@@ -1,6 +1,14 @@
 from setuptools import setup
 
-requirements = []
+# requirements file vs. setup.py: https://stackoverflow.com/a/33685899/4816930
+requirements = [
+    'tensorflow-gpu',
+    'keras',
+    'pandas',
+    'numpy',
+    'h5py',
+    'jupyter'
+]
 
 setup(
     name='mp-2018',
