@@ -1,0 +1,5 @@
+# Thomas: Location of slides, research papers, etc
+docs/
+
+# Python Virtual Environment
+venv/
