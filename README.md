@@ -27,6 +27,6 @@ Ruff, Lukas
 https://docs.google.com/spreadsheets/d/14Iq7KM18AcpRYFfaFsnXl9ZdxFjwvuHyjNotVltmsrE/edit
 
 
-## Related Wor
+## Related Work
 
 https://docs.google.com/spreadsheets/d/1RfVxjoRtdQ6kFV4LAlauLiIxddjfDfHoyyCJLIOOcyc/edit#gid=0
