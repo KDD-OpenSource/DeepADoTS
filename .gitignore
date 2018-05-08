@@ -105,7 +105,3 @@ venv.bak/
 
 # Thomas: Location of slides, research papers, etc (mostly not code related)
 docs/
-
-# Lukas Notebook (Data and output)
-*.pt
-*.pdf
