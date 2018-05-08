@@ -24,5 +24,9 @@ Ruff, Lukas
 * Development of an anomaly detection meta class (e.g. with attributes dataset, model, results, etc.)
 
 ## Datasets
+https://docs.google.com/spreadsheets/d/14Iq7KM18AcpRYFfaFsnXl9ZdxFjwvuHyjNotVltmsrE/edit
 
-## Related Work
+
+## Related Wor
+
+https://docs.google.com/spreadsheets/d/1RfVxjoRtdQ6kFV4LAlauLiIxddjfDfHoyyCJLIOOcyc/edit#gid=0
