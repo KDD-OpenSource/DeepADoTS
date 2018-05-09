@@ -105,3 +105,4 @@ venv.bak/
 
 # Thomas: Location of slides, research papers, etc (mostly not code related)
 docs/
+lstm/data
