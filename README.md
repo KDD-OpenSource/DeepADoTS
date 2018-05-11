@@ -8,3 +8,30 @@ virtualenv venv -p /usr/bin/python3
 source venv/bin/activate  
 pip install -r requirements.txt
 ```
+
+## Project Structure
+```
+├── data
+│   ├── processed           <- The final, canonical data sets for modeling
+│   └── raw                 <- The original, immutable data dump
+│
+├── models                  <- Trained and serialized models
+│
+├── notebooks               <- Jupyter notebooks. Naming convention is a number (for ordering),
+│                              the creator's initials, and a short `-` delimited description, e.g.
+│                              `1.0-jqp-initial-data-exploration`
+│
+├── reports                 <- Generated analysis as HTML, PDF, LaTeX, etc.
+│   └── figures             <- Generated graphics and figures to be used in reporting
+│
+├── requirements.txt        <- The requirements file for reproducing the analysis environment
+│
+├── third_party             <- Contains repositories of related work that can be used
+│
+├── src                     <- Source code for use in this project
+│   ├── __init__.py         <- Makes src a Python module
+│   ├── preprocessing.py    <- Methods to transform the raw data into usable representations
+│   └── algorithms          <- Contains wrappers of the used approaches
+│
+└── main.py                 <- Script that orchestrates the components in the project
+```
