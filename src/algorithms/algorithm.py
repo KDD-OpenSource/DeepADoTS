@@ -1,6 +1,3 @@
-import numpy as np
-
-
 class Algorithm:
     def fit(self, X, y):
         """
@@ -10,5 +7,5 @@ class Algorithm:
         """
         raise NotImplementedError
 
-    def predict(self, X: np.array):
+    def predict(self, X):
         raise NotImplementedError
