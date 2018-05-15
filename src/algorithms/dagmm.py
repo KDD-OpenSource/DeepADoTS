@@ -9,13 +9,14 @@ import torch
 sys.path.append(os.path.join(os.getcwd(), "third_party", "dagmm"))
 
 from torch.utils.data import DataLoader
-from torch.autograd import Variable
 from third_party.dagmm.model import DaGMM
+from third_party.dagmm.utils import to_var
 from .algorithm import Algorithm
 
 
 class CustomDataLoader(object):
     """Wrap the given features so they can be put into a torch DataLoader"""
+
     def __init__(self, X):
         self.X = X
 
@@ -31,10 +32,15 @@ class DAGMM(Algorithm):
     def __init__(self, lr=1e-4, batch_size=1024, gmm_k=4, normal_percentile=80):
         self.lr = lr
         self.batch_size = batch_size
-        self.gmm_k = gmm_k
-        self.normal_percentile = normal_percentile
+        self.gmm_k = gmm_k  # Number of Gaussian mixtures
+        self.normal_percentile = normal_percentile  # Up to which percentile data should be consideres normal
+
+    def _reset_grad(self):
+        self.dagmm.zero_grad()
 
     def fit(self, X, _):
+        """Learn the mixture probability, mean and covariance for each component k.
+        Store the computed energy based on the training data and the aforementioned parameters."""
         data_loader = DataLoader(dataset=CustomDataLoader(X), batch_size=self.batch_size, shuffle=True)
 
         self.dagmm = DaGMM(self.gmm_k)
@@ -51,7 +57,7 @@ class DAGMM(Algorithm):
         gamma_sum = 0
 
         for it, input_data in enumerate(data_loader):
-            input_data = self.to_var(input_data)
+            input_data = to_var(input_data)
             enc, dec, z, gamma = self.dagmm(input_data)
             phi, mu, cov = self.dagmm.compute_gmm_params(z, gamma)
 
@@ -69,7 +75,7 @@ class DAGMM(Algorithm):
 
         train_energy = []
         for it, input_data in enumerate(data_loader):
-            input_data = self.to_var(input_data)
+            input_data = to_var(input_data)
             enc, dec, z, gamma = self.dagmm(input_data)
             sample_energy, cov_diag = self.dagmm.compute_energy(z, phi=self.train_phi, mu=self.train_mu,
                                                                 cov=self.train_cov, size_average=False)
@@ -77,22 +83,17 @@ class DAGMM(Algorithm):
 
         self.train_energy = np.concatenate(train_energy, axis=0)
 
-    def reset_grad(self):
-        self.dagmm.zero_grad()
-
-    def to_var(self, x, volatile=False):
-        if torch.cuda.is_available():
-            x = x.cuda()
-        return Variable(x, volatile=volatile)
-
     def predict(self, X):
+        """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
+        given data and label an anomaly if it is outside of the `self.normal_percentile` percentile."""
         data_loader = DataLoader(dataset=CustomDataLoader(X), batch_size=self.batch_size, shuffle=False)
 
         test_energy = []
         for it, input_data in enumerate(data_loader):
-            input_data = self.to_var(input_data)
+            input_data = to_var(input_data)
             enc, dec, z, gamma = self.dagmm(input_data)
-            sample_energy, cov_diag = self.dagmm.compute_energy(z, size_average=False)
+            sample_energy, cov_diag = self.dagmm.compute_energy(z, phi=self.train_phi, mu=self.train_mu,
+                                                                cov=self.train_cov, size_average=False)
             test_energy.append(sample_energy.data.cpu().numpy())
 
         test_energy = np.concatenate(test_energy, axis=0)
