@@ -35,3 +35,6 @@ pip install -r requirements.txt
 │
 └── main.py                 <- Script that orchestrates the components in the project
 ```
+
+## Credits
+[dagmm](https://github.com/danieltan07/dagmm)
