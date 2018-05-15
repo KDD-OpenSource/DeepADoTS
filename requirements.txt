@@ -1,0 +1,16 @@
+# Data Generator
+-e git+https://github.com/WGierke/agots#egg=agots
+
+# Requirements for donut (https://github.com/korepwx/donut)
+git+https://github.com/thu-ml/zhusuan.git
+git+https://github.com/korepwx/tfsnippet.git
+git+https://github.com/korepwx/donut.git
+
+# Requirements for dagmm (https://github.com/danieltan07/dagmm)
+torch>=0.4.0
+
+# Remaining requirements that should be installed if not already done so
+numpy
+pandas
+tqdm
+sklearn
