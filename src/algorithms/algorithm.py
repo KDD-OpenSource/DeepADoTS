@@ -1,7 +1,5 @@
 import numpy as np
 
-from ..dataset import Dataset
-
 
 class Algorithm:
     def fit(self, X, y):
