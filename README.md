@@ -1,4 +1,4 @@
-# MP-2018
+# MP-2018 [![CircleCI](https://circleci.com/gh/KDD-OpenSource/MP-2018/tree/master.svg?style=svg&circle-token=2f20af2255f5f2d1ca22193c1b896d1c97b270d3)](https://circleci.com/gh/KDD-OpenSource/MP-2018/tree/master)
 Repository for the summer term master project 2018 on "Unsupervised Anomaly Detection: Representation Learning for Predictive Maintenance over Time"
 
 ## Installation
