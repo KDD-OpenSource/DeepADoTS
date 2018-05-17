@@ -8,10 +8,12 @@ git+https://github.com/korepwx/donut.git
 
 # Requirements for dagmm (https://github.com/danieltan07/dagmm)
 torch>=0.4.0
+torchvision
+h5py
 
 # Remaining requirements that should be installed if not already done so
 numpy
 pandas
 tqdm
-sklearn
+scikit-learn>=0.19.1
 flake8
