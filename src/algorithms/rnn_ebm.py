@@ -2,8 +2,10 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
+from . import Algorithm
 
-class RecurrentEBM(object):
+
+class RecurrentEBM(Algorithm):
     """ Recurrent Energy-Based Model implementation using TensorFlow.
     The interface of the class is sklearn-like.
     """
