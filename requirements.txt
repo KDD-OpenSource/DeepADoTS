@@ -14,3 +14,4 @@ numpy
 pandas
 tqdm
 sklearn
+flake8
