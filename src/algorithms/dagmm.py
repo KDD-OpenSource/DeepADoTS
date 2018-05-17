@@ -5,13 +5,12 @@ import sys
 
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
+from .algorithm import Algorithm
 
 sys.path.append(os.path.join(os.getcwd(), "third_party", "dagmm"))
-
-from torch.utils.data import DataLoader
-from third_party.dagmm.model import DaGMM
-from third_party.dagmm.utils import to_var
-from .algorithm import Algorithm
+from third_party.dagmm.model import DaGMM  # noqa
+from third_party.dagmm.utils import to_var  # noqa
 
 
 class CustomDataLoader(object):
