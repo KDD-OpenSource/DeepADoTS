@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
@@ -10,10 +8,11 @@ class RecurrentEBM(object):
     The interface of the class is sklearn-like.
     """
 
-    def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100):
+    def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100, min_lr=0.01):
         self.num_epochs = num_epochs
         self.n_hidden = n_hidden  # Size of RBM's hidden layer
         self.n_hidden_recurrent = n_hidden_recurrent  # Size of RNN's hidden layer
+        self.min_lr = min_lr
 
         # Placeholders
         self.input_data = None
@@ -40,32 +39,31 @@ class RecurrentEBM(object):
         self._train_model(X, batch_size)
 
     def predict(self, X, min_energy=None):
-        results = []
         scores = []
+        labels = []
 
         for i in range(len(X)):
-          reconstruction_err = self.tf_session.run([self.cost],
-                                                   feed_dict={self.input_data: X[i:i + 1],
-                                                              self.batch_size: 1})
-          results.append(reconstruction_err[0])
-          if min_energy is not None:
-            scores.append(reconstruction_err[0] >= min_energy)
+            reconstruction_err = self.tf_session.run([self.cost],
+                                                     feed_dict={self.input_data: X[i:i + 1],
+                                                                self.batch_size: 1})
+            scores.append(reconstruction_err[0])
+            if min_energy is not None:
+                labels.append(reconstruction_err[0] >= min_energy)
 
-        return (scores, results) if min_energy is not None else results
+        return (labels, scores) if min_energy is not None else scores
 
     def _train_model(self, train_set, batch_size):
         for epoch in range(self.num_epochs):
             costs = []
-            start = time.time()
             for i in tqdm(range(0, len(train_set), batch_size)):
                 x = train_set[i:i + batch_size]
                 if len(x) == batch_size:
-                    alpha = min(0.01, 0.1 / float(i + 1))
+                    alpha = min(self.min_lr, 0.1 / float(i + 1))
                     _, C = self.tf_session.run([self.update, self.cost],
                                                feed_dict={self.input_data: x, self.lr: alpha,
                                                           self.batch_size: batch_size})
                     costs.append(C)
-            print(f'Epoch: {epoch} Cost: {np.mean(costs)} Time: {time.time() - start}')
+            print(f'Epoch: {epoch+1} Cost: {np.mean(costs)}')
 
     def _initialize_tf(self):
         init = tf.initialize_all_variables()
