@@ -63,7 +63,7 @@ class RecurrentEBM(object):
                                                feed_dict={self.input_data: x, self.lr: alpha,
                                                           self.batch_size: batch_size})
                     costs.append(C)
-            print(f'Epoch: {epoch+1} Cost: {np.mean(costs)}')
+            print('Epoch: {} Cost: {}'.format(epoch+1, np.mean(costs)))
 
     def _initialize_tf(self):
         init = tf.initialize_all_variables()
