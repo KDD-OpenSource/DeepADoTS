@@ -2,8 +2,13 @@ import numpy as np
 import tensorflow as tf
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc
+from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc, precision_recall_fscore_support as prf, accuracy_score
 from pandas_ml import ConfusionMatrix
+
+def get_accuracy_precision_recall_fscore(ground_truth, prediction):
+    accuracy = accuracy_score(ground_truth, prediction)
+    precision, recall, f_score, support = prf(ground_truth, prediction, average='binary')
+return accuracy, precision, recall, f_score
 
 def evaluate_seq(y, saver_locations, names):
     saver = tf.train.Saver()
@@ -32,15 +37,14 @@ def evaluate(y, y_, names):
     
     df = pd.Dataframe(columns = ["name", "precision", "recall", "F1-score"])
     for i in range(len(names)):
-
-        cm = ConfusionMatrix(y, y_[i])
-        cm.print_stats()
+        acc, prec, rec, f_score = get_accuracy_precision_recall_fscore(ground_truth, prediction)
         df.append({"name": names[i], 
-                   "precision": curr_cm['PPV'], 
-                   "recall": curr_cm['TPR'], 
-                   "F1-score": curr_cm['F1']})
+                   "accuracy": acc,
+                   "precision": prec, 
+                   "recall": rec, 
+                   "F1-score": f_score})
 
-        compute_roc_curve()
+        compute_roc_curve(y, y_)
     print(df)
     
 def compute_roc_curve(y, y_):
