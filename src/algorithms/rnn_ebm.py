@@ -1,6 +1,8 @@
+import logging
+
 import numpy as np
 import tensorflow as tf
-from tqdm import tqdm
+from tqdm import trange
 
 from . import Algorithm
 
@@ -60,7 +62,7 @@ class RecurrentEBM(Algorithm):
     def _train_model(self, train_set, batch_size):
         for epoch in range(self.num_epochs):
             costs = []
-            for i in tqdm(range(0, len(train_set), batch_size)):
+            for i in trange(0, len(train_set), batch_size):
                 x = train_set[i:i + batch_size]
                 if len(x) == batch_size:
                     alpha = min(self.min_lr, 0.1 / float(i + 1))
@@ -68,7 +70,7 @@ class RecurrentEBM(Algorithm):
                                                feed_dict={self.input_data: x, self.lr: alpha,
                                                           self._batch_size: batch_size})
                     costs.append(C)
-            print('Epoch: {} Cost: {}'.format(epoch+1, np.mean(costs)))
+            logging.info(f'Epoch: {epoch+1} Cost: {np.mean(costs)}')
 
     def _initialize_tf(self):
         init = tf.initialize_all_variables()
