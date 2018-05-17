@@ -52,10 +52,10 @@ class RecurrentEBM(Algorithm):
                                                      feed_dict={self.input_data: X[i:i + 1],
                                                                 self._batch_size: 1})
             scores.append(reconstruction_err[0])
-            if min_energy is not None:
-                labels.append(reconstruction_err[0] >= min_energy)
+            if self.min_energy is not None:
+                labels.append(reconstruction_err[0] >= self.min_energy)
 
-        return (labels, scores) if min_energy is not None else scores
+        return (labels, scores) if self.min_energy is not None else scores
 
     def _train_model(self, train_set, batch_size):
         for epoch in range(self.num_epochs):
