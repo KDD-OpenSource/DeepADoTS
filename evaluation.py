@@ -8,81 +8,43 @@ from pandas_ml import ConfusionMatrix
 def get_accuracy_precision_recall_fscore(ground_truth, prediction):
     accuracy = accuracy_score(ground_truth, prediction)
     precision, recall, f_score, support = prf(ground_truth, prediction, average='binary')
-return accuracy, precision, recall, f_score
-
-def evaluate_seq(y, saver_locations, names):
-    saver = tf.train.Saver()
-    
-    df = pd.Dataframe(columns = ["name", "precision", "recall", "F1-score"])
-    for i in range(len(names)):
-        with tf.Session() as sess:
-            # Restore variables from disk.
-            saver.restore(sess, saver_locations[i])
-            print("Model restored.")
-
-            y_ = y_.eval()
-
-            cm = ConfusionMatrix(y, y_)
-            cm.print_stats()
-            df.append({"name": names[i], 
-                       "precision": curr_cm['PPV'], 
-                       "recall": curr_cm['TPR'], 
-                       "F1-score": curr_cm['F1']})
-            
-            compute_roc_curve()
-    print(df)
-    
-def evaluate(y, y_, names):
-    saver = tf.train.Saver()
-    
-    df = pd.Dataframe(columns = ["name", "precision", "recall", "F1-score"])
-    for i in range(len(names)):
-        acc, prec, rec, f_score = get_accuracy_precision_recall_fscore(ground_truth, prediction)
-        df.append({"name": names[i], 
-                   "accuracy": acc,
-                   "precision": prec, 
-                   "recall": rec, 
-                   "F1-score": f_score})
-
-        compute_roc_curve(y, y_)
-    print(df)
+    return accuracy, precision, recall, f_score
     
 def compute_roc_curve(y, y_):
     # Compute ROC curve and ROC area for each class
     fpr = dict()
     tpr = dict()
     roc_auc = dict()
-    for i in range(2):
-        fpr[i], tpr[i], _ = roc_curve(y, y_, pos_label=1)
-        roc_auc[i] = auc(fpr[i], tpr[i])
 
-        #Plot of a ROC curve for a specific class
+    fpr[0], tpr[0], _ = roc_curve(y, y_, pos_label=1)
+    roc_auc[0] = auc(fpr[0], tpr[0])
 
-        plt.figure()
-        lw = 2
-        plt.plot(fpr[1], tpr[1], color='darkorange',
-                 lw=lw, label='ROC curve (area = %0.2f)' % roc_auc[1])
-        plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title('Receiver operating characteristic example')
-        plt.legend(loc="lower right")
-        plt.show()
-        
-def DBSM_evaluate():
-    newdata = []
-    newresult = []
-    outliers = 0
-    for i in range(NUM_EXAMPLES):
-        newindex = randint(0,len(data)-1)
-        newdata += [Xy_full[newindex]]
-        newresult += [y_test[newindex]]
-        if newresult[i] == 1:
-            outliers += 1
+    #Plot of a ROC curve for a specific class
 
+    plt.figure()
+    lw = 2
+    plt.plot(fpr[0], tpr[0], color='darkorange',
+             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc[0])
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver operating characteristic example')
+    plt.legend(loc="lower right")
+    plt.show()
+
+def evaluate(y, y_, names):
     
-    score = model.score(newdata, newresult, 10e+4)
-    print("Score: {} (ouliers ratio: {})".format(score, outliers/NUM_EXAMPLES))
-    model.delete()
+    df = pd.DataFrame(columns = ["name", "accuracy", "precision", "recall", "F1-score"])
+    for i in range(len(names)):
+        acc, prec, rec, f_score = get_accuracy_precision_recall_fscore(y, y_[i])
+        df = df.append({"name": names[i], 
+                   "accuracy": acc,
+                   "precision": prec, 
+                   "recall": rec, 
+                   "F1-score": f_score},
+                   ignore_index=True)
+
+        compute_roc_curve(y, y_[i])
+    print(df)
