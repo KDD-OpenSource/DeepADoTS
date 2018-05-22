@@ -1,7 +1,9 @@
 # MP-2018 [![CircleCI](https://circleci.com/gh/KDD-OpenSource/MP-2018/tree/master.svg?style=svg&circle-token=2f20af2255f5f2d1ca22193c1b896d1c97b270d3)](https://circleci.com/gh/KDD-OpenSource/MP-2018/tree/master)
+
 Repository for the summer term master project 2018 on "Unsupervised Anomaly Detection: Representation Learning for Predictive Maintenance over Time"
 
 ## Installation
+
 ```bash
 git clone --recurse-submodules -j8 git://github.com/KDD-OpenSource/MP-2018.git  
 virtualenv venv -p /usr/bin/python3  
@@ -10,6 +12,7 @@ pip install -r requirements.txt
 ```
 
 ## Project Structure
+
 ```
 ├── data
 │   ├── processed           <- The final, canonical data sets for modeling
@@ -36,6 +39,29 @@ pip install -r requirements.txt
 └── main.py                 <- Script that orchestrates the components in the project
 ```
 
+## Datasets
+
+https://docs.google.com/spreadsheets/d/14Iq7KM18AcpRYFfaFsnXl9ZdxFjwvuHyjNotVltmsrE/edit
+
+## Related Work
+
+https://docs.google.com/spreadsheets/d/1RfVxjoRtdQ6kFV4LAlauLiIxddjfDfHoyyCJLIOOcyc/edit#gid=0
+
 ## Credits
+
 [dagmm](https://github.com/danieltan07/dagmm)
 
+### Team members
+
+Fischer, Maxi
+Gierke, Willi
+Kesar, Ajay
+Kellermeier, Thomas
+Stebner, Axel
+Thevessen, Daniel
+
+### Advisors
+
+Mueller, Emmanuel
+Geier, Fabian
+Ruff, Lukas
