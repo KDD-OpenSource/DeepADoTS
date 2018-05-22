@@ -30,7 +30,7 @@ def execute_lstm_enc_dec():
     test_dataset = TimeseriesData.batchify(args, TimeseriesData.testData, args.eval_batch_size)
     gen_dataset = TimeseriesData.batchify(args, TimeseriesData.testData, 1)
     lstm_enc_dec = LSTM_Enc_Dec(TimeseriesData, train_dataset, test_dataset, gen_dataset)
-    lstm_enc_dec.fit(TimeseriesData, train_dataset, test_dataset, gen_dataset)
+    lstm_enc_dec.fit()
     pred = lstm_enc_dec.predict(test_dataset)
     print("LSTM-Enc_Dec results: ", get_accuracy_precision_recall_fscore(TimeseriesData.testLabel, pred))
 
