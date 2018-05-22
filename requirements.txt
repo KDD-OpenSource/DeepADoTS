@@ -17,3 +17,11 @@ pandas
 tqdm
 scikit-learn>=0.19.1
 flake8
+
+# Requirements for LSTM-Enc-Dec
+argparse
+pyparsing
+cycler
+matplotlib
+requests
+scipy

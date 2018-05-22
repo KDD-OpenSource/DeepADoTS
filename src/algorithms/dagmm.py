@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader
 from .algorithm import Algorithm
 
 sys.path.append(os.path.join(os.getcwd(), "third_party", "dagmm"))
-from third_party.dagmm.model import DaGMM  # noqa
-from third_party.dagmm.utils import to_var  # noqa
+#from third_party.dagmm.model import DaGMM  # noqa
+#from third_party.dagmm.utils import to_var  # noqa
 
 
 class CustomDataLoader(object):
