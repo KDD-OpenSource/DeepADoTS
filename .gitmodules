@@ -1,0 +1,3 @@
+[submodule "third_party/dagmm"]
+	path = third_party/dagmm
+	url = https://github.com/danieltan07/dagmm
