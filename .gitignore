@@ -104,3 +104,6 @@ venv.bak/
 
 # PyCharm
 .idea/
+
+# SyncThing data
+data/
