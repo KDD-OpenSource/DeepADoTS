@@ -1,14 +1,9 @@
 from setuptools import setup
 
-# requirements file vs. setup.py: https://stackoverflow.com/a/33685899/4816930
-requirements = [
-    'tensorflow-gpu',
-    'keras',
-    'pandas',
-    'numpy',
-    'h5py',
-    'jupyter'
-]
+def parse_requirements(filename):
+    """ load requirements from a pip requirements file """
+    lineiter = (line.strip() for line in open(filename))
+    return [line for line in lineiter if line and not line.startswith("#")]
 
 setup(
     name='mp-2018',
@@ -18,7 +13,8 @@ setup(
     version='0.0',
     packages=[],
     scripts=[],
-    install_requires=requirements,
+    # Requirements for executing the project (not development)
+    install_requires=parse_requirements('requirements.txt'),
     url='github.com/KDD-OpenSource/MP-2018',
     license='MIT License',
 )
