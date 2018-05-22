@@ -104,7 +104,3 @@ venv.bak/
 
 # PyCharm
 .idea/
-
-# Thomas: Location of slides, research papers, etc (mostly not code related)
-docs/
-lstm/data
