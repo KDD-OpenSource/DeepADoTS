@@ -15,6 +15,10 @@ from DSEBM_parsing import *
 from LSTM_AD import *
 from evaluation import *
 from synthetic_data_generator import *
+from src.algorithms.dagmm import DAGMM
+from src.datasets.dataset import KDD_Cup
+from src.evaluation import get_accuracy_precision_recall_fscore
+
 
 NUM_EPOCHS=100
 NUM_EXAMPLES=100
@@ -30,10 +34,18 @@ def main():
     #print("Loaded data")
     
     print("Load Synthetic Data")
-    
-    
+    df1, df2, df3, df4 = generate_outliers()
     
     y_ = []
+    
+    dagmm = DAGMM()
+    kdd_cup = KDD_Cup()
+    (X_train, y_train), (X_test, y_test) = kdd_cup.get_data_dagmm()
+    dagmm.fit(X_train, y_train)
+    pred = dagmm.predict(X_test)
+    print("Trained DAGMM")
+    print(get_accuracy_precision_recall_fscore(y_test, pred))
+    
     
     #print("Train models...")
     #DSEBM_model = FC_DSEBM([num_params,5], num_epochs=NUM_EPOCHS)
