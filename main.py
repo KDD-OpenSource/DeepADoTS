@@ -21,18 +21,24 @@ def execute_dagmm():
 
 
 def execute_lstm_enc_dec():
-
     args = train_predictor.get_args()
     # Load data
     TimeseriesData = preprocess_data.PickleDataLoad(data_type=args.data, filename=args.filename,
                                                     augment_test_data=args.augment)
     train_dataset = TimeseriesData.batchify(args, TimeseriesData.trainData, args.batch_size)
-    test_dataset = TimeseriesData.batchify(args, TimeseriesData.testData, args.eval_batch_size)
+    eval_dataset = TimeseriesData.batchify(args, TimeseriesData.testData, args.eval_batch_size)
     gen_dataset = TimeseriesData.batchify(args, TimeseriesData.testData, 1)
-    lstm_enc_dec = LSTM_Enc_Dec(TimeseriesData, train_dataset, test_dataset, gen_dataset)
+    lstm_enc_dec = LSTM_Enc_Dec(TimeseriesData, train_dataset, eval_dataset, gen_dataset)
     lstm_enc_dec.fit()
-    pred = lstm_enc_dec.predict(test_dataset)
-    print("LSTM-Enc_Dec results: ", get_accuracy_precision_recall_fscore(TimeseriesData.testLabel, pred))
+
+    TimeseriesData = preprocess_data.PickleDataLoad(data_type=args.data, filename=args.filename,
+                                                    augment_test_data=False)
+    train_dataset = TimeseriesData.batchify(args, TimeseriesData.trainData[:TimeseriesData.length], bsz=1)
+    test_dataset = TimeseriesData.batchify(args, TimeseriesData.testData, bsz=1)
+    pred = lstm_enc_dec.predict(TimeseriesData, train_dataset, test_dataset)
+    print("pred: ", pred)
+    print("test_label: ", TimeseriesData.testLabel.to(args.device))
+    print("LSTM-Enc_Dec results: ", get_accuracy_precision_recall_fscore(TimeseriesData.testLabel.to(args.device), pred))
 
 
 if __name__ == '__main__':

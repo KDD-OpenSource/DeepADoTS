@@ -20,6 +20,7 @@ class LSTM_Enc_Dec(Algorithm):
 
     def __init__(self, TimeseriesData, train_dataset, test_dataset, gen_dataset):
         self.args = train_predictor.args
+        self.best_val_loss = None
 
         # load data
         self.TimeseriesData = TimeseriesData
@@ -58,7 +59,7 @@ class LSTM_Enc_Dec(Algorithm):
                 if epoch % self.args.save_interval == 0:
                     # Save the model if the validation loss is the best we've seen so far.
                     is_best = val_loss > best_val_loss
-                    best_val_loss = max(val_loss, best_val_loss)
+                    self.best_val_loss = max(val_loss, best_val_loss)
                     model_dictionary = {'epoch': epoch,
                                         'best_loss': best_val_loss,
                                         'state_dict': self.model.state_dict(),
@@ -90,7 +91,7 @@ class LSTM_Enc_Dec(Algorithm):
         print('-' * 89)
 
 
-    def predict(self, test_dataset):
-        anomaly_detection(test_dataset)
+    def predict(self, TimeseriesData, train_dataset, test_dataset):
+        return anomaly_detection.calc_anomalies(TimeseriesData, train_dataset, test_dataset)
 
 

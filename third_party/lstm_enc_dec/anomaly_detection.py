@@ -13,7 +13,7 @@ from .anomalyDetector import fit_norm_distribution_param
 from .anomalyDetector import anomalyScore
 from .anomalyDetector import get_precision_recall
 
-def calc_anomalies(test_dataset):
+def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
     parser = argparse.ArgumentParser(description='PyTorch LSTM-Enc-Dec Anomaly Detection Model')
     parser.add_argument('--prediction_window_size', type=int, default=10,
                         help='prediction_window_size')
@@ -46,8 +46,8 @@ def calc_anomalies(test_dataset):
     ###############################################################################
     # Load data
     ###############################################################################
-    TimeseriesData = PickleDataLoad(data_type=args.data, filename=args.filename, augment_test_data=False)
-    train_dataset = TimeseriesData.batchify(args, TimeseriesData.trainData[:TimeseriesData.length], bsz=1)
+    TimeseriesData = TimeseriesData
+    train_dataset = train_dataset
     test_dataset = test_dataset
 
     ###############################################################################
