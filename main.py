@@ -1,5 +1,6 @@
 from src.algorithms.dagmm import DAGMM
 from src.algorithms.lstm_enc_dec import LSTM_Enc_Dec
+from third_party.lstm_enc_dec import train_predictor
 from src.datasets.dataset import KDD_Cup
 from src.evaluation import get_accuracy_precision_recall_fscore
 from third_party.lstm_enc_dec import preprocess_data
@@ -20,12 +21,14 @@ def execute_dagmm():
 
 
 def execute_lstm_enc_dec():
+
+    args = train_predictor.get_args()
     # Load data
-    TimeseriesData = preprocess_data.PickleDataLoad(data_type=LSTM_Enc_Dec.args.data, filename=LSTM_Enc_Dec.args.filename,
-                                                    augment_test_data=LSTM_Enc_Dec.args.augment)
-    train_dataset = TimeseriesData.batchify(LSTM_Enc_Dec.args, TimeseriesData.trainData, LSTM_Enc_Dec.args.batch_size)
-    test_dataset = TimeseriesData.batchify(LSTM_Enc_Dec.args, TimeseriesData.testData, LSTM_Enc_Dec.args.eval_batch_size)
-    gen_dataset = TimeseriesData.batchify(LSTM_Enc_Dec.args, TimeseriesData.testData, 1)
+    TimeseriesData = preprocess_data.PickleDataLoad(data_type=args.data, filename=args.filename,
+                                                    augment_test_data=args.augment)
+    train_dataset = TimeseriesData.batchify(args, TimeseriesData.trainData, args.batch_size)
+    test_dataset = TimeseriesData.batchify(args, TimeseriesData.testData, args.eval_batch_size)
+    gen_dataset = TimeseriesData.batchify(args, TimeseriesData.testData, 1)
     lstm_enc_dec = LSTM_Enc_Dec(TimeseriesData, train_dataset, test_dataset, gen_dataset)
     lstm_enc_dec.fit(TimeseriesData, train_dataset, test_dataset, gen_dataset)
     pred = lstm_enc_dec.predict(test_dataset)

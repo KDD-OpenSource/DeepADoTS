@@ -41,7 +41,7 @@ class LSTM_Enc_Dec(Algorithm):
         optimizer = optim.Adam(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
         criterion = nn.MSELoss()
 
-    def fit(self, epoch=1, start_epoch=1, best_val_loss=0, epochs=20):
+    def fit(self, epoch=1, start_epoch=1, best_val_loss=0, epochs=train_predictor.args.epochs):
         try:
             for epoch in range(start_epoch, epochs + 1):
 

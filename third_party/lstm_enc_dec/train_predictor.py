@@ -48,7 +48,7 @@ parser.add_argument('--tied', action='store_true',
                     help='tie the word embedding and softmax weights (deprecated)')
 parser.add_argument('--seed', type=int, default=1111,
                     help='random seed')
-parser.add_argument('--device', type=str, default='cuda',
+parser.add_argument('--device', type=str, default='cpu',
                     help='cuda or cpu')
 parser.add_argument('--log_interval', type=int, default=10, metavar='N',
                     help='report interval')
@@ -68,6 +68,11 @@ args = parser.parse_args()
 # Set the random seed manually for reproducibility.
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed(args.seed)
+
+
+def get_args():
+    return args
+
 
 ###############################################################################
 # Training code
