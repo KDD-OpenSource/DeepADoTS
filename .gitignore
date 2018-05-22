@@ -102,6 +102,3 @@ venv.bak/
 
 # mypy
 .mypy_cache/
-
-# Thomas: Location of slides, research papers, etc (mostly not code related)
-docs/
