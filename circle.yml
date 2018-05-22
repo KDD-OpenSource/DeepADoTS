@@ -32,7 +32,7 @@ jobs:
           name: run linting and metrics
           command: |
             . venv/bin/activate
-            flake8 src main.py
+            flake8 --exclude=third_party,venv
       - store_artifacts:
           path: test-reports
           destination: test-reports
