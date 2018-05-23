@@ -6,13 +6,14 @@ import numpy as np
 class Dataset:
     def __init__(self, name, raw_path, processed_path):
         self.name = name
-        self.raw_path = os.path.join(os.getcwd(), "data/raw/", raw_path)
-        self.processed_path = os.path.join(os.getcwd(), "data/processed/", processed_path)
+        self.raw_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../data/raw/", raw_path)
+        self.processed_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../data/processed/",
+                                           processed_path)
 
 
-class KDD_Cup(Dataset):
+class KDDCup(Dataset):
     def __init__(self):
-        super(KDD_Cup, self).__init__("KDD Cup '99", "kddcup-data_10_percent_corrected.txt", "kdd_cup.npz")
+        super(KDDCup, self).__init__("KDD Cup '99", "kddcup-data_10_percent_corrected.txt", "kdd_cup.npz")
 
     def get_data_dagmm(self):
         """
@@ -35,16 +36,16 @@ class KDD_Cup(Dataset):
         attack_data = features[labels == 0]
         attack_labels = labels[labels == 0]
 
-        N_attack = attack_data.shape[0]
+        n_attack = attack_data.shape[0]
 
-        randIdx = np.arange(N_attack)
-        np.random.shuffle(randIdx)
-        N_train = N_attack // 2
-        train = attack_data[randIdx[:N_train]]
-        train_labels = attack_labels[randIdx[:N_train]]
+        rand_idx = np.arange(n_attack)
+        np.random.shuffle(rand_idx)
+        n_train = n_attack // 2
+        train = attack_data[rand_idx[:n_train]]
+        train_labels = attack_labels[rand_idx[:n_train]]
 
-        test = attack_data[randIdx[N_train:]]
-        test_labels = attack_labels[randIdx[N_train:]]
+        test = attack_data[rand_idx[n_train:]]
+        test_labels = attack_labels[rand_idx[n_train:]]
 
         test = np.concatenate((test, normal_data), axis=0)
         test_labels = np.concatenate((test_labels, normal_labels), axis=0)
