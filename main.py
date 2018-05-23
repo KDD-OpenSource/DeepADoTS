@@ -1,9 +1,6 @@
-from src.algorithms.dagmm import DAGMM
-from src.algorithms.lstm_enc_dec import LSTM_Enc_Dec
-from third_party.lstm_enc_dec import train_predictor
-from src.datasets.dataset import KDD_Cup
+from src.algorithms import DAGMM, LSTM_Enc_Dec
+from src.datasets import KDD_Cup, ECG
 from src.evaluation import get_accuracy_precision_recall_fscore
-from third_party.lstm_enc_dec import preprocess_data
 
 
 def main():
@@ -24,12 +21,8 @@ def execute_lstm_enc_dec():
 
     args = train_predictor.get_args()
     # Load data
-    TimeseriesData = preprocess_data.PickleDataLoad(data_type=args.data, filename=args.filename,
-                                                    augment_test_data=args.augment)
-    train_dataset = TimeseriesData.batchify(args, TimeseriesData.trainData, args.batch_size)
-    test_dataset = TimeseriesData.batchify(args, TimeseriesData.testData, args.eval_batch_size)
-    gen_dataset = TimeseriesData.batchify(args, TimeseriesData.testData, 1)
-    lstm_enc_dec = LSTM_Enc_Dec(TimeseriesData, train_dataset, test_dataset, gen_dataset)
+    ecg = ECG()
+    lstm_enc_dec = LSTM_Enc_Dec(*ecg.get_lstm_enc_dec_data())
     lstm_enc_dec.fit()
     pred = lstm_enc_dec.predict(test_dataset)
     print("LSTM-Enc_Dec results: ", get_accuracy_precision_recall_fscore(TimeseriesData.testLabel, pred))
