@@ -5,18 +5,18 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc, precision_recall_fscore_support as prf, accuracy_score
 from pandas_ml import ConfusionMatrix
 
-def get_accuracy_precision_recall_fscore(ground_truth, prediction):
-    accuracy = accuracy_score(ground_truth, prediction)
-    precision, recall, f_score, support = prf(ground_truth, prediction, average='binary')
+def get_accuracy_precision_recall_fscore(y_true, y_pred):
+    accuracy = accuracy_score(y_true, y_pred)
+    precision, recall, f_score, support = prf(y_true, y_pred, average='binary')
     return accuracy, precision, recall, f_score
     
-def compute_roc_curve(y, y_):
+def compute_roc_curve(y_true, y_pred):
     # Compute ROC curve and ROC area for each class
     fpr = dict()
     tpr = dict()
     roc_auc = dict()
 
-    fpr[0], tpr[0], _ = roc_curve(y, y_, pos_label=1)
+    fpr[0], tpr[0], _ = roc_curve(y_true, y_pred, pos_label=1)
     roc_auc[0] = auc(fpr[0], tpr[0])
 
     #Plot of a ROC curve for a specific class
@@ -34,11 +34,10 @@ def compute_roc_curve(y, y_):
     plt.legend(loc="lower right")
     plt.show()
 
-def evaluate(y, y_, names):
-    
+def evaluate(y_true, y_pred, names):
     df = pd.DataFrame(columns = ["name", "accuracy", "precision", "recall", "F1-score"])
     for i in range(len(names)):
-        acc, prec, rec, f_score = get_accuracy_precision_recall_fscore(y, y_[i])
+        acc, prec, rec, f_score = get_accuracy_precision_recall_fscore(y_true, y_pred[i])
         df = df.append({"name": names[i], 
                    "accuracy": acc,
                    "precision": prec, 
@@ -46,5 +45,5 @@ def evaluate(y, y_, names):
                    "F1-score": f_score},
                    ignore_index=True)
 
-        compute_roc_curve(y, y_[i])
+        compute_roc_curve(y_true, y_pred[i])
     print(df)
