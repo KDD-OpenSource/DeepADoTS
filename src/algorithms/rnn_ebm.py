@@ -60,9 +60,9 @@ class RecurrentEBM(Algorithm):
         return (labels, scores) if self.min_energy is not None else scores
 
     def _train_model(self, train_set, batch_size):
-        for epoch in range(self.num_epochs):
+        for epoch in trange(self.num_epochs):
             costs = []
-            for i in trange(0, len(train_set), batch_size):
+            for i in range(0, len(train_set), batch_size):
                 x = train_set[i:i + batch_size]
                 if len(x) == batch_size:
                     alpha = min(self.min_lr, 0.1 / float(i + 1))
@@ -73,7 +73,7 @@ class RecurrentEBM(Algorithm):
             logging.info(f'Epoch: {epoch+1} Cost: {np.mean(costs)}')
 
     def _initialize_tf(self):
-        init = tf.initialize_all_variables()
+        init = tf.global_variables_initializer()
         self.tf_session.run(init)
 
     def _build_model(self, n_visible):
