@@ -12,7 +12,7 @@ from .dataset import Dataset
 
 class ECG(Dataset):
     def __init__(self):
-        super(ECG, self).__init__("ECG", "", "chfdb_chf13_45590.pkl")
+        super(ECG, self).__init__("ECG", "ecg/chfdb_chf13_45590.txt", "ecg/whole/chfdb_chf13_45590.pkl")
         self.batch_size = 64
         self.eval_batch_size = 64
         self.augment_test_data = True
