@@ -5,6 +5,8 @@ import torch.nn as nn
 from .preprocess_data import *
 from .model import RNNPredictor
 from torch import optim
+import matplotlib
+matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 from pathlib import Path
 from .anomalyDetector import fit_norm_distribution_param
@@ -125,7 +127,6 @@ def generate_output(args, epoch, model, gen_dataset, TimeseriesData, disp_uncert
         #     lowerlim95 = torch.cat(lowerlim95, dim=0)
         #     upperlim95 = preprocess_data.reconstruct(upperlim95.data.cpu().numpy(),TimeseriesData.mean,TimeseriesData.std)
         #     lowerlim95 = preprocess_data.reconstruct(lowerlim95.data.cpu().numpy(),TimeseriesData.mean,TimeseriesData.std)
-
         plt.figure(figsize=(15, 5))
         for i in range(target.size(-1)):
             plt.plot(target[:, :, i].numpy(), label='Target' + str(i),
@@ -140,7 +141,6 @@ def generate_output(args, epoch, model, gen_dataset, TimeseriesData, disp_uncert
             plt.plot(range(startPoint, endPoint), outSeq[startPoint:, i].numpy(),
                      label='Recursive predictions for target' + str(i),
                      color='blue', marker='.', linestyle='--', markersize=1.5, linewidth=1)
-
         plt.xlim([startPoint - 500, endPoint])
         plt.xlabel('Index', fontsize=15)
         plt.ylabel('Value', fontsize=15)
@@ -150,7 +150,7 @@ def generate_output(args, epoch, model, gen_dataset, TimeseriesData, disp_uncert
         plt.text(startPoint - 500 + 10, target.min(), 'Epoch: ' + str(epoch), fontsize=15)
         save_dir = Path('result', args.data, args.filename).with_suffix('').joinpath('fig_prediction')
         save_dir.mkdir(parents=True, exist_ok=True)
-        plt.savefig(save_dir.joinpath('fig_epoch' + str(epoch)).with_suffix('.png'))
+        plt.savefig(str(save_dir.joinpath('fig_epoch' + str(epoch)).with_suffix('.png')))
         # plt.show()
         plt.close()
         return outSeq

@@ -18,16 +18,15 @@ def execute_dagmm():
 
 
 def execute_lstm_enc_dec():
-    args = train_predictor.get_args()
     # Load data
     ecg = ECG()
     lstm_enc_dec = LSTM_Enc_Dec(*ecg.get_lstm_enc_dec_data())
     lstm_enc_dec.fit()
+    # Model uses the test data for testing and valdiation
     pred = lstm_enc_dec.predict()
-    TimeseriesData = self.TimeseriesData
     print("pred: ", pred)
-    print("test_label: ", TimeseriesData.testLabel.to(args.device))
-    print("LSTM-Enc_Dec results: ", get_accuracy_precision_recall_fscore(TimeseriesData.testLabel.to(args.device), pred))
+    print("test_label: ", ecg.get_test_labels())
+    print("LSTM-Enc_Dec results: ", get_accuracy_precision_recall_fscore(ecg.get_test_labels(), pred))
 
 
 if __name__ == '__main__':

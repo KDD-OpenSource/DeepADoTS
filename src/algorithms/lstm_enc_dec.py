@@ -91,5 +91,5 @@ class LSTM_Enc_Dec(Algorithm):
         print('-' * 89)
 
 
-    def predict(self, TimeseriesData, train_dataset, test_dataset):
+    def predict(self):
         return anomaly_detection.calc_anomalies(self.TimeseriesData, self.train_dataset, self.test_dataset)

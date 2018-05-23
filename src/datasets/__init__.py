@@ -1,5 +1,5 @@
 from .dataset import Dataset
-from .kdd_cup import KDD_CUP
+from .kdd_cup import KDD_Cup
 from .ecg import ECG
 
-__all__ = ['Dataset', 'KDD_CUP', 'ECG']
+__all__ = ['Dataset', 'KDD_Cup', 'ECG']
