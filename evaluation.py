@@ -1,9 +1,6 @@
-import numpy as np
-import tensorflow as tf
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc, precision_recall_fscore_support as prf, accuracy_score
-from pandas_ml import ConfusionMatrix
+from sklearn.metrics import roc_curve, auc, precision_recall_fscore_support as prf, accuracy_score
 
 def get_accuracy_precision_recall_fscore(y_true, y_pred):
     accuracy = accuracy_score(y_true, y_pred)
