@@ -2,11 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from agots.multivariate_generators.multivariate_data_generator import MultivariateDataGenerator
-from agots.multivariate_generators.multivariate_shift_outlier_generator import MultivariateShiftOutlierGenerator
-from agots.multivariate_generators.multivariate_trend_outlier_generator import MultivariateTrendOutlierGenerator
-from agots.multivariate_generators.multivariate_variance_outlier_generator import MultivariateVarianceOutlierGenerator
-from agots.multivariate_generators.multivariate_extreme_outlier_generator import MultivariateExtremeOutlierGenerator
-
 
 class synthetic_data_generator():
     def __init__(self):
