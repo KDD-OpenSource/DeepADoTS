@@ -17,5 +17,10 @@ pandas
 tqdm
 scikit-learn>=0.19.1
 flake8
+<<<<<<< HEAD
+matplotlib
+scipy
+=======
 scipy
 matplotlib
+>>>>>>> origin/wg/donut
