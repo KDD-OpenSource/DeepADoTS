@@ -1,3 +1,8 @@
+import matplotlib
+matplotlib.use('TkAgg')
+
+import numpy as np
+
 from src.algorithms import DAGMM, LSTM_Enc_Dec
 from src.datasets import KDD_Cup, ECG
 from src.evaluation import get_accuracy_precision_recall_fscore
@@ -18,14 +23,16 @@ def execute_dagmm():
 
 
 def execute_lstm_enc_dec():
-    # Load data
-    lstm_data = ECG("example/synthetic")
-    lstm_enc_dec = LSTM_Enc_Dec(lstm_data.get_feature_dim())
-    lstm_enc_dec.fit(lstm_data.get_train_data())
-    pred = lstm_enc_dec.predict(lstm_data.get_test_data())
-    # print("pred: ", pred)
-    # print("test_label: ", ecg.get_test_labels())
-    # print("LSTM-Enc_Dec results: ", get_accuracy_precision_recall_fscore(ecg.get_test_labels(), pred))
+    data = ECG()
+    tsDelta = data.get_train_data()
+    print(tsDelta.trainData.shape, tsDelta.trainLabel.shape, tsDelta.testData.shape, tsDelta.testLabel.shape)
+    lstm_enc_dec = LSTM_Enc_Dec()
+    kdd_cup = KDD_Cup()
+    (X_train, y_train), (X_test, y_test) = kdd_cup.get_data_dagmm()
+    lstm_enc_dec.fit(X_train, y_train)
+    pred = lstm_enc_dec.predict(X_test)
+    print(y_test.shape, pred.shape)
+    print("LSTM-Enc_Dec results: ", get_accuracy_precision_recall_fscore(y_test, pred))
 
 
 if __name__ == '__main__':

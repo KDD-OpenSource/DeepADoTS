@@ -23,9 +23,9 @@ def reconstruct(seqData, mean, std):
 
 class PickleDataLoad(object):
     # augment=True: Same shape for test and train
-    def __init__(self, data_type, filename, augment_test_data=True, ecg=False):
+    def __init__(self, data_type, filename, augment_test_data=True, input_data=None):
         self.augment_test_data = augment_test_data
-        if not ecg:
+        if input_data is not None:
             self.trainData, self.trainLabel = self.preprocessing_all(Path('data', 'processed', filename), train=True)
             self.testData, self.testLabel = self.preprocessing_all(Path('data', 'processed', filename), train=False)
         else:
@@ -33,7 +33,6 @@ class PickleDataLoad(object):
                                                                      train=True)
             self.testData, self.testLabel = self.preprocessing_ecg(Path('data', 'processed', data_type, 'test', filename),
                                                                    train=False)
-        print('Shapes', self.trainData.shape, self.trainLabel.shape, self.testData.shape, self.testLabel.shape)
 
     def augmentation(self, data, label, noise_ratio=0.05, noise_interval=0.0005, max_length=100000):
         noiseSeq = torch.randn(data.size())

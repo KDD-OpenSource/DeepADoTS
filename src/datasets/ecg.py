@@ -19,12 +19,10 @@ class ECG(Dataset):
         self.augment_test_data = True
         is_ecg = (pickle_path == "ecg/whole/chfdb_chf13_45590.pkl")
         self.trainTimeseriesData = preprocess_data.PickleDataLoad(
-            data_type='ECG', filename=self.processed_path, augment_test_data=self.augment_test_data,
-            ecg=is_ecg
+            data_type='ECG', filename=self.processed_path, augment_test_data=self.augment_test_data
         )
         self.testTimeseriesData = preprocess_data.PickleDataLoad(
-            data_type='ECG', filename=self.processed_path, augment_test_data=False,
-            ecg=is_ecg
+            data_type='ECG', filename=self.processed_path, augment_test_data=False
         )
 
     def get_device(self):

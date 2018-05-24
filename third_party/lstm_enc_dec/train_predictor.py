@@ -5,8 +5,6 @@ import torch.nn as nn
 from .preprocess_data import *
 from .model import RNNPredictor
 from torch import optim
-import matplotlib
-matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 from pathlib import Path
 from .anomalyDetector import fit_norm_distribution_param
