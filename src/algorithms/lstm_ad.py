@@ -84,13 +84,13 @@ class LSTMAD(Algorithm):
 
         # fit multivariate Gaussian on (validation set) error distribution (via maximum likelihood estimation)
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
+        norm /= np.std(norm, axis=0)
+        norm -= np.mean(norm, axis=0)
+        norm *= 1e10
         mean = np.mean(norm, axis=0)
         cov = np.cov(norm.T)
 
-        scores = -multivariate_normal.logpdf(
-            norm,
-            mean=mean, cov=cov
-        )
+        scores = -multivariate_normal.logpdf(norm, mean=mean, cov=cov) / 1e10
         scores = np.pad(scores, (2 * self.len_out - 1, 0), 'constant', constant_values=np.nan)
         return scores
 
