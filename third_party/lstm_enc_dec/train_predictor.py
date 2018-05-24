@@ -11,6 +11,8 @@ from matplotlib import pyplot as plt
 from pathlib import Path
 from .anomalyDetector import fit_norm_distribution_param
 
+REPORT_FIGURES_DIR = 'reports/figures'
+
 parser = argparse.ArgumentParser(description='PyTorch RNN Prediction Model on Time-series Dataset')
 parser.add_argument('--data', type=str, default='ecg',
                     help='type of the dataset (ecg, gesture, power_demand, space_shuttle, respiration, nyc_taxi')
@@ -148,7 +150,7 @@ def generate_output(args, epoch, model, gen_dataset, TimeseriesData, disp_uncert
         plt.legend()
         plt.tight_layout()
         plt.text(startPoint - 500 + 10, target.min(), 'Epoch: ' + str(epoch), fontsize=15)
-        save_dir = Path('result', args.data, args.filename).with_suffix('').joinpath('fig_prediction')
+        save_dir = Path(REPORT_FIGURES_DIR, args.data, args.filename).with_suffix('').joinpath('fig_prediction')
         save_dir.mkdir(parents=True, exist_ok=True)
         plt.savefig(str(save_dir.joinpath('fig_epoch' + str(epoch)).with_suffix('.png')))
         # plt.show()
@@ -286,7 +288,7 @@ def evaluate(args, model, test_dataset, criterion):
 # Loop over epochs.
 if args.resume or args.pretrained:
     print("=> loading checkpoint ")
-    checkpoint = torch.load(Path('save', args.data, 'checkpoint', args.filename).with_suffix('.pth'))
+    checkpoint = torch.load(Path('models', args.data, 'checkpoint', args.filename).with_suffix('.pth'))
     args, start_epoch, best_val_loss = model.load_checkpoint(args, checkpoint, feature_dim)
     optimizer.load_state_dict((checkpoint['optimizer']))
     del checkpoint

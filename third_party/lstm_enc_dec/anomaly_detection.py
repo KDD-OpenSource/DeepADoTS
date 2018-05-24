@@ -34,7 +34,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
     args_ = parser.parse_args()
     print('-' * 89)
     print("=> loading checkpoint ")
-    checkpoint = torch.load(str(Path('save', args_.data, 'checkpoint', args_.filename).with_suffix('.pth')))
+    checkpoint = torch.load(str(Path('models', args_.data, 'checkpoint', args_.filename).with_suffix('.pth')))
     args = checkpoint['args']
     args.prediction_window_size = args_.prediction_window_size
     args.beta = args_.beta
