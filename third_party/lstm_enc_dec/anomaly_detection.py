@@ -13,6 +13,9 @@ from .anomalyDetector import fit_norm_distribution_param
 from .anomalyDetector import anomalyScore
 from .anomalyDetector import get_precision_recall
 
+REPORT_PICKLES_DIR = 'reports/data'
+REPORT_FIGURES_DIR = 'reports/figures'
+
 def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
     parser = argparse.ArgumentParser(description='PyTorch LSTM-Enc-Dec Anomaly Detection Model')
     parser.add_argument('--prediction_window_size', type=int, default=10,
@@ -137,7 +140,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             precisions.append(precision), recalls.append(recall), f_betas.append(f_beta)
 
             if args.save_fig:
-                save_dir = Path('reports/figures', args.data, args.filename).with_suffix('').joinpath('fig_detection')
+                save_dir = Path(REPORT_FIGURES_DIR, args.data, args.filename).with_suffix('').joinpath('fig_detection')
                 save_dir.mkdir(parents=True, exist_ok=True)
                 plt.plot(precision.cpu().numpy(), label='precision')
                 plt.plot(recall.cpu().numpy(), label='recall')
@@ -187,7 +190,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
         print('Exiting from training early')
 
     print('=> saving the results as pickle extensions')
-    save_dir = Path('results', args.data, args.filename).with_suffix('')
+    save_dir = Path(REPORT_PICKLES_DIR, args.data, args.filename).with_suffix('')
     save_dir.mkdir(parents=True, exist_ok=True)
     pickle.dump(targets, open(str(save_dir.joinpath('target.pkl')), 'wb'))
     pickle.dump(mean_predictions, open(str(save_dir.joinpath('mean_predictions.pkl')), 'wb'))
