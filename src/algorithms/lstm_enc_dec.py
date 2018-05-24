@@ -20,9 +20,9 @@ from .algorithm import Algorithm
 
 class LSTM_Enc_Dec(Algorithm):
 
-    def __init__(self):
-        # TODO: module uses argparser (for cmd) -> inject kwargs into the parser
-        self.args = train_predictor.args
+    def __init__(self, **kwargs):
+        train_predictor.set_args(**kwargs)
+        self.args = train_predictor.get_args()
         self.best_val_loss = None
 
     def _build_model(self, feature_dim):

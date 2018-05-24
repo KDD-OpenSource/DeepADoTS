@@ -26,6 +26,7 @@ def execute_lstm_enc_dec():
     data = ECG()
     tsDelta = data.get_train_data()
     print(tsDelta.trainData.shape, tsDelta.trainLabel.shape, tsDelta.testData.shape, tsDelta.testLabel.shape)
+    # custom params can be passed e.g. epochs=2
     lstm_enc_dec = LSTM_Enc_Dec()
     kdd_cup = KDD_Cup()
     (X_train, y_train), (X_test, y_test) = kdd_cup.get_data_dagmm()
