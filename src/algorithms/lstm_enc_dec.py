@@ -42,25 +42,48 @@ class LSTM_Enc_Dec(Algorithm):
     def fit(self, X_train, y_train):
         self._build_model(X_train.shape[1])
         trainTimeseriesData = self.transform_fit_data(X_train, y_train)
-        self.fit(trainTimeseriesData)
+        self.intern_fit(trainTimeseriesData)
 
     # X_test is a DataFrame (e.g. 200x4)
     # Returns anomaly score as Series (e.g. 200)
     def predict(self, X_test):
-        testTimeseriesData = self.transform_predict_data(X_test, X_train, y_train)
+        testTimeseriesData = self.transform_predict_data(X_test)
         # Anomaly score is returned for each series seperately
-        channels_scores = self.intern_fit(testTimeseriesData)
+        channels_scores = self.intern_predict(testTimeseriesData)
         channels_scores = [x.numpy() for x in channels_scores]
         return np.max(channelwise_scores)
 
     def transform_fit_data(self, X_orig_train, y_orig_train):
-        print('X_orig_train', X_orig_train.shape)
-        print('y_orig_train', y_orig_train.shape)
         X_train, X_test, y_train, y_test = train_test_split(X_orig_train, y_orig_train, test_size=0.25, random_state=42)
         self.trainTimeseriesData = preprocess_data.PickleDataLoad(
-            data_type='ECG', filename=self.processed_path, augment_test_data=self.augment_test_data,
-            input_data=None
+            input_data=(X_train, y_train, X_test, y_test)
         )
+        print('-'*89)
+        print('Splitting and transforming input data:')
+        print('X_orig_train', X_orig_train.shape)
+        print('y_orig_train', y_orig_train.shape)
+        print('X_train', self.trainTimeseriesData.trainData.shape)
+        print('y_train', self.trainTimeseriesData.trainLabel.shape)
+        print('X_val', self.trainTimeseriesData.testData.shape)
+        print('y_val', self.trainTimeseriesData.testLabel.shape)
+        print('-'*89)
+        return self.trainTimeseriesData
+
+    def transform_predict_data(self, X_orig_test):
+        # TODO: only store X data and adjust anomaly_detection to not calculate precision, recall and stuff
+        self.testTimeseriesData = preprocess_data.PickleDataLoad(
+            input_data=(X_orig_test), isPrediction=True,
+        )
+        print('-'*89)
+        print('Splitting and transforming input data:')
+        print('X_orig_train', X_orig_train.shape)
+        print('y_orig_train', y_orig_train.shape)
+        print('X_train', self.trainTimeseriesData.trainData.shape)
+        print('y_train', self.trainTimeseriesData.trainLabel.shape)
+        print('X_test', self.trainTimeseriesData.testData.shape)
+        print('y_test', self.trainTimeseriesData.testLabel.shape)
+        print('-'*89)
+
         assert False
         return self.trainTimeseriesData
         self.testTimeseriesData = preprocess_data.PickleDataLoad(
@@ -71,7 +94,7 @@ class LSTM_Enc_Dec(Algorithm):
     def intern_fit(self, trainTimeseriesData, start_epoch=1, best_val_loss=0, epochs=train_predictor.args.epochs):
         train_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.trainData, self.args.batch_size)
         test_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.testData, self.args.eval_batch_size)
-        gen_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.testData, 1)
+        # gen_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.testData, 1)
         try:
             for epoch in range(start_epoch, epochs + 1):
 
@@ -83,7 +106,8 @@ class LSTM_Enc_Dec(Algorithm):
                         time.time() - epoch_start_time), val_loss))
                 print('-' * 89)
 
-                train_predictor.generate_output(self.args, epoch, self.model, gen_dataset, trainTimeseriesData, startPoint=1500)
+                # TODO: Only plots figures - doesn't work right now because of start and endPoint (what is gen_data)
+                # train_predictor.generate_output(self.args, epoch, self.model, gen_dataset, trainTimeseriesData, startPoint=1500)
 
                 if epoch % self.args.save_interval == 0:
                     # Save the model if the validation loss is the best we've seen so far.

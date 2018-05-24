@@ -23,12 +23,17 @@ def reconstruct(seqData, mean, std):
 
 class PickleDataLoad(object):
     # augment=True: Same shape for test and train
-    def __init__(self, data_type, filename, augment_test_data=True, input_data=None):
+    # for ecg: define filename
+    # for other datasets (passed as pandas or numpy objects): define input_data
+    def __init__(self, data_type="ECG", filename="", input_data=None, augment_test_data=False):
+        # FIXME: Not supported because shapes do not match in line 46 (expand_as)
         self.augment_test_data = augment_test_data
         if input_data is not None:
-            self.trainData, self.trainLabel = self.preprocessing_all(Path('data', 'processed', filename), train=True)
-            self.testData, self.testLabel = self.preprocessing_all(Path('data', 'processed', filename), train=False)
+            assert len(input_data) == 4, 'Input should be train and test (X and y)'
+            self.trainData, self.trainLabel = self.preprocessing(input_data, train=True)
+            self.testData, self.testLabel = self.preprocessing(input_data, train=False)
         else:
+            assert len(filename) > 0
             self.trainData, self.trainLabel = self.preprocessing_ecg(Path('data', 'processed', data_type, 'train', filename),
                                                                      train=True)
             self.testData, self.testLabel = self.preprocessing_ecg(Path('data', 'processed', data_type, 'test', filename),
@@ -49,25 +54,23 @@ class PickleDataLoad(object):
 
         return augmentedData, augmentedLabel
 
-    def preprocessing_all(self, path, train=True, augmentation=True):
+    def preprocessing(self, input_data, train=True, augmentation=True):
         """ Read, Standardize, Augment """
+        (X_train, y_train, X_test, y_test) = input_data
 
-        with open(str(path), 'rb') as f:
-            pickled_data = pickle.load(f)
-            (X_train, y_train, X_test, y_test) = pickled_data
-            if train:
-                label = torch.FloatTensor(y_train.values)
-                data = torch.FloatTensor(X_train.values)
-                self.mean = data.mean(dim=0)
-                self.std = data.std(dim=0)
-                self.length = len(data)
-                if augmentation:
-                    data, label = self.augmentation(data, label)
-            else:
-                label = torch.FloatTensor(y_test.values)
-                data = torch.FloatTensor(X_test.values)
-                if self.augment_test_data:
-                    data, label = self.augmentation(data, label)
+        if train:
+            label = torch.FloatTensor(np.array(y_train))
+            data = torch.FloatTensor(np.array(X_train))
+            self.mean = data.mean(dim=0)
+            self.std = data.std(dim=0)
+            self.length = len(data)
+            if augmentation:
+                data, label = self.augmentation(data, label)
+        else:
+            label = torch.FloatTensor(np.array(y_test))
+            data = torch.FloatTensor(np.array(X_test))
+            if self.augment_test_data:
+                data, label = self.augmentation(data, label)
 
         data = standardization(data, self.mean, self.std)
 
