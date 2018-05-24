@@ -14,7 +14,7 @@ from .dataset import Dataset
 class ECG(Dataset):
     def __init__(self, pickle_path="ecg/whole/chfdb_chf13_45590.pkl"):
         # raw path is not used: "ecg/chfdb_chf13_45590.txt"
-        super(ECG, self).__init__("ECG", None, pickle_path)
+        super(ECG, self).__init__("ECG", "", pickle_path)
         self.args = train_predictor.get_args()
         self.augment_test_data = True
         is_ecg = (pickle_path == "ecg/whole/chfdb_chf13_45590.pkl")
