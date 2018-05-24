@@ -19,9 +19,10 @@ def execute_dagmm():
 
 def execute_lstm_enc_dec():
     # Load data
-    ecg = ECG()
+    ecg = ECG("example/synthetic")
     lstm_enc_dec = LSTM_Enc_Dec(ecg.get_feature_dim())
-    # lstm_enc_dec.fit(ecg.get_train_data())
+    (X_train, y_train), (X_test, y_test) = kdd_cup.get_data_dagmm()
+    lstm_enc_dec.fit(ecg.get_train_data())
     pred = lstm_enc_dec.predict(ecg.get_test_data())
     # print("pred: ", pred)
     # print("test_label: ", ecg.get_test_labels())

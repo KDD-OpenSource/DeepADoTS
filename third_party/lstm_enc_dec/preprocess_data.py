@@ -26,8 +26,8 @@ class PickleDataLoad(object):
     def __init__(self, data_type, filename, augment_test_data=True, ecg=False):
         self.augment_test_data = augment_test_data
         if not ecg:
-            self.trainData, self.trainLabel = self.preprocessing_all(Path('data', 'mypickle'), train=True)
-            self.testData, self.testLabel = self.preprocessing_all(Path('data', 'mypickle'), train=False)
+            self.trainData, self.trainLabel = self.preprocessing_all(Path('data', 'processed', filename), train=True)
+            self.testData, self.testLabel = self.preprocessing_all(Path('data', 'processed', filename), train=False)
         else:
             self.trainData, self.trainLabel = self.preprocessing_ecg(Path('data', 'processed', data_type, 'train', filename),
                                                                      train=True)
@@ -50,7 +50,7 @@ class PickleDataLoad(object):
 
         return augmentedData, augmentedLabel
 
-    def preprocessing_all(self, path, train=True, augmentation=False):
+    def preprocessing_all(self, path, train=True, augmentation=True):
         """ Read, Standardize, Augment """
 
         with open(str(path), 'rb') as f:
