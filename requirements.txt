@@ -15,5 +15,6 @@ h5py
 numpy
 pandas
 tqdm
+scipy>=0.14.0
 scikit-learn>=0.19.1
 flake8
