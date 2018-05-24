@@ -201,5 +201,3 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
     print('-' * 89)
 
     return mean_predictions
-
-

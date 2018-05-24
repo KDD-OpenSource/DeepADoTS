@@ -18,20 +18,24 @@ class ECG(Dataset):
         self.batch_size = 64
         self.eval_batch_size = 64
         self.augment_test_data = True
-        self.TimeseriesData = preprocess_data.PickleDataLoad(
+        self.trainTimeseriesData = preprocess_data.PickleDataLoad(
             data_type='ECG', filename=self.processed_path, augment_test_data=self.augment_test_data
         )
+        self.testTimeseriesData = preprocess_data.PickleDataLoad(
+            data_type='ECG', filename=self.processed_path, augment_test_data=False
+        )
 
-    def get_device():
+    def get_device(self):
         return self.args.device
 
-    def get_test_labels():
-        return self.TimeseriesData.testLabel.to(self.args.device)
+    def get_feature_dim(self):
+        return self.trainTimeseriesData.trainData.size(1)
 
-    def get_lstm_enc_dec_data(self):
+    def get_test_labels(self):
+        return self.testTimeseriesData.testLabel.to(self.args.device)
 
-        train_dataset = self.TimeseriesData.batchify(self.args, self.TimeseriesData.trainData, self.batch_size)
-        test_dataset = self.TimeseriesData.batchify(self.args, self.TimeseriesData.testData, self.eval_batch_size)
-        gen_dataset = self.TimeseriesData.batchify(self.args, self.TimeseriesData.testData, 1)
+    def get_test_data(self):
+        return self.testTimeseriesData
 
-        return (self.TimeseriesData, train_dataset, test_dataset, gen_dataset)
+    def get_train_data(self):
+        return self.trainTimeseriesData
