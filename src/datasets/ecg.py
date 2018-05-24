@@ -15,8 +15,6 @@ class ECG(Dataset):
     def __init__(self):
         super(ECG, self).__init__("ECG", "ecg/chfdb_chf13_45590.txt", "ecg/whole/chfdb_chf13_45590.pkl")
         self.args = train_predictor.get_args()
-        self.batch_size = 64
-        self.eval_batch_size = 64
         self.augment_test_data = True
         self.trainTimeseriesData = preprocess_data.PickleDataLoad(
             data_type='ECG', filename=self.processed_path, augment_test_data=self.augment_test_data

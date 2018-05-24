@@ -36,8 +36,8 @@ class LSTM_Enc_Dec(Algorithm):
         self.criterion = nn.MSELoss()
 
     def fit(self, trainTimeseriesData, start_epoch=1, best_val_loss=0, epochs=train_predictor.args.epochs):
-        train_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.trainData, self.batch_size)
-        test_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.testData, self.eval_batch_size)
+        train_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.trainData, self.args.batch_size)
+        test_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.testData, self.args.eval_batch_size)
         gen_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.testData, 1)
         try:
             for epoch in range(start_epoch, epochs + 1):
@@ -89,6 +89,7 @@ class LSTM_Enc_Dec(Algorithm):
 
     # For prediction the data is not augmented and not batchified in 64-chunks
     def predict(self, testTimeseriesData):
+        # Make train and test data the same size
         train_dataset = testTimeseriesData.batchify(self.args, testTimeseriesData.trainData[:testTimeseriesData.length], bsz=1)
         test_dataset = testTimeseriesData.batchify(self.args, testTimeseriesData.testData, bsz=1)
         return anomaly_detection.calc_anomalies(testTimeseriesData, train_dataset, test_dataset)
