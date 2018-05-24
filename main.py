@@ -25,7 +25,7 @@ def execute_lstm_enc_dec():
     pred = lstm_enc_dec.predict(ecg.get_test_data())
     print("pred: ", pred)
     print("test_label: ", ecg.get_test_labels())
-    print("LSTM-Enc_Dec results: ", get_accuracy_precision_recall_fscore(ecg.get_test_labels(), pred))
+    # print("LSTM-Enc_Dec results: ", get_accuracy_precision_recall_fscore(ecg.get_test_labels(), pred))
 
 
 if __name__ == '__main__':
