@@ -34,7 +34,7 @@ parser.add_argument('--weight_decay', type=float, default=1e-4,
                     help='weight decay')
 parser.add_argument('--clip', type=float, default=10,
                     help='gradient clipping')
-parser.add_argument('--epochs', type=int, default=10,
+parser.add_argument('--epochs', type=int, default=3,
                     help='upper epoch limit')
 parser.add_argument('--batch_size', type=int, default=64, metavar='N',
                     help='batch size')
@@ -74,6 +74,11 @@ torch.cuda.manual_seed(args.seed)
 
 def get_args():
     return args
+
+def set_args(**kwargs):
+    global args
+    parser.set_defaults(**kwargs)
+    args = parser.parse_args()
 
 
 ###############################################################################
