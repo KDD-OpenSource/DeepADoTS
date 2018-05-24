@@ -90,6 +90,7 @@ def anomalyScore(args, model, dataset, mean, cov, channel_idx=0, score_predictor
 
 
 def get_precision_recall(args, score, label, num_samples, beta=1.0, sampling='log', predicted_score=None):
+    print(args, score.shape, label.shape, num_samples, beta, sampling, predicted_score)
     '''
     :param args:
     :param score: anomaly scores

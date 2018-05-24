@@ -22,12 +22,18 @@ def reconstruct(seqData, mean, std):
 
 
 class PickleDataLoad(object):
-    def __init__(self, data_type, filename, augment_test_data=True):
+    # augment=True: Same shape for test and train
+    def __init__(self, data_type, filename, augment_test_data=True, ecg=False):
         self.augment_test_data = augment_test_data
-        self.trainData, self.trainLabel = self.preprocessing(Path('data', 'processed', data_type, 'train', filename),
-                                                             train=True)
-        self.testData, self.testLabel = self.preprocessing(Path('data', 'processed', data_type, 'test', filename),
-                                                           train=False)
+        if not ecg:
+            self.trainData, self.trainLabel = self.preprocessing_all(Path('data', 'mypickle'), train=True)
+            self.testData, self.testLabel = self.preprocessing_all(Path('data', 'mypickle'), train=False)
+        else:
+            self.trainData, self.trainLabel = self.preprocessing_ecg(Path('data', 'processed', data_type, 'train', filename),
+                                                                     train=True)
+            self.testData, self.testLabel = self.preprocessing_ecg(Path('data', 'processed', data_type, 'test', filename),
+                                                                   train=False)
+        print('Shapes', self.trainData.shape, self.trainLabel.shape, self.testData.shape, self.testLabel.shape)
 
     def augmentation(self, data, label, noise_ratio=0.05, noise_interval=0.0005, max_length=100000):
         noiseSeq = torch.randn(data.size())
@@ -44,11 +50,36 @@ class PickleDataLoad(object):
 
         return augmentedData, augmentedLabel
 
-    def preprocessing(self, path, train=True):
+    def preprocessing_all(self, path, train=True, augmentation=False):
         """ Read, Standardize, Augment """
 
         with open(str(path), 'rb') as f:
-            data = torch.FloatTensor(pickle.load(f))
+            pickled_data = pickle.load(f)
+            (X_train, y_train, X_test, y_test) = pickled_data
+            if train:
+                label = torch.FloatTensor(y_train.values)
+                data = torch.FloatTensor(X_train.values)
+                self.mean = data.mean(dim=0)
+                self.std = data.std(dim=0)
+                self.length = len(data)
+                if augmentation:
+                    data, label = self.augmentation(data, label)
+            else:
+                label = torch.FloatTensor(y_test.values)
+                data = torch.FloatTensor(X_test.values)
+                if self.augment_test_data:
+                    data, label = self.augmentation(data, label)
+
+        data = standardization(data, self.mean, self.std)
+
+        return data, label
+
+    def preprocessing_ecg(self, path, train=True):
+        """ Read, Standardize, Augment """
+
+        with open(str(path), 'rb') as f:
+            pickled_data = pickle.load(f)
+            data = torch.FloatTensor(pickled_data)
             label = data[:, -1]
             data = data[:, :-1]
         if train:

@@ -57,6 +57,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
     # Build the model
     ###############################################################################
     nfeatures = TimeseriesData.trainData.size(-1)
+    print('nFeatures', nfeatures)
     model = RNNPredictor(rnn_type=args.model,
                                enc_inp_size=nfeatures,
                                rnn_inp_size=args.emsize,
@@ -102,6 +103,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
                                                                                       score_predictor=score_predictor,
                                                                                       channel_idx=channel_idx)
 
+            print('calc score', score.shape, test_dataset.shape, mean.shape, cov.shape, channel_idx)
             ''' 4. Evaluate the result '''
             # The obtained anomaly scores are evaluated by measuring precision, recall, and f_beta scores
             # The precision, recall, f_beta scores are are calculated repeatedly,
@@ -109,6 +111,11 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             print('=> calculating precision, recall, and f_beta')
             precision, recall, f_beta = get_precision_recall(args, score, num_samples=1000, beta=args.beta,
                                                              label=TimeseriesData.testLabel.to(args.device))
+
+            print('f beta shape', f_beta.shape)
+            print('max', f_beta.max())
+            print(f_beta.max().shape)
+            print(f_beta.max().item())
             print('data: ', args.data, ' filename: ', args.filename,
                   ' f-beta (no compensation): ', f_beta.max().item(), ' beta: ', args.beta)
             if args.compensate:
