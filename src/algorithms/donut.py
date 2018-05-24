@@ -11,13 +11,15 @@ from .algorithm import Algorithm
 class Donut(Algorithm):
     def __init__(self):
         super(Donut).__init__()
-        self.feature_col_idx, self.mean, self.std, self.model, self.model_vs, self.tf_session = \
-            None, None, None, None, None, None
+        self.feature_col_idx, self.mean, self.std, self.model, self.model_vs, self.tf_session, self.x_dims = \
+            None, None, None, None, None, None, 120
 
-    def fit(self, X: pd.DataFrame, y: pd.Series, timestamp_col_name="timestamps", feature_col_idx=1):
-        self.tf_session = tf.Session()
+    def fit(self, X: pd.DataFrame, y: pd.Series, feature_col_idx=1):
         self.feature_col_idx = feature_col_idx
-        timestamps, features, labels = X[timestamp_col_name].values, X.iloc[:, self.feature_col_idx].values, y.values
+        self.tf_session = tf.Session()
+        timestamps = X.index
+        features = X.iloc[:, self.feature_col_idx].values
+        labels = y
         timestamps, missing, (features, labels) = complete_timestamp(timestamps, (features, labels))
         train_features, self.mean, self.std = standardize_kpi(features, excludes=np.logical_or(labels, missing))
 
@@ -35,7 +37,7 @@ class Donut(Algorithm):
                     K.layers.Dense(100, kernel_regularizer=K.regularizers.l2(0.001),
                                    activation=tf.nn.relu),
                 ]),
-                x_dims=120,
+                x_dims=self.x_dims,
                 z_dims=5,
             )
 
@@ -50,4 +52,7 @@ class Donut(Algorithm):
         with self.tf_session.as_default():
             test_score = predictor.get_score(test_values, test_missing)
         self.tf_session.close()
+        test_score = np.power(np.e, test_score)  # test_score is the logarithm of the probability
+        test_score = np.pad(test_score, (self.x_dims - 1, 0), 'constant',
+                            constant_values=np.nan)  # Prepend x_dims - 1 np.nan's
         return test_score
