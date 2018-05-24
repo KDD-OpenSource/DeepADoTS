@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
 
+from matplotlib import pyplot as plt
+
 from src.algorithms import DAGMM, LSTM_Enc_Dec
 from src.datasets import KDD_Cup, ECG
 from src.evaluation import get_accuracy_precision_recall_fscore
@@ -24,20 +26,25 @@ def execute_dagmm():
 
 
 def execute_lstm_enc_dec():
-    data = ECG()
-    tsDelta = data.get_train_data()
-    print(tsDelta.trainData.shape, tsDelta.trainLabel.shape, tsDelta.testData.shape, tsDelta.testLabel.shape)
-    # custom params can be passed e.g. epochs=2
-    lstm_enc_dec = LSTM_Enc_Dec()
+    lstm_enc_dec = LSTM_Enc_Dec(epochs=200, augment_train_data=True)
     # FIXME: Doesnt print loss/valid loss - not learning
     # kdd_cup = KDD_Cup()
     # (X_train, y_train), (X_test, y_test) = kdd_cup.get_data_dagmm()
     # FIXME: Not learning anything - too small dataset?
+    # Augment = false
     with open("data/processed/synthetic", "rb") as f:
         (X_train, y_train, X_test, y_test) = pickle.load(f)
-    lstm_enc_dec.fit(X_train, y_train)
+    # lstm_enc_dec.fit(X_train, y_train)
     pred = lstm_enc_dec.predict(X_test)
-    print(y_test.shape, pred.shape)
+    # plt.plot(pred[:100])
+    # plt.savefig('temp1.png')
+    # plt.close()
+    # plt.plot(y_test[:100])
+    # plt.savefig('temp2.png')
+    # plt.close()
+    # plt.plot(y_test)
+    # plt.savefig('temp3.png')
+    # plt.close()
     print("LSTM-Enc_Dec results: ", get_accuracy_precision_recall_fscore(y_test, pred))
 
 

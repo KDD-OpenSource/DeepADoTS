@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
 from torch import optim
+import numpy as np
 from matplotlib import pyplot as plt
 from third_party.lstm_enc_dec.anomalyDetector import fit_norm_distribution_param
 from third_party.lstm_enc_dec import train_predictor
@@ -24,6 +25,8 @@ class LSTM_Enc_Dec(Algorithm):
         train_predictor.set_args(**kwargs)
         self.args = train_predictor.get_args()
         self.best_val_loss = None
+        self.trainTimeseriesData = None
+        self.testTimeseriesData = None
 
     def _build_model(self, feature_dim):
         self.model = RNNPredictor(rnn_type=self.args.model,
@@ -49,14 +52,46 @@ class LSTM_Enc_Dec(Algorithm):
     def predict(self, X_test):
         testTimeseriesData = self.transform_predict_data(X_test)
         # Anomaly score is returned for each series seperately
-        channels_scores = self.intern_predict(testTimeseriesData)
+        channels_scores, _ = self.intern_predict(testTimeseriesData)
         channels_scores = [x.numpy() for x in channels_scores]
-        return np.max(channelwise_scores)
+        # plt.plot(channels_scores[0])
+        # plt.plot(channels_scores[1])
+        # plt.plot(channels_scores[2])
+        # plt.plot(channels_scores[3])
+        # plt.savefig('scores.png')
+        # plt.close()
+        binary_decisions = np.array(list(self.find_fitting_threshold(channels_scores)))
+        return np.max(binary_decisions, axis=0)
+
+    def find_fitting_threshold(self, channels_scores):
+        plot_xmax = max([x.max() for x in channels_scores])
+        for j, score in enumerate(channels_scores):
+            maximum = score.max()
+            # Sample thresholds logarithmically
+            # The sampled thresholds are logarithmically spaced between: math:`10 ^ {start}` and: math:`10 ^ {end}`.
+            # th = torch.logspace(0, torch.log10(torch.tensor(float(maximum))), threshold_checks).to(self.args.device)
+            th = torch.tensor(np.linspace(0, maximum, 20))
+            anomalies_by_threshold = np.zeros(len(th))
+            for i in range(len(th)):
+                anomaly = (score > th[i]).float()
+                amount_anomalies = anomaly.sum()
+                anomalies_by_threshold[i] = amount_anomalies
+                diff = anomalies_by_threshold[max(i-1, 0)] - anomalies_by_threshold[i]
+
+            p = plt.plot(th.numpy(), anomalies_by_threshold)
+            threshold = np.median(anomalies_by_threshold) + anomalies_by_threshold.std() / 2
+            # plt.hlines(threshold, 0, plot_xmax, color=p[-1].get_color(), linestyles='dashed')
+            yield np.array(score > threshold, dtype=int)
+        # plt.ylabel('Amount of anomalies')
+        # plt.xlabel('Threshold')
+        # plt.savefig('anomalies_by_threshold.png')
+        # plt.close()
 
     def transform_fit_data(self, X_orig_train, y_orig_train):
-        X_train, X_test, y_train, y_test = train_test_split(X_orig_train, y_orig_train, test_size=0.25, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X_orig_train, y_orig_train, test_size=0.25, shuffle=False, random_state=42)
         self.trainTimeseriesData = preprocess_data.PickleDataLoad(
-            input_data=(X_train, y_train, X_test, y_test)
+            input_data=(X_train, y_train, X_test, y_test),
+            augment_train_data=self.args.augment_train_data,
         )
         print('-'*89)
         print('Splitting and transforming input data:')
@@ -70,33 +105,24 @@ class LSTM_Enc_Dec(Algorithm):
         return self.trainTimeseriesData
 
     def transform_predict_data(self, X_orig_test):
-        # TODO: only store X data and adjust anomaly_detection to not calculate precision, recall and stuff
+        # TODO: adjust anomaly_detection to not calculate precision, recall and stuff
         self.testTimeseriesData = preprocess_data.PickleDataLoad(
-            input_data=(X_orig_test), isPrediction=True,
+            input_data=X_orig_test,
         )
         print('-'*89)
-        print('Splitting and transforming input data:')
-        print('X_orig_train', X_orig_train.shape)
-        print('y_orig_train', y_orig_train.shape)
-        print('X_train', self.trainTimeseriesData.trainData.shape)
-        print('y_train', self.trainTimeseriesData.trainLabel.shape)
-        print('X_test', self.trainTimeseriesData.testData.shape)
-        print('y_test', self.trainTimeseriesData.testLabel.shape)
+        print('Input data:')
+        print('X_orig_test', X_orig_test.shape)
+        print('X_test', self.testTimeseriesData.testData.shape)
         print('-'*89)
 
-        assert False
-        return self.trainTimeseriesData
-        self.testTimeseriesData = preprocess_data.PickleDataLoad(
-            data_type='ECG', filename=self.processed_path, augment_test_data=False,
-            ecg=is_ecg
-        )
+        return self.testTimeseriesData
 
-    def intern_fit(self, trainTimeseriesData, start_epoch=1, best_val_loss=0, epochs=train_predictor.args.epochs):
+    def intern_fit(self, trainTimeseriesData, start_epoch=1, best_val_loss=0):
         train_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.trainData, self.args.batch_size)
         test_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.testData, self.args.eval_batch_size)
-        # gen_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.testData, 1)
+        gen_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.testData, 1)
         try:
-            for epoch in range(start_epoch, epochs + 1):
+            for epoch in range(start_epoch, self.args.epochs + 1):
 
                 epoch_start_time = time.time()
                 train_predictor.train(self.args, self.model, train_dataset, epoch, self.optimizer, self.criterion)
@@ -107,7 +133,11 @@ class LSTM_Enc_Dec(Algorithm):
                 print('-' * 89)
 
                 # TODO: Only plots figures - doesn't work right now because of start and endPoint (what is gen_data)
-                # train_predictor.generate_output(self.args, epoch, self.model, gen_dataset, trainTimeseriesData, startPoint=1500)
+                validation_length = len(gen_dataset)
+                train_predictor.generate_output(
+                    self.args, epoch, self.model, gen_dataset, trainTimeseriesData,
+                    startPoint=int(validation_length / 4), endPoint=validation_length - 1
+                )
 
                 if epoch % self.args.save_interval == 0:
                     # Save the model if the validation loss is the best we've seen so far.
@@ -146,6 +176,12 @@ class LSTM_Enc_Dec(Algorithm):
     # For prediction the data is not augmented and not batchified in 64-chunks
     def intern_predict(self, testTimeseriesData):
         # Make train and test data the same size
-        train_dataset = testTimeseriesData.batchify(self.args, testTimeseriesData.trainData[:testTimeseriesData.length], bsz=1)
         test_dataset = testTimeseriesData.batchify(self.args, testTimeseriesData.testData, bsz=1)
+        if self.trainTimeseriesData:
+            train_dataset = testTimeseriesData.batchify(self.args, self.trainTimeseriesData.trainData[:testTimeseriesData.length], bsz=1)
+        else:
+            # Even in prediction mode the test data is required for calculating
+            # the anomaly threshold
+            train_dataset = test_dataset
+            testTimeseriesData.trainData = testTimeseriesData.testData
         return anomaly_detection.calc_anomalies(testTimeseriesData, train_dataset, test_dataset)

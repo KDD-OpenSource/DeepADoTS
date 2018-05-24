@@ -25,13 +25,24 @@ class PickleDataLoad(object):
     # augment=True: Same shape for test and train
     # for ecg: define filename
     # for other datasets (passed as pandas or numpy objects): define input_data
-    def __init__(self, data_type="ECG", filename="", input_data=None, augment_test_data=False):
+    def __init__(self, data_type="ECG", filename="", input_data=None, augment_train_data=True, augment_test_data=False):
         # FIXME: Not supported because shapes do not match in line 46 (expand_as)
+        self.augment_train_data = augment_train_data
         self.augment_test_data = augment_test_data
         if input_data is not None:
-            assert len(input_data) == 4, 'Input should be train and test (X and y)'
-            self.trainData, self.trainLabel = self.preprocessing(input_data, train=True)
-            self.testData, self.testLabel = self.preprocessing(input_data, train=False)
+            if isinstance(input_data, list) or isinstance(input_data, tuple):
+                assert len(input_data) == 4, 'Input should be train and test (X and y)'
+                self.trainData, self.trainLabel = self.preprocessing(input_data, train=True)
+                self.testData, self.testLabel = self.preprocessing(input_data, train=False)
+            else:
+                # input_data is a DataFrame/Numpy Array
+                data = torch.FloatTensor(np.array(input_data))
+                self.mean = data.mean(dim=0)
+                self.std = data.std(dim=0)
+                self.testData = standardization(data, self.mean, self.std)
+                self.trainData, self.trainLabel, self.testLabel = None, None, None
+                self.length = len(data)
+
         else:
             assert len(filename) > 0
             self.trainData, self.trainLabel = self.preprocessing_ecg(Path('data', 'processed', data_type, 'train', filename),
@@ -54,7 +65,7 @@ class PickleDataLoad(object):
 
         return augmentedData, augmentedLabel
 
-    def preprocessing(self, input_data, train=True, augmentation=True):
+    def preprocessing(self, input_data, train=True):
         """ Read, Standardize, Augment """
         (X_train, y_train, X_test, y_test) = input_data
 
@@ -64,7 +75,7 @@ class PickleDataLoad(object):
             self.mean = data.mean(dim=0)
             self.std = data.std(dim=0)
             self.length = len(data)
-            if augmentation:
+            if self.augment_train_data:
                 data, label = self.augmentation(data, label)
         else:
             label = torch.FloatTensor(np.array(y_test))

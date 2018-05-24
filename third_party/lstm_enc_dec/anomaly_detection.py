@@ -102,9 +102,15 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             score, sorted_prediction, sorted_error, _, predicted_score = anomalyScore(args, model, test_dataset, mean, cov,
                                                                                       score_predictor=score_predictor,
                                                                                       channel_idx=channel_idx)
-
+            score = score.cpu()
+            scores.append(score)
+            predicted_scores.append(predicted_score)
             # print('calc score', score.shape, test_dataset.shape, mean.shape, cov.shape, channel_idx)
             ''' 4. Evaluate the result '''
+            if not TimeseriesData.testLabel:
+                # In pipeline mode we have no access to the true labels
+                continue
+
             # The obtained anomaly scores are evaluated by measuring precision, recall, and f_beta scores
             # The precision, recall, f_beta scores are are calculated repeatedly,
             # sampling the threshold from 1 to the maximum anomaly score value, either equidistantly or logarithmically.
@@ -140,8 +146,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             sorted_errors_mean = sorted_error.abs().mean(dim=1).cpu()
             sorted_errors_mean *= TimeseriesData.std[channel_idx]
             sorted_errors_mean = sorted_errors_mean.numpy()
-            score = score.cpu()
-            scores.append(score), targets.append(target), predicted_scores.append(predicted_score)
+            targets.append(target),
             mean_predictions.append(mean_prediction), oneStep_predictions.append(oneStep_prediction)
             Nstep_predictions.append(Nstep_prediction)
             precisions.append(precision), recalls.append(recall), f_betas.append(f_beta)
@@ -200,23 +205,14 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
     save_dir = Path(REPORT_PICKLES_DIR, args.data, args.filename).with_suffix('')
     save_dir.mkdir(parents=True, exist_ok=True)
     pickle.dump(targets, open(str(save_dir.joinpath('target.pkl')), 'wb'))
-    print('targets', [x.shape for x in targets])
     pickle.dump(mean_predictions, open(str(save_dir.joinpath('mean_predictions.pkl')), 'wb'))
-    print('mean_predictions', [x.shape for x in mean_predictions])
     pickle.dump(oneStep_predictions, open(str(save_dir.joinpath('oneStep_predictions.pkl')), 'wb'))
-    print('oneStep_predictions', [x.shape for x in oneStep_predictions])
     pickle.dump(Nstep_predictions, open(str(save_dir.joinpath('Nstep_predictions.pkl')), 'wb'))
-    print('Nstep_predictions', [x.shape for x in Nstep_predictions])
     pickle.dump(scores, open(str(save_dir.joinpath('score.pkl')), 'wb'))
-    print('scores', [x.shape for x in scores])
     pickle.dump(predicted_scores, open(str(save_dir.joinpath('predicted_scores.pkl')), 'wb'))
-    print('predicted_scores', [x.shape for x in predicted_scores])
     pickle.dump(precisions, open(str(save_dir.joinpath('precision.pkl')), 'wb'))
-    print('precisions', [x.shape for x in precisions])
     pickle.dump(recalls, open(str(save_dir.joinpath('recall.pkl')), 'wb'))
-    print('recalls', [x.shape for x in recalls])
     pickle.dump(f_betas, open(str(save_dir.joinpath('f_beta.pkl')), 'wb'))
-    print('f_betas', [x.shape for x in f_betas])
     print('-' * 89)
 
-    return scores
+    return scores, predicted_scores

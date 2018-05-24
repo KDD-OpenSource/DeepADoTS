@@ -18,8 +18,8 @@ parser.add_argument('--filename', type=str, default='chfdb_chf13_45590.pkl',
                     help='filename of the dataset')
 parser.add_argument('--model', type=str, default='LSTM',
                     help='type of recurrent net (RNN_TANH, RNN_RELU, LSTM, GRU, SRU)')
-parser.add_argument('--augment', type=bool, default=True,
-                    help='augment')
+parser.add_argument('--augment_train_data', type=bool, default=True,
+                    help='augment train data')
 parser.add_argument('--emsize', type=int, default=32,
                     help='size of rnn input features')
 parser.add_argument('--nhid', type=int, default=32,
@@ -91,6 +91,7 @@ def get_batch(args, source, i):
     return data, target
 
 
+# Starting from startPoint the model will reuse the output from the last step to predict the next value
 def generate_output(args, epoch, model, gen_dataset, TimeseriesData, disp_uncertainty=True, startPoint=500, endPoint=3500):
     if args.save_fig:
         # Turn on evaluation mode which disables dropout.
@@ -99,6 +100,9 @@ def generate_output(args, epoch, model, gen_dataset, TimeseriesData, disp_uncert
         outSeq = []
         upperlim95 = []
         lowerlim95 = []
+        assert startPoint > 0, 'Need to see something before predicting'
+        assert startPoint < endPoint
+        assert endPoint < len(gen_dataset), 'End point {} is out of bounds [0, {}]'.format(endPoint, len(gen_dataset))
         with torch.no_grad():
             for i in range(endPoint):
                 if i >= startPoint:
