@@ -120,8 +120,7 @@ class QuietDonutTrainer(DonutTrainer):
                             loop.add_summary(sess.run(self._summary_op))
 
                         # do validation in batches
-                        with loop.timeit('valid_time'), \
-                             loop.metric_collector('valid_loss') as mc:
+                        with loop.timeit('valid_time'), loop.metric_collector('valid_loss') as mc:
                             v_it = valid_sliding_window.get_iterator([v_x, v_y])
                             for b_v_x, b_v_y in v_it:
                                 feed_dict = dict(
@@ -135,10 +134,12 @@ class QuietDonutTrainer(DonutTrainer):
                 if self._lr_anneal_epochs and epoch % self._lr_anneal_epochs == 0:
                     lr *= self._lr_anneal_factor
 
+
 class Donut(Algorithm):
     """For each feature, the anomaly score is set to 1 for a point if its reconstruction probability
     is smaller than mean - std of the reconstruction probabilities for that feature. For each point
     in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
+
     def __init__(self):
         super(Donut).__init__()
         self.x_dims = 120

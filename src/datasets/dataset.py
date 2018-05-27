@@ -1,7 +1,5 @@
 import os
 
-import numpy as np
-
 
 class Dataset:
     def __init__(self, name, raw_path, processed_path):

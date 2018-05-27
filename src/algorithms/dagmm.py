@@ -233,7 +233,7 @@ class DAGMM(Algorithm):
 
         self.train_energy = np.concatenate(train_energy, axis=0)
 
-    def predict(self, X:pd.DataFrame):
+    def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
         given data and label an anomaly if it is outside of the `self.normal_percentile` percentile."""
         data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
