@@ -136,6 +136,9 @@ class QuietDonutTrainer(DonutTrainer):
                     lr *= self._lr_anneal_factor
 
 class Donut(Algorithm):
+    """For each feature, the anomaly score is set to 1 for a point if its reconstruction probability
+    is smaller than mean - std of the reconstruction probabilities for that feature. For each point
+    in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
     def __init__(self):
         super(Donut).__init__()
         self.x_dims = 120
