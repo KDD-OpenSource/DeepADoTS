@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 from torch import optim
 import numpy as np
-from matplotlib import pyplot as plt
 from third_party.lstm_enc_dec.anomalyDetector import fit_norm_distribution_param
 from third_party.lstm_enc_dec import train_predictor
 from third_party.lstm_enc_dec import anomaly_detection
@@ -15,6 +14,7 @@ from third_party.lstm_enc_dec import preprocess_data
 from third_party.lstm_enc_dec.model import RNNPredictor
 
 from .algorithm import Algorithm
+
 
 def isnan(x):
     return x != x
@@ -83,10 +83,14 @@ class LSTM_Enc_Dec(Algorithm):
         print('Splitting and transforming input data:')
         print('X_orig_train', X_orig_train.shape, 'isnan: ', isnan(X_orig_train).sum())
         print('y_orig_train', y_orig_train.shape, 'isnan: ', isnan(y_orig_train).sum())
-        print('X_train', self.trainTimeseriesData.trainData.shape, 'isnan: ', isnan(self.trainTimeseriesData.trainData).sum())
-        print('y_train', self.trainTimeseriesData.trainLabel.shape, 'isnan: ', isnan(self.trainTimeseriesData.trainLabel).sum())
-        print('X_val', self.trainTimeseriesData.testData.shape, 'isnan: ', isnan(self.trainTimeseriesData.testData).sum())
-        print('y_val', self.trainTimeseriesData.testLabel.shape, 'isnan: ', isnan(self.trainTimeseriesData.testLabel).sum())
+        print('X_train', self.trainTimeseriesData.trainData.shape, 'isnan: ',
+              isnan(self.trainTimeseriesData.trainData).sum())
+        print('y_train', self.trainTimeseriesData.trainLabel.shape, 'isnan: ',
+              isnan(self.trainTimeseriesData.trainLabel).sum())
+        print('X_val', self.trainTimeseriesData.testData.shape, 'isnan: ',
+              isnan(self.trainTimeseriesData.testData).sum())
+        print('y_val', self.trainTimeseriesData.testLabel.shape, 'isnan: ',
+              isnan(self.trainTimeseriesData.testLabel).sum())
         print('-'*89)
         return self.trainTimeseriesData
 

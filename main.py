@@ -22,10 +22,12 @@ def execute_dagmm():
     pred = dagmm.predict(X_test)
     print("DAGMM results: ", get_accuracy_precision_recall_fscore(y_test, pred))
 
+
 def get_synthetic_data():
     with open("data/processed/synthetic", "rb") as f:
         (X_train, y_train, X_test, y_test) = pickle.load(f)
     return (X_train, y_train), (X_test, y_test)
+
 
 def execute_lstm_enc_dec():
     lstm_enc_dec = LSTM_Enc_Dec(epochs=200, augment_train_data=False, data='lstm_enc_dec_kdd')
