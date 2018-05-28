@@ -74,6 +74,8 @@ class PickleDataLoad(object):
             data = torch.FloatTensor(np.array(X_train))
             self.mean = data.mean(dim=0)
             self.std = data.std(dim=0)
+            # FIXME: If any STD is zero all data becomes nan. Is this fix the right thing to do?
+            self.std[self.std == 0] = 1
             self.length = len(data)
             if self.augment_train_data:
                 data, label = self.augmentation(data, label)
@@ -82,7 +84,6 @@ class PickleDataLoad(object):
             data = torch.FloatTensor(np.array(X_test))
             if self.augment_test_data:
                 data, label = self.augmentation(data, label)
-
         data = standardization(data, self.mean, self.std)
 
         return data, label

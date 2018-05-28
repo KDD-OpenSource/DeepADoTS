@@ -12,16 +12,19 @@ from sklearn.model_selection import GridSearchCV
 from .anomalyDetector import fit_norm_distribution_param
 from .anomalyDetector import anomalyScore
 from .anomalyDetector import get_precision_recall
-from .train_predictor import args as train_args
+from .train_predictor import get_args as get_train_args
 
 REPORT_PICKLES_DIR = 'reports/data'
 REPORT_FIGURES_DIR = 'reports/figures'
 
+
+
 def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
+    train_args = get_train_args()
     parser = argparse.ArgumentParser(description='PyTorch LSTM-Enc-Dec Anomaly Detection Model')
     parser.add_argument('--prediction_window_size', type=int, default=train_args.prediction_window_size,
                         help='prediction_window_size')
-    parser.add_argument('--data', type=str, default='ecg',
+    parser.add_argument('--data', type=str, default=train_args.data,
                         help='type of the dataset (ecg, gesture, power_demand, space_shuttle, respiration, nyc_taxi')
     parser.add_argument('--filename', type=str, default='chfdb_chf13_45590.pkl',
                         help='filename of the dataset')
