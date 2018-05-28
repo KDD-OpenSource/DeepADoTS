@@ -42,7 +42,7 @@ class DAGMM(Algorithm):
         Store the computed energy based on the training data and the aforementioned parameters."""
         data_loader = DataLoader(dataset=CustomDataLoader(X), batch_size=self.batch_size, shuffle=True)
 
-        self.dagmm = DaGMM(self.gmm_k)
+        self.dagmm = DAGMM(self.gmm_k)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
 
         if torch.cuda.is_available():

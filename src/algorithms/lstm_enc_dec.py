@@ -1,8 +1,6 @@
 '''Adapted from https://github.com/chickenbestlover/RNN-Time-series-Anomaly-Detection'''
 
-import argparse
 import time
-from pathlib import Path
 
 from sklearn.model_selection import train_test_split
 import torch
@@ -30,14 +28,14 @@ class LSTM_Enc_Dec(Algorithm):
 
     def _build_model(self, feature_dim):
         self.model = RNNPredictor(rnn_type=self.args.model,
-                             enc_inp_size=feature_dim,
-                             rnn_inp_size=self.args.emsize,
-                             rnn_hid_size=self.args.nhid,
-                             dec_out_size=feature_dim,
-                             nlayers=self.args.nlayers,
-                             dropout=self.args.dropout,
-                             tie_weights=self.args.tied,
-                             res_connection=self.args.res_connection).to(self.args.device)
+                                  enc_inp_size=feature_dim,
+                                  rnn_inp_size=self.args.emsize,
+                                  rnn_hid_size=self.args.nhid,
+                                  dec_out_size=feature_dim,
+                                  nlayers=self.args.nlayers,
+                                  dropout=self.args.dropout,
+                                  tie_weights=self.args.tied,
+                                  res_connection=self.args.res_connection).to(self.args.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
         self.criterion = nn.MSELoss()
 

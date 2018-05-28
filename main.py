@@ -1,18 +1,14 @@
-import pickle
+from src.algorithms import DAGMM, LSTM_Enc_Dec
+from src.datasets import KDD_Cup
+from src.evaluation import get_accuracy_precision_recall_fscore
 
-import numpy as np
+import pickle
 import matplotlib
 matplotlib.use('TkAgg')
 
-from matplotlib import pyplot as plt
-
-from src.algorithms import DAGMM, LSTM_Enc_Dec
-from src.datasets import KDD_Cup, ECG
-from src.evaluation import get_accuracy_precision_recall_fscore
-
 
 def main():
-    #execute_dagmm()
+    # execute_dagmm()
     execute_lstm_enc_dec()
 
 
