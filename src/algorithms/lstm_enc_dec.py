@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 from torch import optim
 import numpy as np
-from matplotlib import pyplot as plt
 from third_party.lstm_enc_dec.anomalyDetector import fit_norm_distribution_param
 from third_party.lstm_enc_dec import train_predictor
 from third_party.lstm_enc_dec import anomaly_detection
@@ -52,41 +51,26 @@ class LSTM_Enc_Dec(Algorithm):
         # Anomaly score is returned for each series seperately
         channels_scores, _ = self.intern_predict(testTimeseriesData)
         channels_scores = [x.numpy() for x in channels_scores]
-        # plt.plot(channels_scores[0])
-        # plt.plot(channels_scores[1])
-        # plt.plot(channels_scores[2])
-        # plt.plot(channels_scores[3])
-        # plt.savefig('scores.png')
-        # plt.close()
         binary_decisions = np.array(list(self.find_fitting_threshold(channels_scores)))
         return np.max(binary_decisions, axis=0)
 
     def find_fitting_threshold(self, channels_scores):
-        plot_xmax = max([x.max() for x in channels_scores])
         for j, score in enumerate(channels_scores):
             maximum = score.max()
-            # Sample thresholds logarithmically
-            # The sampled thresholds are logarithmically spaced between: math:`10 ^ {start}` and: math:`10 ^ {end}`.
-            # th = torch.logspace(0, torch.log10(torch.tensor(float(maximum))), threshold_checks).to(self.args.device)
             th = torch.tensor(np.linspace(0, maximum, 20))
             anomalies_by_threshold = np.zeros(len(th))
             for i in range(len(th)):
                 anomaly = (score > th[i]).float()
                 amount_anomalies = anomaly.sum()
                 anomalies_by_threshold[i] = amount_anomalies
-                diff = anomalies_by_threshold[max(i-1, 0)] - anomalies_by_threshold[i]
-
-            p = plt.plot(th.numpy(), anomalies_by_threshold)
             threshold = np.median(anomalies_by_threshold) + anomalies_by_threshold.std() / 2
-            # plt.hlines(threshold, 0, plot_xmax, color=p[-1].get_color(), linestyles='dashed')
             yield np.array(score > threshold, dtype=int)
-        # plt.ylabel('Amount of anomalies')
-        # plt.xlabel('Threshold')
-        # plt.savefig('anomalies_by_threshold.png')
-        # plt.close()
 
     def transform_fit_data(self, X_orig_train, y_orig_train):
-        X_train, X_test, y_train, y_test = train_test_split(X_orig_train, y_orig_train, test_size=0.25, shuffle=False, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_orig_train, y_orig_train, test_size=0.25, shuffle=False,
+            random_state=42
+        )
         self.trainTimeseriesData = preprocess_data.PickleDataLoad(
             input_data=(X_train, y_train, X_test, y_test),
             augment_train_data=self.args.augment_train_data,
@@ -158,7 +142,10 @@ class LSTM_Enc_Dec(Algorithm):
         means, covs = list(), list()
         train_dataset = trainTimeseriesData.batchify(self.args, trainTimeseriesData.trainData, bsz=1)
         for channel_idx in range(self.model.enc_input_size):
-            mean, cov = fit_norm_distribution_param(self.args, self.model, train_dataset[:trainTimeseriesData.length], channel_idx)
+            mean, cov = fit_norm_distribution_param(
+                self.args, self.model,
+                train_dataset[:trainTimeseriesData.length], channel_idx
+            )
             means.append(mean), covs.append(cov)
         model_dictionary = {'epoch': max(epoch, start_epoch),
                             'best_loss': self.best_val_loss,
@@ -176,7 +163,11 @@ class LSTM_Enc_Dec(Algorithm):
         # Make train and test data the same size
         test_dataset = testTimeseriesData.batchify(self.args, testTimeseriesData.testData, bsz=1)
         if self.trainTimeseriesData:
-            train_dataset = testTimeseriesData.batchify(self.args, self.trainTimeseriesData.trainData[:testTimeseriesData.length], bsz=1)
+            train_dataset = testTimeseriesData.batchify(
+                self.args,
+                self.trainTimeseriesData.trainData[:testTimeseriesData.length],
+                bsz=1
+            )
         else:
             # Even in prediction mode the test data is required for calculating
             # the anomaly threshold

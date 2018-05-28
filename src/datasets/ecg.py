@@ -3,8 +3,6 @@
     Download source: http://www.cs.ucr.edu/~eamonn/discords/
 """
 
-import numpy as np
-
 from third_party.lstm_enc_dec import train_predictor
 from third_party.lstm_enc_dec import preprocess_data
 
@@ -17,7 +15,6 @@ class ECG(Dataset):
         super(ECG, self).__init__("ECG", "", pickle_path)
         self.args = train_predictor.get_args()
         self.augment_test_data = True
-        is_ecg = (pickle_path == "ecg/whole/chfdb_chf13_45590.pkl")
         self.trainTimeseriesData = preprocess_data.PickleDataLoad(
             data_type='ECG', filename=self.processed_path, augment_test_data=self.augment_test_data
         )
