@@ -12,7 +12,8 @@ from .anomalyDetector import fit_norm_distribution_param
 REPORT_FIGURES_DIR = 'reports/figures'
 
 parser = argparse.ArgumentParser(description='PyTorch RNN Prediction Model on Time-series Dataset')
-parser.add_argument('--data', type=str, default='ecg',
+# We use the network name (instead of 'ecg') because it stores its trained model with this name
+parser.add_argument('--data', type=str, default='lstm_enc_dec',
                     help='type of the dataset (ecg, gesture, power_demand, space_shuttle, respiration, nyc_taxi')
 parser.add_argument('--filename', type=str, default='chfdb_chf13_45590.pkl',
                     help='filename of the dataset')
