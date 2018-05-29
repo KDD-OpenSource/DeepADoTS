@@ -61,7 +61,7 @@ class LSTM_Enc_Dec(Algorithm):
         max).
         The resulting amounts of anomalies by threshold are distributed in a
         logarithmic way. We decided to select the threshold by considering
-        the median and standarddeviation of all tested thresholds.
+        the mean of all found anomaly amounts.
     """
     def create_validation_set(self, channels_scores):
         for score in channels_scores:
