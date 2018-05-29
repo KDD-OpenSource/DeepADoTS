@@ -27,7 +27,8 @@ class AirQuality(Dataset):
     def __init__(self):
         super(AirQuality, self).__init__("AirQuality", "AirQualityUCI.csv", "air_quality.npz")
 
-    def get_data(self):
+    def data(self):
         raw = pd.read_csv(self.raw_path, sep=';', decimal=',')
         data = raw.dropna(how='all')
+        # ToDo: wrong return value!
         return data
