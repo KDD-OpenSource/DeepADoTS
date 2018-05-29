@@ -11,9 +11,8 @@ class Evaluator:
     """
     ToDo:
         * refactor (type(det).__name__ into name attribute
-        * include plots
+        * fix roc curve
         * rename benchmarks()
-        * move _binary_label() into detectors
         * refine progressbar or remove (also in requirements)
         * sort columns of df from benchmarks()
     """
@@ -22,13 +21,13 @@ class Evaluator:
         self.datasets = datasets
         self.detectors = detectors
         self.results = dict()
-<<<<<<< HEAD
 
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true, y_pred):
         accuracy = accuracy_score(y_true, y_pred)
         precision, recall, f_score, support = prf(y_true, y_pred, average='binary')
-        return accuracy, precision, recall, f_score
+        fpr, _, _ = roc_curve(y_true, y_pred, pos_label=1)
+        return accuracy, precision, recall, f_score, fpr
 
     def evaluate(self):
         for ds in progressbar.progressbar(self.datasets):
@@ -43,10 +42,11 @@ class Evaluator:
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
             for det in self.detectors:
-                score = self.results[(type(ds).__name__, type(det).__name__)]
+                score = self.results[(ds.name, type(det).__name__)]
                 acc, prec, rec, f_score, fpr = self.get_accuracy_precision_recall_fscore(y_test,
                                                                                          det.get_binary_label(score))
-                df = df.append({"dataset": type(ds).__name__,
+                df = df.append({"dataset": 
+                                ds.name,
                                 "approach": type(det).__name__,
                                 "accuracy": acc,
                                 "precision": prec,
@@ -59,7 +59,7 @@ class Evaluator:
 
     def plot_scores(self):
         for ds in self.datasets:
-            _, _, X_test, y_test = ds.get_data()
+            _, _, X_test, y_test = ds.data()
             subtitle_loc = 'left'
             fig = plt.figure(figsize=(15, 15))
             sp = fig.add_subplot((2*len(self.detectors)+2) * 100 + 11)
@@ -74,7 +74,7 @@ class Evaluator:
             for det in self.detectors:
                 sp = fig.add_subplot((2*len(self.detectors)+2) * 100 + 10 + subplot_num)
                 sp.set_title("scores of " + type(det).__name__, loc=subtitle_loc)
-                y_pred = self.results[(type(ds).__name__, type(det).__name__)]
+                y_pred = self.results[(ds.name, type(det).__name__)]
                 plt.plot(np.arange(len(X_test)), [x for x in y_pred])
                 threshold_line = len(X_test) * [det.get_threshold(y_pred)]
                 plt.plot([x for x in threshold_line])
@@ -87,14 +87,12 @@ class Evaluator:
         plt.legend()
         plt.tight_layout()
         plt.show()
-
-        # TODO: fix plot_roc_curves
         # self.plot_roc_curves()
 
     def plot_roc_curves(self):
         # Plot of a ROC curve for all classes
         for ds in self.datasets:
-            res = self.benchmark_df[self.benchmark_df["dataset"] == type(ds).__name__]
+            res = self.benchmark_df[self.benchmark_df["dataset"] == ds.name]
             plt.figure()
             len_subplot = len(res)
             subplot_count = 1
@@ -108,7 +106,7 @@ class Evaluator:
                 plt.ylim([0.0, 1.05])
                 plt.xlabel('False Positive Rate')
                 plt.ylabel('True Positive Rate')
-                plt.title(type(ds).__name__)
+                plt.title(ds.name)
                 plt.legend(loc="lower right")
                 subplot_count += 1
             plt.show()

@@ -20,11 +20,10 @@ class Algorithm:
         """
         :return scores
         """
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def get_binary_label(y):
         """
         :param scores
         :return binary_labels
         """
-        raise NotImplementedError
