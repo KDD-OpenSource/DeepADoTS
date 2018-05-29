@@ -201,6 +201,6 @@ class Donut(Algorithm):
         return aggregated_test_scores, prediction_mask
 
     @staticmethod
-    def binarize(y_pred):
+    def binarize(y_pred, threshold=None):
         threshold = np.mean(y_pred) - np.std(y_pred)
         return np.where(y_pred <= threshold, 1, 0)
