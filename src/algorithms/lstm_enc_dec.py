@@ -47,9 +47,15 @@ class LSTM_Enc_Dec(Algorithm):
     def predict(self, X_test: pd.DataFrame) -> pd.Series:
         testTimeseriesData = self.transform_predict_data(X_test)
         # Anomaly score is returned for each series seperately
-        channels_scores, _ = self.intern_predict(testTimeseriesData)
-        channels_scores = [x.numpy() for x in channels_scores]
-        binary_decisions = np.array(list(self.create_validation_set(channels_scores)))
+        channel_scores, _ = self.intern_predict(testTimeseriesData)
+        channel_scores = [x.numpy() for x in channel_scores]
+        return channel_scores
+
+        #binary_decisions = np.array(list(self.create_validation_set(channel_scores)))
+        #return np.max(binary_decisions, axis=0)
+
+    def get_binary_label(self, y):
+        binary_decisions = np.array(list(self.create_validation_set(y)))
         return np.max(binary_decisions, axis=0)
 
     """
