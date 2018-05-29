@@ -50,8 +50,6 @@ class LSTM_Enc_Dec(Algorithm):
         channels_scores, _ = self.intern_predict(testTimeseriesData)
         channels_scores = [x.numpy() for x in channels_scores]
         binary_decisions = np.array(list(self.create_validation_set(channels_scores)))
-        print(binary_decisions.shape)
-        print(np.max(binary_decisions, axis=0).shape)
         return np.max(binary_decisions, axis=0)
 
     """
@@ -175,6 +173,9 @@ class LSTM_Enc_Dec(Algorithm):
     def intern_predict(self, testTimeseriesData):
         # Make train and test data the same size
         test_dataset = testTimeseriesData.batchify(self.args, testTimeseriesData.testData, bsz=1)
+        # In anomaly_detection.py we load the pre-calculated mean and cov
+        # from training dataset
+        testTimeseriesData.trainData = testTimeseriesData.testData
         if self.trainTimeseriesData:
             train_dataset = testTimeseriesData.batchify(
                 self.args,
@@ -185,5 +186,4 @@ class LSTM_Enc_Dec(Algorithm):
             # Even in prediction mode the test data is required for calculating
             # the anomaly threshold
             train_dataset = test_dataset
-            testTimeseriesData.trainData = testTimeseriesData.testData
         return anomaly_detection.calc_anomalies(testTimeseriesData, train_dataset, test_dataset)
