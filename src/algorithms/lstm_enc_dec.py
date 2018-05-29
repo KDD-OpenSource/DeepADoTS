@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 from torch import optim
 import numpy as np
+import pandas as pd
 from third_party.lstm_enc_dec.anomalyDetector import fit_norm_distribution_param
 from third_party.lstm_enc_dec import train_predictor
 from third_party.lstm_enc_dec import anomaly_detection
@@ -14,10 +15,6 @@ from third_party.lstm_enc_dec import preprocess_data
 from third_party.lstm_enc_dec.model import RNNPredictor
 
 from .algorithm import Algorithm
-
-
-def isnan(x):
-    return x != x
 
 
 class LSTM_Enc_Dec(Algorithm):
@@ -42,32 +39,44 @@ class LSTM_Enc_Dec(Algorithm):
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
         self.criterion = nn.MSELoss()
 
-    # X_train is a DataFrame (e.g. 1000x4), y_train is a Series (e.g. 1000)
-    def fit(self, X_train, y_train):
+    def fit(self, X_train: pd.DataFrame, y_train: pd.Series):
         self._build_model(X_train.shape[1])
         trainTimeseriesData = self.transform_fit_data(X_train, y_train)
         self.intern_fit(trainTimeseriesData)
 
-    # X_test is a DataFrame (e.g. 200x4)
-    # Returns anomaly score as Series (e.g. 200)
-    def predict(self, X_test):
+    def predict(self, X_test: pd.DataFrame) -> pd.Series:
         testTimeseriesData = self.transform_predict_data(X_test)
         # Anomaly score is returned for each series seperately
         channels_scores, _ = self.intern_predict(testTimeseriesData)
         channels_scores = [x.numpy() for x in channels_scores]
-        binary_decisions = np.array(list(self.find_fitting_threshold(channels_scores)))
+        binary_decisions = np.array(list(self.create_validation_set(channels_scores)))
+        print(binary_decisions.shape)
+        print(np.max(binary_decisions, axis=0).shape)
         return np.max(binary_decisions, axis=0)
 
-    def find_fitting_threshold(self, channels_scores):
-        for j, score in enumerate(channels_scores):
+    """
+        Because the algorithm returns only an anomaly score we need to find and
+        apply our own threshold for the evaluation. This is done by looking at
+        each channel seperately and testing different thresholds (from zero to
+        max).
+        The resulting amounts of anomalies by threshold are distributed in a
+        logarithmic way. We decided to select the threshold by considering
+        the median and standarddeviation of all tested thresholds.
+    """
+    def create_validation_set(self, channels_scores):
+        for score in channels_scores:
             maximum = score.max()
-            th = torch.tensor(np.linspace(0, maximum, 20))
+            steps = 40
+            th = torch.tensor(np.linspace(0, maximum, steps))
             anomalies_by_threshold = np.zeros(len(th))
             for i in range(len(th)):
                 anomaly = (score > th[i]).float()
                 amount_anomalies = anomaly.sum()
                 anomalies_by_threshold[i] = amount_anomalies
-            threshold = np.median(anomalies_by_threshold) + anomalies_by_threshold.std() / 2
+            # Find threshold which amount is the closest to the mean of all anomaly amounts
+            idx = (np.abs(anomalies_by_threshold - anomalies_by_threshold.mean())).argmin()
+            threshold = th[idx]
+            print('Selecting threshold #{}: {}'.format(idx, threshold))
             yield np.array(score > threshold, dtype=int)
 
     def transform_fit_data(self, X_orig_train, y_orig_train):
@@ -81,16 +90,18 @@ class LSTM_Enc_Dec(Algorithm):
         )
         print('-'*89)
         print('Splitting and transforming input data:')
-        print('X_orig_train', X_orig_train.shape, 'isnan: ', isnan(X_orig_train).sum())
-        print('y_orig_train', y_orig_train.shape, 'isnan: ', isnan(y_orig_train).sum())
+        print('X_orig_train', X_orig_train.shape, 'isnan: ',
+              np.isnan(X_orig_train).sum())
+        print('y_orig_train', y_orig_train.shape, 'isnan: ',
+              np.isnan(y_orig_train).sum())
         print('X_train', self.trainTimeseriesData.trainData.shape, 'isnan: ',
-              isnan(self.trainTimeseriesData.trainData).sum())
+              np.isnan(self.trainTimeseriesData.trainData).sum())
         print('y_train', self.trainTimeseriesData.trainLabel.shape, 'isnan: ',
-              isnan(self.trainTimeseriesData.trainLabel).sum())
+              np.isnan(self.trainTimeseriesData.trainLabel).sum())
         print('X_val', self.trainTimeseriesData.testData.shape, 'isnan: ',
-              isnan(self.trainTimeseriesData.testData).sum())
+              np.isnan(self.trainTimeseriesData.testData).sum())
         print('y_val', self.trainTimeseriesData.testLabel.shape, 'isnan: ',
-              isnan(self.trainTimeseriesData.testLabel).sum())
+              np.isnan(self.trainTimeseriesData.testLabel).sum())
         print('-'*89)
         return self.trainTimeseriesData
 

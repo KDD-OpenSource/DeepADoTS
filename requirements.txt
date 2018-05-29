@@ -24,4 +24,3 @@ argparse
 pyparsing
 cycler
 matplotlib
-requests
