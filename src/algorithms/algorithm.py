@@ -17,4 +17,14 @@ class Algorithm:
 
     @abc.abstractmethod
     def predict(self, X):
-        """predict"""
+        """
+        :return scores
+        """
+        raise NotImplementedError
+
+    def get_binary_label(y):
+        """
+        :param scores
+        :return binary_labels
+        """
+        raise NotImplementedError

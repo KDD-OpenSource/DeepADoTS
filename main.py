@@ -23,6 +23,14 @@ def main():
     donut.fit(X_train, y_train)
     pred = donut.predict(X_test)
     print(pred)
+    
+    #datasets = [synthetic_data_generator("extreme")]
+    #detectors = [RecurrentEBM(num_epochs=15), LSTMAD()]
+    #evaluator = Evaluator(datasets, detectors)
+    #evaluator.evaluate()
+    #df = evaluator.benchmarks()
+    #print(df)
+    #evaluator.plot_scores()
 
 
 if __name__ == '__main__':
