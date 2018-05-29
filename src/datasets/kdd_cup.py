@@ -1,4 +1,5 @@
 from .dataset import Dataset
+import numpy as np
 
 
 class KDDCup(Dataset):

@@ -44,7 +44,7 @@ class Evaluator:
                 score = self.results[(ds.name, det.name)]
                 acc, prec, rec, f_score, fpr = self.get_accuracy_precision_recall_fscore(y_test,
                                                                                          det.get_binary_label(score))
-                df = df.append({"dataset": 
+                df = df.append({"dataset":
                                 ds.name,
                                 "approach": det.name,
                                 "accuracy": acc,

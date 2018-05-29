@@ -4,7 +4,7 @@ import abc
 class Algorithm:
     def __str__(self) -> str:
         return self.name
-    
+
     @abc.abstractmethod
     def fit(self, X, y):
         """
