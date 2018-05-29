@@ -10,6 +10,7 @@ from .algorithm import Algorithm
 
 class Donut(Algorithm):
     def __init__(self):
+        self.name = "Donut"
         super(Donut).__init__()
         self.feature_col_idx, self.mean, self.std, self.model, self.model_vs, self.tf_session, self.x_dims = \
             None, None, None, None, None, None, 120

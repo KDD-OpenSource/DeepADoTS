@@ -40,6 +40,7 @@ class LSTMAD(Algorithm):
     """
 
     def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=128, optimizer=torch.optim.Rprop):
+        self.name = "LSTM-AD"
         self.len_in = len_in
         self.len_out = len_out
 

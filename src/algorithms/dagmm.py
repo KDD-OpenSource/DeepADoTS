@@ -178,6 +178,7 @@ class DAGMM_Module(nn.Module):
 class DAGMM(Algorithm):
 
     def __init__(self, lr=1e-4, batch_size=1024, gmm_k=4, normal_percentile=80):
+        self.name = "DAGMM"
         self.lr = lr
         self.batch_size = batch_size
         self.gmm_k = gmm_k  # Number of Gaussian mixtures

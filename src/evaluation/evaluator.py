@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 class Evaluator:
     """
     ToDo:
-        * refactor (type(det).__name__ into name attribute
         * fix roc curve
         * rename benchmarks()
         * refine progressbar or remove (also in requirements)
@@ -35,19 +34,19 @@ class Evaluator:
             for det in progressbar.progressbar(self.detectors):
                 det.fit(X_train, y_train)
                 score = det.predict(X_test)
-                self.results[(ds.name, type(det).__name__)] = score
+                self.results[(ds.name, det.name)] = score
 
     def benchmarks(self) -> pd.DataFrame:
         df = pd.DataFrame()
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
             for det in self.detectors:
-                score = self.results[(ds.name, type(det).__name__)]
+                score = self.results[(ds.name, det.name)]
                 acc, prec, rec, f_score, fpr = self.get_accuracy_precision_recall_fscore(y_test,
                                                                                          det.get_binary_label(score))
                 df = df.append({"dataset": 
                                 ds.name,
-                                "approach": type(det).__name__,
+                                "approach": det.name,
                                 "accuracy": acc,
                                 "precision": prec,
                                 "recall": rec,
@@ -73,15 +72,15 @@ class Evaluator:
             subplot_num = 3
             for det in self.detectors:
                 sp = fig.add_subplot((2*len(self.detectors)+2) * 100 + 10 + subplot_num)
-                sp.set_title("scores of " + type(det).__name__, loc=subtitle_loc)
-                y_pred = self.results[(ds.name, type(det).__name__)]
+                sp.set_title("scores of " + det.name, loc=subtitle_loc)
+                y_pred = self.results[(ds.name, det.name)]
                 plt.plot(np.arange(len(X_test)), [x for x in y_pred])
                 threshold_line = len(X_test) * [det.get_threshold(y_pred)]
                 plt.plot([x for x in threshold_line])
                 subplot_num += 1
 
                 sp = fig.add_subplot((2*len(self.detectors)+2) * 100 + 10 + subplot_num)
-                sp.set_title("binary labels of " + type(det).__name__, loc=subtitle_loc)
+                sp.set_title("binary labels of " + det.name, loc=subtitle_loc)
                 plt.plot(np.arange(len(X_test)), [x for x in det.get_binary_label(y_pred)])
                 subplot_num += 1
         plt.legend()

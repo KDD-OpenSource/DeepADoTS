@@ -2,11 +2,9 @@ import abc
 
 
 class Algorithm:
-    """"
-    ToDo:
-        * algorithms should have a name
-    """
-
+    def __str__(self) -> str:
+        return self.name
+    
     @abc.abstractmethod
     def fit(self, X, y):
         """
@@ -22,7 +20,7 @@ class Algorithm:
         """
 
     @abc.abstractmethod
-    def get_binary_label(y):
+    def get_binary_label(self, y):
         """
         :param scores
         :return binary_labels
