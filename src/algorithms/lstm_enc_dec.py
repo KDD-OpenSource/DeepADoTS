@@ -90,18 +90,12 @@ class LSTM_Enc_Dec(Algorithm):
         )
         print('-'*89)
         print('Splitting and transforming input data:')
-        print('X_orig_train', X_orig_train.shape, 'isnan: ',
-              np.isnan(X_orig_train).sum())
-        print('y_orig_train', y_orig_train.shape, 'isnan: ',
-              np.isnan(y_orig_train).sum())
-        print('X_train', self.trainTimeseriesData.trainData.shape, 'isnan: ',
-              np.isnan(self.trainTimeseriesData.trainData).sum())
-        print('y_train', self.trainTimeseriesData.trainLabel.shape, 'isnan: ',
-              np.isnan(self.trainTimeseriesData.trainLabel).sum())
-        print('X_val', self.trainTimeseriesData.testData.shape, 'isnan: ',
-              np.isnan(self.trainTimeseriesData.testData).sum())
-        print('y_val', self.trainTimeseriesData.testLabel.shape, 'isnan: ',
-              np.isnan(self.trainTimeseriesData.testLabel).sum())
+        print('X_orig_train', X_orig_train.shape)
+        print('y_orig_train', y_orig_train.shape)
+        print('X_train', self.trainTimeseriesData.trainData.shape)
+        print('y_train', self.trainTimeseriesData.trainLabel.shape)
+        print('X_val', self.trainTimeseriesData.testData.shape)
+        print('y_val', self.trainTimeseriesData.testLabel.shape)
         print('-'*89)
         return self.trainTimeseriesData
 
