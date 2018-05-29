@@ -8,4 +8,14 @@ class Algorithm:
         raise NotImplementedError
 
     def predict(self, X):
+        """
+        :return scores
+        """
+        raise NotImplementedError
+        
+    def get_binary_label(y):
+        """
+        :param scores
+        :return binary_labels
+        """
         raise NotImplementedError

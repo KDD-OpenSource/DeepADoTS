@@ -57,7 +57,8 @@ class RecurrentEBM(Algorithm):
             if self.min_energy is not None:
                 labels.append(reconstruction_err[0] >= self.min_energy)
 
-        return (labels, scores) if self.min_energy is not None else scores
+        #return (labels, scores) if self.min_energy is not None else scores
+        return scores
 
     def _train_model(self, train_set, batch_size):
         for epoch in trange(self.num_epochs):
@@ -146,6 +147,14 @@ class RecurrentEBM(Algorithm):
         BX_t = tf.Variable(tf.zeros([1, n_visible]), name="BX_t")
 
         return W, Wuh, Wux, Wxu, Wuu, bu, u0, bh, bx, BH_t, BX_t
-
+    
     def delete(self):
         self.tf_session.close()
+
+    def get_binary_label(self, score):
+        threshold = self.get_threshold(score)
+        score = np.where(np.isnan(score), threshold - 1, score)
+        return np.where(score >= threshold, 1, 0)
+    
+    def get_threshold(self, score):
+        return np.nanmean(score) + 2*np.nanstd(score)
