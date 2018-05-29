@@ -4,5 +4,4 @@ from .rnn_ebm import RecurrentEBM
 from .donut import Donut
 from .lstm_ad import LSTMAD
 
-
-__all__ = ['Algorithm', 'DAGMM', 'RecurrentEBM', 'Donut', 'LSTMAD']
+__all__ = ['Algorithm', 'DAGMM', 'RecurrentEBM', 'LSTMAD', 'Donut']
