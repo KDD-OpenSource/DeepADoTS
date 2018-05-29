@@ -14,6 +14,7 @@ class RecurrentEBM(Algorithm):
 
     def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100,
                  min_lr=0.01, min_energy=None, batch_size=10):
+        self.name = "Recurrent EBM"
         self.num_epochs = num_epochs
         self.n_hidden = n_hidden  # Size of RBM's hidden layer
         self.n_hidden_recurrent = n_hidden_recurrent  # Size of RNN's hidden layer
@@ -149,3 +150,11 @@ class RecurrentEBM(Algorithm):
 
     def delete(self):
         self.tf_session.close()
+
+    def get_binary_label(self, score):
+        threshold = self.get_threshold(score)
+        score = np.where(np.isnan(score), threshold - 1, score)
+        return np.where(score >= threshold, 1, 0)
+
+    def get_threshold(self, score):
+        return np.nanmean(score) + 2*np.nanstd(score)

@@ -1,6 +1,7 @@
 """Adapted from Daniel Stanley Tan (https://github.com/danieltan07/dagmm)"""
 
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -177,6 +178,7 @@ class DAGMM_Module(nn.Module):
 class DAGMM(Algorithm):
 
     def __init__(self, lr=1e-4, batch_size=1024, gmm_k=4, normal_percentile=80):
+        self.name = "DAGMM"
         self.lr = lr
         self.batch_size = batch_size
         self.gmm_k = gmm_k  # Number of Gaussian mixtures
@@ -232,10 +234,10 @@ class DAGMM(Algorithm):
 
         self.train_energy = np.concatenate(train_energy, axis=0)
 
-    def predict(self, X):
+    def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
         given data and label an anomaly if it is outside of the `self.normal_percentile` percentile."""
-        data_loader = DataLoader(dataset=CustomDataLoader(X), batch_size=self.batch_size, shuffle=False)
+        data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
 
         test_energy = []
         for it, input_data in enumerate(data_loader):
@@ -249,4 +251,4 @@ class DAGMM(Algorithm):
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
         thresh = np.percentile(combined_energy, self.normal_percentile)
-        return (test_energy > thresh).astype(int)
+        return (test_energy > thresh).astype(int), test_energy, thresh
