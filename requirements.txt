@@ -1,5 +1,5 @@
 # Data Generator
--e git+https://github.com/WGierke/agots#egg=agots
+git+https://github.com/WGierke/agots#egg=agots
 
 # Requirements for donut (https://github.com/korepwx/donut)
 git+https://github.com/thu-ml/zhusuan.git
@@ -19,3 +19,4 @@ scipy>=0.14.0
 scikit-learn>=0.19.1
 flake8
 matplotlib
+progressbar2

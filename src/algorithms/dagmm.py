@@ -178,6 +178,7 @@ class DAGMM_Module(nn.Module):
 class DAGMM(Algorithm):
 
     def __init__(self, lr=1e-4, batch_size=1024, gmm_k=4, normal_percentile=80):
+        self.name = "DAGMM"
         self.lr = lr
         self.batch_size = batch_size
         self.gmm_k = gmm_k  # Number of Gaussian mixtures
@@ -250,4 +251,4 @@ class DAGMM(Algorithm):
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
         thresh = np.percentile(combined_energy, self.normal_percentile)
-        return (test_energy > thresh).astype(int)
+        return (test_energy > thresh).astype(int), test_energy, thresh
