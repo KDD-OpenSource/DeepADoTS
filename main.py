@@ -62,7 +62,7 @@ def execute_lstm_enc_dec():
     # (X_train, y_train), (X_test, y_test) = KDD_Cup().get_data_dagmm()
     (X_train, y_train), (X_test, y_test) = get_synthetic_data()
 
-    lstm_enc_dec = LSTM_Enc_Dec(epochs=500, augment_train_data=True, data='lstm_enc_dec_not_augmented_2')
+    lstm_enc_dec = LSTM_Enc_Dec(epochs=10, augment_train_data=True, data='lstm_enc_dec')
     lstm_enc_dec.fit(X_train, y_train)
     scores = lstm_enc_dec.predict_channel_scores(X_test)
     plot_thresholds(scores, y_test)

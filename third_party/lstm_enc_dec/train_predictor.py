@@ -57,8 +57,6 @@ parser.add_argument('--log_interval', type=int, default=10, metavar='N',
                     help='report interval')
 parser.add_argument('--save_interval', type=int, default=10, metavar='N',
                     help='save interval')
-parser.add_argument('--save_fig', action='store_true', default="--save_fig",
-                    help='save figure')
 parser.add_argument('--resume', '-r',
                     help='use checkpoint model parameters as initial parameters (default: False)',
                     action="store_true")
@@ -91,101 +89,6 @@ def get_batch(args, source, i):
     target = source[i + 1:i + 1 + seq_len]  # [ (seq_len x batch_size x feature_size) ]
     return data, target
 
-
-# Starting from startPoint the model will reuse the output from the last step to predict the next value
-def generate_output(args, epoch, model, gen_dataset, TimeseriesData, disp_uncertainty=True, startPoint=500, endPoint=3500):
-    if args.save_fig:
-        # Turn on evaluation mode which disables dropout.
-        model.eval()
-        hidden = model.init_hidden(1)
-        outSeq = []
-        upperlim95 = []
-        lowerlim95 = []
-        assert startPoint > 0, 'Need to see something before predicting'
-        assert startPoint < endPoint
-        assert endPoint < len(gen_dataset), 'End point {} is out of bounds [0, {}]'.format(endPoint, len(gen_dataset))
-        with torch.no_grad():
-            for i in range(endPoint):
-                if i >= startPoint:
-                    # if disp_uncertainty and epoch > 40:
-                    #     outs = []
-                    #     model.train()
-                    #     for i in range(20):
-                    #         out_, hidden_ = model.forward(out+0.01*Variable(torch.randn(out.size())).cuda(),hidden,noise=True)
-                    #         outs.append(out_)
-                    #     model.eval()
-                    #     outs = torch.cat(outs,dim=0)
-                    #     out_mean = torch.mean(outs,dim=0) # [bsz * feature_dim]
-                    #     out_std = torch.std(outs,dim=0) # [bsz * feature_dim]
-                    #     upperlim95.append(out_mean + 2.58*out_std/np.sqrt(20))
-                    #     lowerlim95.append(out_mean - 2.58*out_std/np.sqrt(20))
-
-                    out, hidden = model.forward(out, hidden)
-
-                    # print(out_mean,out)
-
-                else:
-                    out, hidden = model.forward(gen_dataset[i].unsqueeze(0), hidden)
-                outSeq.append(out.data.cpu()[0][0].unsqueeze(0))
-
-        outSeq = torch.cat(outSeq, dim=0)  # [seqLength * feature_dim]
-
-        target = reconstruct(gen_dataset.cpu().numpy(), TimeseriesData.mean, TimeseriesData.std)
-        outSeq = reconstruct(outSeq.numpy(), TimeseriesData.mean, TimeseriesData.std)
-        # if epoch>40:
-        #     upperlim95 = torch.cat(upperlim95, dim=0)
-        #     lowerlim95 = torch.cat(lowerlim95, dim=0)
-        #     upperlim95 = preprocess_data.reconstruct(upperlim95.data.cpu().numpy(),TimeseriesData.mean,TimeseriesData.std)
-        #     lowerlim95 = preprocess_data.reconstruct(lowerlim95.data.cpu().numpy(),TimeseriesData.mean,TimeseriesData.std)
-        plt.figure(figsize=(15, 5))
-        for i in range(target.size(-1)):
-            plt.plot(target[:, :, i].numpy(), label='Target' + str(i),
-                     color='black', marker='.', linestyle='--', markersize=1, linewidth=0.5)
-            plt.plot(range(startPoint), outSeq[:startPoint, i].numpy(), label='1-step predictions for target' + str(i),
-                     color='green', marker='.', linestyle='--', markersize=1.5, linewidth=1)
-            # if epoch>40:
-            #     plt.plot(range(startPoint, endPoint), upperlim95[:,i].numpy(), label='upperlim'+str(i),
-            #              color='skyblue', marker='.', linestyle='--', markersize=1.5, linewidth=1)
-            #     plt.plot(range(startPoint, endPoint), lowerlim95[:,i].numpy(), label='lowerlim'+str(i),
-            #              color='skyblue', marker='.', linestyle='--', markersize=1.5, linewidth=1)
-            plt.plot(range(startPoint, endPoint), outSeq[startPoint:, i].numpy(),
-                     label='Recursive predictions for target' + str(i),
-                     color='blue', marker='.', linestyle='--', markersize=1.5, linewidth=1)
-        plt.xlim([startPoint - 500, endPoint])
-        plt.xlabel('Index', fontsize=15)
-        plt.ylabel('Value', fontsize=15)
-        plt.title('Time-series Prediction on ' + args.data + ' Dataset', fontsize=18, fontweight='bold')
-        plt.legend()
-        plt.tight_layout()
-        plt.text(startPoint - 500 + 10, target.min(), 'Epoch: ' + str(epoch), fontsize=15)
-        save_dir = Path(REPORT_FIGURES_DIR, args.data, args.filename).with_suffix('').joinpath('fig_prediction')
-        save_dir.mkdir(parents=True, exist_ok=True)
-        plt.savefig(str(save_dir.joinpath('fig_epoch' + str(epoch)).with_suffix('.png')))
-        # plt.show()
-        plt.close()
-        return outSeq
-
-    else:
-        pass
-
-'''
-def evaluate_1step_pred(args, model, test_dataset):
-    # Turn on evaluation mode which disables dropout.
-    model.eval()
-    total_loss = 0
-    with torch.no_grad():
-        hidden = model.init_hidden(args.eval_batch_size)
-        for nbatch, i in enumerate(range(0, test_dataset.size(0) - 1, args.bptt)):
-            inputSeq, targetSeq = get_batch(args, test_dataset, i)
-            outSeq, hidden = model.forward(inputSeq, hidden)
-
-            loss = criterion(outSeq.view(args.batch_size, -1), targetSeq.view(args.batch_size, -1))
-            hidden = model.repackage_hidden(hidden)
-            total_loss += loss.item()
-
-    return total_loss / nbatch
-'''
-
 def train(args, model, train_dataset, epoch, optimizer, criterion):
     with torch.enable_grad():
         # Turn on training mode which enables dropout.
@@ -215,20 +118,14 @@ def train(args, model, train_dataset, epoch, optimizer, criterion):
             outSeq1 = torch.cat(outVals, dim=0)
             hids1 = torch.cat(hids1, dim=0)
 
-            #print("outSeq1", outSeq1.shape)
-            #print("targetSeq", targetSeq.shape)
-
             loss1 = criterion(outSeq1, targetSeq)
-            #loss1 = criterion(outSeq1.view(args.batch_size, -1), targetSeq.view(args.batch_size, -1))
 
             '''Loss2: Teacher forcing loss'''
             outSeq2, hidden, hids2 = model.forward(inputSeq, hidden, return_hiddens=True)
             loss2 = criterion(outSeq2, targetSeq)
-            #loss2 = criterion(outSeq2.view(args.batch_size, -1), targetSeq.view(args.batch_size, -1))
 
             '''Loss3: Simplified Professor forcing loss'''
             loss3 = criterion(hids1, hids2.detach())
-            #loss3 = criterion(hids1.view(args.batch_size, -1), hids2.view(args.batch_size, -1).detach())
 
             '''Total loss = Loss1+Loss2+Loss3'''
             loss = loss1 + loss2 + loss3
@@ -274,12 +171,10 @@ def evaluate(args, model, test_dataset, criterion):
             outSeq1 = torch.cat(outVals, dim=0)
             hids1 = torch.cat(hids1, dim=0)
             loss1 = criterion(outSeq1, targetSeq)
-            #loss1 = criterion(outSeq1.view(args.batch_size, -1), targetSeq.view(args.batch_size, -1))
 
             '''Loss2: Teacher forcing loss'''
             outSeq2, hidden, hids2 = model.forward(inputSeq, hidden, return_hiddens=True)
             loss2 = criterion(outSeq2, targetSeq)
-            #loss2 = criterion(outSeq2.view(args.batch_size, -1), targetSeq.view(args.batch_size, -1))
 
             '''Loss3: Simplified Professor forcing loss'''
             loss3 = criterion(hids1.view(args.batch_size, -1), hids2.view(args.batch_size, -1).detach())
@@ -291,23 +186,3 @@ def evaluate(args, model, test_dataset, criterion):
             total_loss += loss.item()
 
     return total_loss / (nbatch + 1)
-
-'''
-# Loop over epochs.
-if args.resume or args.pretrained:
-    print("=> loading checkpoint ")
-    checkpoint = torch.load(Path('models', args.data, 'checkpoint', args.filename).with_suffix('.pth'))
-    args, start_epoch, best_val_loss = model.load_checkpoint(args, checkpoint, feature_dim)
-    optimizer.load_state_dict((checkpoint['optimizer']))
-    del checkpoint
-    epoch = start_epoch
-    print("=> loaded checkpoint")
-else:
-    epoch = 1
-    start_epoch = 1
-    best_val_loss = 0
-    print("=> Start training from scratch")
-print('-' * 89)
-print(args)
-print('-' * 89)
-'''

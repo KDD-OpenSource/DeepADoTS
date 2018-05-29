@@ -11,7 +11,6 @@ from sklearn.svm import SVR
 from sklearn.model_selection import GridSearchCV
 from .anomalyDetector import fit_norm_distribution_param
 from .anomalyDetector import anomalyScore
-from .anomalyDetector import get_precision_recall
 from .train_predictor import get_args as get_train_args
 
 REPORT_PICKLES_DIR = 'reports/data'
@@ -28,12 +27,8 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
                         help='type of the dataset (ecg, gesture, power_demand, space_shuttle, respiration, nyc_taxi')
     parser.add_argument('--filename', type=str, default='chfdb_chf13_45590.pkl',
                         help='filename of the dataset')
-    parser.add_argument('--save_fig', action='store_true', default="--save_fig",
-                        help='save results as figures')
     parser.add_argument('--compensate', action='store_true',
                         help='compensate anomaly score using anomaly score esimation')
-    parser.add_argument('--beta', type=float, default=1.0,
-                        help='beta value for f-beta score')
 
     args_ = parser.parse_args()
     print('-' * 89)
@@ -41,8 +36,6 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
     checkpoint = torch.load(str(Path('models', args_.data, 'checkpoint', args_.filename).with_suffix('.pth')))
     args = checkpoint['args']
     args.prediction_window_size = args_.prediction_window_size
-    args.beta = args_.beta
-    args.save_fig = args_.save_fig
     args.compensate = args_.compensate
     print("=> loaded checkpoint")
 
@@ -71,8 +64,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
     model.load_state_dict(checkpoint['state_dict'])
     # del checkpoint
 
-    scores, predicted_scores, precisions, recalls, f_betas = list(), list(), list(), list(), list()
-    targets, mean_predictions, oneStep_predictions, Nstep_predictions = list(), list(), list(), list()
+    scores, predicted_scores = list(), list()
     try:
         # For each channel in the dataset
         for channel_idx in range(nfeatures):
@@ -102,103 +94,13 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             # Anomaly scores are calculated on the test dataset
             # given the mean and the covariance calculated on the train dataset
             print('=> calculating anomaly scores')
-            score, sorted_prediction, sorted_error, _, predicted_score = anomalyScore(args, model, test_dataset, mean, cov,
-                                                                                      score_predictor=score_predictor,
-                                                                                      channel_idx=channel_idx)
+            score, _, _, _, predicted_score = anomalyScore(
+                args, model, test_dataset, mean, cov,
+                score_predictor=score_predictor, channel_idx=channel_idx
+            )
             score = score.cpu()
             scores.append(score)
             predicted_scores.append(predicted_score)
-            # print('calc score', score.shape, test_dataset.shape, mean.shape, cov.shape, channel_idx)
-            ''' 4. Evaluate the result '''
-            if not TimeseriesData.testLabel:
-                # In pipeline mode we have no access to the true labels
-                continue
-
-            # The obtained anomaly scores are evaluated by measuring precision, recall, and f_beta scores
-            # The precision, recall, f_beta scores are are calculated repeatedly,
-            # sampling the threshold from 1 to the maximum anomaly score value, either equidistantly or logarithmically.
-            print('=> calculating precision, recall, and f_beta')
-            precision, recall, f_beta = get_precision_recall(args, score, num_samples=1000, beta=args.beta,
-                                                             label=TimeseriesData.testLabel.to(args.device))
-
-            # print('f beta shape', f_beta.shape)
-            # print('max', f_beta.max())
-            # print(f_beta.max().shape)
-            # print(f_beta.max().item())
-            # print('data: ', args.data, ' filename: ', args.filename,
-            #       ' f-beta (no compensation): ', f_beta.max().item(), ' beta: ', args.beta)
-            if args.compensate:
-                precision, recall, f_beta = get_precision_recall(args, score, num_samples=1000, beta=args.beta,
-                                                                 label=TimeseriesData.testLabel.to(args.device),
-                                                                 predicted_score=predicted_score)
-                print('data: ', args.data, ' filename: ', args.filename,
-                      ' f-beta    (compensation): ', f_beta.max().item(), ' beta: ', args.beta)
-
-            target = reconstruct(test_dataset.cpu()[:, 0, channel_idx],
-                                                 TimeseriesData.mean[channel_idx],
-                                                 TimeseriesData.std[channel_idx]).numpy()
-            mean_prediction = reconstruct(sorted_prediction.mean(dim=1).cpu(),
-                                                          TimeseriesData.mean[channel_idx],
-                                                          TimeseriesData.std[channel_idx]).numpy()
-            oneStep_prediction = reconstruct(sorted_prediction[:, -1].cpu(),
-                                                             TimeseriesData.mean[channel_idx],
-                                                             TimeseriesData.std[channel_idx]).numpy()
-            Nstep_prediction = reconstruct(sorted_prediction[:, 0].cpu(),
-                                                           TimeseriesData.mean[channel_idx],
-                                                           TimeseriesData.std[channel_idx]).numpy()
-            sorted_errors_mean = sorted_error.abs().mean(dim=1).cpu()
-            sorted_errors_mean *= TimeseriesData.std[channel_idx]
-            sorted_errors_mean = sorted_errors_mean.numpy()
-            targets.append(target),
-            mean_predictions.append(mean_prediction), oneStep_predictions.append(oneStep_prediction)
-            Nstep_predictions.append(Nstep_prediction)
-            precisions.append(precision), recalls.append(recall), f_betas.append(f_beta)
-
-            if args.save_fig:
-                save_dir = Path(REPORT_FIGURES_DIR, args.data, args.filename).with_suffix('').joinpath('fig_detection')
-                save_dir.mkdir(parents=True, exist_ok=True)
-                plt.plot(precision.cpu().numpy(), label='precision')
-                plt.plot(recall.cpu().numpy(), label='recall')
-                plt.plot(f_beta.cpu().numpy(), label='f1')
-                plt.legend()
-                plt.xlabel('Threshold (log scale)')
-                plt.ylabel('Value')
-                plt.title('Anomaly Detection on ' + args.data + ' Dataset', fontsize=18, fontweight='bold')
-                plt.savefig(str(save_dir.joinpath('fig_f_beta_channel' + str(channel_idx)).with_suffix('.png')))
-                plt.close()
-
-                fig, ax1 = plt.subplots(figsize=(15, 5))
-                ax1.plot(target, label='Target',
-                         color='black', marker='.', linestyle='--', markersize=1, linewidth=0.5)
-                ax1.plot(mean_prediction, label='Mean predictions',
-                         color='purple', marker='.', linestyle='--', markersize=1, linewidth=0.5)
-                ax1.plot(oneStep_prediction, label='1-step predictions',
-                         color='green', marker='.', linestyle='--', markersize=1, linewidth=0.5)
-                ax1.plot(Nstep_prediction, label=str(args.prediction_window_size) + '-step predictions',
-                         color='blue', marker='.', linestyle='--', markersize=1, linewidth=0.5)
-                ax1.plot(sorted_errors_mean, label='Absolute mean prediction errors',
-                         color='orange', marker='.', linestyle='--', markersize=1, linewidth=1.0)
-                ax1.legend(loc='upper left')
-                ax1.set_ylabel('Value', fontsize=15)
-                ax1.set_xlabel('Index', fontsize=15)
-                ax2 = ax1.twinx()
-                ax2.plot(score.numpy().reshape(-1, 1), label='Anomaly scores from \nmultivariate normal distribution',
-                         color='red', marker='.', linestyle='--', markersize=1, linewidth=1)
-                if args.compensate:
-                    ax2.plot(predicted_score, label='Predicted anomaly scores from SVR',
-                             color='cyan', marker='.', linestyle='--', markersize=1, linewidth=1)
-                # ax2.plot(score.reshape(-1,1)/(predicted_score+1),label='Anomaly scores from \nmultivariate normal distribution',
-                #        color='hotpink', marker='.', linestyle='--', markersize=1, linewidth=1)
-                ax2.legend(loc='upper right')
-                ax2.set_ylabel('anomaly score', fontsize=15)
-                # plt.axvspan(2830,2900 , color='yellow', alpha=0.3)
-                plt.title('Anomaly Detection on ' + args.data + ' Dataset', fontsize=18, fontweight='bold')
-                plt.tight_layout()
-                plt.xlim([0, len(test_dataset)])
-                plt.savefig(str(save_dir.joinpath('fig_scores_channel' + str(channel_idx)).with_suffix('.png')))
-                # plt.show()
-                plt.close()
-
 
     except KeyboardInterrupt:
         print('-' * 89)
@@ -207,15 +109,8 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
     print('=> saving the results as pickle extensions')
     save_dir = Path(REPORT_PICKLES_DIR, args.data, args.filename).with_suffix('')
     save_dir.mkdir(parents=True, exist_ok=True)
-    pickle.dump(targets, open(str(save_dir.joinpath('target.pkl')), 'wb'))
-    pickle.dump(mean_predictions, open(str(save_dir.joinpath('mean_predictions.pkl')), 'wb'))
-    pickle.dump(oneStep_predictions, open(str(save_dir.joinpath('oneStep_predictions.pkl')), 'wb'))
-    pickle.dump(Nstep_predictions, open(str(save_dir.joinpath('Nstep_predictions.pkl')), 'wb'))
     pickle.dump(scores, open(str(save_dir.joinpath('score.pkl')), 'wb'))
     pickle.dump(predicted_scores, open(str(save_dir.joinpath('predicted_scores.pkl')), 'wb'))
-    pickle.dump(precisions, open(str(save_dir.joinpath('precision.pkl')), 'wb'))
-    pickle.dump(recalls, open(str(save_dir.joinpath('recall.pkl')), 'wb'))
-    pickle.dump(f_betas, open(str(save_dir.joinpath('f_beta.pkl')), 'wb'))
     print('-' * 89)
 
     return scores, predicted_scores
