@@ -62,3 +62,23 @@ class SyntheticData(Dataset):
         del df['y']
 
         return baseline, y_train, df, y_test
+
+
+class MissingValuesDataset(SyntheticData):
+
+    def __init__(self, missing_percentage: float, separate: bool=False, **kwargs):
+        super.__init__(kwargs)
+        self.missing_percentage = missing_percentage
+
+    def data(self):
+        baseline, y_train, df, y_test = super.data()
+
+        if separate:
+            for col in df.columns:
+                missing_idxs = np.random.choice(np.arange(self.length), missing_percentage*self.length)
+                df[col][missing_idxs] = np.nan
+        else:
+            missing_idxs = np.random.choice(np.arange(self.length), missing_percentage*self.length)
+            df.iloc[missing_idxs] = [np.nan] * self.n
+
+        return baseline, y_train, df, y_test
