@@ -82,15 +82,16 @@ class LSTMAD(Algorithm):
         errors = np.stack(errors, axis=3)
         errors = target_data.data.numpy()[:, self.len_out-1:, :, 0][..., np.newaxis] - errors
 
+        SCALING_FACTOR = 1e10  # To compensate for lack of floating point precision
         # fit multivariate Gaussian on (validation set) error distribution (via maximum likelihood estimation)
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
         norm /= np.std(norm, axis=0)
         norm -= np.mean(norm, axis=0)
-        norm *= 1e10
+        norm *= SCALING_FACTOR
         mean = np.mean(norm, axis=0)
         cov = np.cov(norm.T)
 
-        scores = -multivariate_normal.logpdf(norm, mean=mean, cov=cov) / 1e10
+        scores = -multivariate_normal.logpdf(norm, mean=mean, cov=cov) / np.log(SCALING_FACTOR)
         scores = np.pad(scores, (2 * self.len_out - 1, 0), 'constant', constant_values=np.nan)
         return scores
 
@@ -114,7 +115,6 @@ class LSTMAD(Algorithm):
         loss_train = self.loss(output_data, target_data)
         loss_train.backward()
         return loss_train
-    
     def get_binary_label(self, score):
         threshold = self.get_threshold(score)
         score = np.where(np.isnan(score), threshold - 1, score)
