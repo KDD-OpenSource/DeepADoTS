@@ -1,6 +1,7 @@
 '''Adapted from https://github.com/chickenbestlover/RNN-Time-series-Anomaly-Detection'''
 
 import time
+from typing import List
 
 from sklearn.model_selection import train_test_split
 import torch
@@ -44,11 +45,14 @@ class LSTM_Enc_Dec(Algorithm):
         trainTimeseriesData = self.transform_fit_data(X_train, y_train)
         self.intern_fit(trainTimeseriesData)
 
-    def predict(self, X_test: pd.DataFrame) -> pd.Series:
+    def predict_channel_scores(self, X_test: pd.DataFrame) -> List[np.ndarray]:
         testTimeseriesData = self.transform_predict_data(X_test)
         # Anomaly score is returned for each series seperately
         channels_scores, _ = self.intern_predict(testTimeseriesData)
-        channels_scores = [x.numpy() for x in channels_scores]
+        return [x.numpy() for x in channels_scores]
+
+    def predict(self, X_test: pd.DataFrame) -> pd.Series:
+        channels_scores = self.predict_channel_scores(X_test)
         binary_decisions = np.array(list(self.create_validation_set(channels_scores)))
         return np.max(binary_decisions, axis=0)
 
