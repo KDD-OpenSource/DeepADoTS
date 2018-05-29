@@ -20,7 +20,7 @@ class Algorithm:
         """
 
     @abc.abstractmethod
-    def get_binary_label(self, y):
+    def binarize(self, y, threshold=None):
         """
         :param scores
         :return binary_labels
