@@ -12,7 +12,7 @@ class Algorithm:
         :return scores
         """
         raise NotImplementedError
-        
+
     def get_binary_label(y):
         """
         :param scores
