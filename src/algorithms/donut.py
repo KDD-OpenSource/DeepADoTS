@@ -140,9 +140,10 @@ class Donut(Algorithm):
     is smaller than mean - std of the reconstruction probabilities for that feature. For each point
     in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
 
-    def __init__(self):
+    def __init__(self, max_epoch=256):
         super(Donut).__init__()
         self.name = "Donut"
+        self.max_epoch = max_epoch
         self.x_dims = 120
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
@@ -174,7 +175,7 @@ class Donut(Algorithm):
                     z_dims=5,
                 )
 
-            trainer = QuietDonutTrainer(model=model, model_vs=model_vs)
+            trainer = QuietDonutTrainer(model=model, model_vs=model_vs, max_epoch=self.max_epoch)
             with tf_session.as_default():
                 trainer.fit(features, labels, missing, mean, std)
             self.means.append(mean)

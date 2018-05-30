@@ -36,7 +36,8 @@ def evaluate_on_real_world_data_sets():
 def main():
     datasets = [SyntheticData("Synthetic Extreme Outliers", ".")]
     if os.environ.get("CIRCLECI", False):
-        detectors = [RecurrentEBM(num_epochs=15), DAGMM()]
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=5), Donut(max_epoch=5), DAGMM()]
+        os.environ["DISPLAY"] = ":0.0"
     else:
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
     evaluator = Evaluator(datasets, detectors)
