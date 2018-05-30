@@ -87,28 +87,32 @@ class Evaluator:
         plt.legend()
         plt.tight_layout()
         plt.show()
-        # self.plot_roc_curves()
+        self.plot_roc_curves()
 
     def plot_roc_curves(self):
-        # Plot of a ROC curve for all classes
-
-        benchmark_df = self.benchmarks()
         for ds in self.datasets:
-            res = benchmark_df[benchmark_df["dataset"] == ds.name]
-            plt.figure()
-            len_subplot = len(res)
+            _, _, _, y_test = ds.data()
+            fig_scale = 3
+            fig = plt.figure(figsize=(fig_scale*len(self.detectors), fig_scale))
+            fig.suptitle(ds.name, fontsize=14, y="1.1")
             subplot_count = 1
-            print(res)
-            for _, line in res.iterrows():
-                plt.subplot(len_subplot * 100 + 10 + subplot_count)
-                plt.plot(float(line["recall"]), float(line["fpr"]), color='darkorange',
-                         lw=2, label='ROC curve (area = %0.2f)' % auc(float(line["recall"]), float(line["fpr"])))
+            for det in self.detectors:
+                print("Plotting " + det.name + " on " + ds.name)
+                score = self.results[(ds.name, det.name)]
+                y_pred = det.binarize(score)
+                fpr, tpr, _ = roc_curve(y_test, y_pred)
+                roc_auc = auc(fpr, tpr)
+                plt.subplot(1, len(self.detectors), subplot_count)
+                plt.plot(fpr, tpr, color='darkorange',
+                         lw=2, label='area = %0.2f' % roc_auc)
+                subplot_count += 1
                 plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
                 plt.xlim([0.0, 1.0])
                 plt.ylim([0.0, 1.05])
                 plt.xlabel('False Positive Rate')
                 plt.ylabel('True Positive Rate')
-                plt.title(ds.name)
+                plt.gca().set_aspect('equal', adjustable='box')
+                plt.title(det.name)
                 plt.legend(loc="lower right")
-                subplot_count += 1
+            plt.tight_layout()
             plt.show()
