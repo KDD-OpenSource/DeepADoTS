@@ -1,10 +1,12 @@
+import shutil
+import logging
+from pathlib import Path
+
 import torch.nn as nn
 import torch
 from torch.autograd import Variable
 import torch.nn.functional as F
 # from cuda_functional import SRU, SRUCell
-import shutil
-from pathlib import Path
 
 
 class RNNPredictor(nn.Module):
@@ -84,7 +86,7 @@ class RNNPredictor(nn.Module):
             return h.detach()
 
     def save_checkpoint(self, state, is_best):
-        print("=> saving checkpoint ..")
+        logging.info("=> saving checkpoint ..")
         args = state['args']
         checkpoint_dir = Path('models', args.data, 'checkpoint')
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -97,7 +99,7 @@ class RNNPredictor(nn.Module):
 
             shutil.copyfile(checkpoint, model_best_dir.joinpath(args.filename).with_suffix('.pth'))
 
-        print('=> checkpoint saved.')
+        logging.info('=> checkpoint saved.')
 
     def extract_hidden(self, hidden):
         if self.rnn_type == 'LSTM':

@@ -1,12 +1,14 @@
-import argparse
 import time
+import logging
+from pathlib import Path
+
+import argparse
 import torch
 import torch.nn as nn
 from .preprocess_data import *
 from .model import RNNPredictor
 from torch import optim
 from matplotlib import pyplot as plt
-from pathlib import Path
 from .anomalyDetector import fit_norm_distribution_param
 
 REPORT_FIGURES_DIR = 'reports/figures'
@@ -140,7 +142,7 @@ def train(args, model, train_dataset, epoch, optimizer, criterion):
             if batch % args.log_interval == 0 and batch > 0:
                 cur_loss = total_loss / args.log_interval
                 elapsed = time.time() - start_time
-                print('| epoch {:3d} | {:5d}/{:5d} batches | ms/batch {:5.4f} | '
+                logging.info('| epoch {:3d} | {:5d}/{:5d} batches | ms/batch {:5.4f} | '
                       'loss {:5.2f} '.format(
                     epoch, batch, len(train_dataset) // args.bptt,
                                   elapsed * 1000 / args.log_interval, cur_loss))

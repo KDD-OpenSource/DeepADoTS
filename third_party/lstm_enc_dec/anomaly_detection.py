@@ -1,6 +1,8 @@
 import argparse
 import torch
 import pickle
+import logging
+
 from .preprocess_data import *
 from .model import RNNPredictor
 from torch import optim
@@ -9,6 +11,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from sklearn.svm import SVR
 from sklearn.model_selection import GridSearchCV
+
 from .anomalyDetector import fit_norm_distribution_param
 from .anomalyDetector import anomalyScore
 from .train_predictor import get_args as get_train_args
@@ -31,13 +34,13 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
                         help='compensate anomaly score using anomaly score esimation')
 
     args_ = parser.parse_args()
-    print('-' * 89)
-    print("=> loading checkpoint ")
+    logging.info('-' * 89)
+    logging.info("=> loading checkpoint ")
     checkpoint = torch.load(str(Path('models', args_.data, 'checkpoint', args_.filename).with_suffix('.pth')))
     args = checkpoint['args']
     args.prediction_window_size = args_.prediction_window_size
     args.compensate = args_.compensate
-    print("=> loaded checkpoint")
+    logging.info("=> loaded checkpoint")
 
     # Set the random seed manually for reproducibility.
     torch.manual_seed(args.seed)
@@ -71,10 +74,10 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             ''' 1. Load mean and covariance if they are pre-calculated, if not calculate them. '''
             # Mean and covariance are calculated on train dataset.
             if 'means' in checkpoint.keys() and 'covs' in checkpoint.keys():
-                print('=> loading pre-calculated mean and covariance')
+                logging.info('=> loading pre-calculated mean and covariance')
                 mean, cov = checkpoint['means'][channel_idx], checkpoint['covs'][channel_idx]
             else:
-                print('=> calculating mean and covariance')
+                logging.info('=> calculating mean and covariance')
                 mean, cov = fit_norm_distribution_param(args, model, train_dataset, channel_idx=channel_idx)
 
             ''' 2. Train anomaly score predictor using support vector regression (SVR). (Optional) '''
@@ -82,7 +85,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             # given hidden layer output and the corresponding anomaly score on train dataset.
             # Predicted anomaly scores on test dataset can be used for the baseline of the adaptive threshold.
             if args.compensate:
-                print('=> training an SVR as anomaly score predictor')
+                logging.info('=> training an SVR as anomaly score predictor')
                 train_score, _, _, hiddens, _ = anomalyScore(args, model, train_dataset, mean, cov, channel_idx=channel_idx)
                 score_predictor = GridSearchCV(SVR(), cv=5,
                                                param_grid={"C": [1e0, 1e1, 1e2], "gamma": np.logspace(-1, 1, 3)})
@@ -93,7 +96,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             ''' 3. Calculate anomaly scores'''
             # Anomaly scores are calculated on the test dataset
             # given the mean and the covariance calculated on the train dataset
-            print('=> calculating anomaly scores')
+            logging.info('=> calculating anomaly scores')
             score, _, _, _, predicted_score = anomalyScore(
                 args, model, test_dataset, mean, cov,
                 score_predictor=score_predictor, channel_idx=channel_idx
@@ -103,14 +106,14 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             predicted_scores.append(predicted_score)
 
     except KeyboardInterrupt:
-        print('-' * 89)
-        print('Exiting from training early')
+        logging.info('-' * 89)
+        logging.info('Exiting from training early')
 
-    print('=> saving the results as pickle extensions')
+    logging.info('=> saving the results as pickle extensions')
     save_dir = Path(REPORT_PICKLES_DIR, args.data, args.filename).with_suffix('')
     save_dir.mkdir(parents=True, exist_ok=True)
     pickle.dump(scores, open(str(save_dir.joinpath('score.pkl')), 'wb'))
     pickle.dump(predicted_scores, open(str(save_dir.joinpath('predicted_scores.pkl')), 'wb'))
-    print('-' * 89)
+    logging.info('-' * 89)
 
     return scores, predicted_scores

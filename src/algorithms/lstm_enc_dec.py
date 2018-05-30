@@ -1,5 +1,6 @@
 '''Adapted from https://github.com/chickenbestlover/RNN-Time-series-Anomaly-Detection'''
 
+import logging
 import time
 from typing import List
 
@@ -78,7 +79,7 @@ class LSTM_Enc_Dec(Algorithm):
             # Find threshold which amount is the closest to the mean of all anomaly amounts
             idx = (np.abs(anomalies_by_threshold - anomalies_by_threshold.mean())).argmin()
             threshold = th[idx]
-            print('Selecting threshold #{}: {}'.format(idx, threshold))
+            logging.info('Selecting threshold #{}: {}'.format(idx, threshold))
             yield np.array(score > threshold, dtype=int)
 
     def transform_fit_data(self, X_orig_train, y_orig_train):
@@ -90,26 +91,26 @@ class LSTM_Enc_Dec(Algorithm):
             input_data=(X_train, y_train, X_test, y_test),
             augment_train_data=self.args.augment_train_data,
         )
-        print('-'*89)
-        print('Splitting and transforming input data:')
-        print('X_orig_train', X_orig_train.shape)
-        print('y_orig_train', y_orig_train.shape)
-        print('X_train', self.train_timeseries_data.trainData.shape)
-        print('y_train', self.train_timeseries_data.trainLabel.shape)
-        print('X_val', self.train_timeseries_data.testData.shape)
-        print('y_val', self.train_timeseries_data.testLabel.shape)
-        print('-'*89)
+        logging.info('-'*89)
+        logging.info('Splitting and transforming input data:')
+        logging.info('X_orig_train', X_orig_train.shape)
+        logging.info('y_orig_train', y_orig_train.shape)
+        logging.info('X_train', self.train_timeseries_data.trainData.shape)
+        logging.info('y_train', self.train_timeseries_data.trainLabel.shape)
+        logging.info('X_val', self.train_timeseries_data.testData.shape)
+        logging.info('y_val', self.train_timeseries_data.testLabel.shape)
+        logging.info('-'*89)
         return self.train_timeseries_data
 
     def transform_predict_data(self, X_orig_test):
         self.test_timeseries_data = preprocess_data.PickleDataLoad(
             input_data=X_orig_test,
         )
-        print('-'*89)
-        print('Input data:')
-        print('X_orig_test', X_orig_test.shape)
-        print('X_test', self.test_timeseries_data.testData.shape)
-        print('-'*89)
+        logging.info('-'*89)
+        logging.info('Input data:')
+        logging.info('X_orig_test', X_orig_test.shape)
+        logging.info('X_test', self.test_timeseries_data.testData.shape)
+        logging.info('-'*89)
 
         return self.test_timeseries_data
 
@@ -124,10 +125,10 @@ class LSTM_Enc_Dec(Algorithm):
                 train_predictor.train(self.args, self.model, train_dataset, epoch, self.optimizer, self.criterion)
 
                 val_loss = train_predictor.evaluate(self.args, self.model, test_dataset, self.criterion)
-                print('-' * 89)
-                print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.4f} | '.format(epoch, (
+                logging.info('-' * 89)
+                logging.info('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.4f} | '.format(epoch, (
                         time.time() - epoch_start_time), val_loss))
-                print('-' * 89)
+                logging.info('-' * 89)
 
                 if epoch % self.args.save_interval == 0:
                     # Save the model if the validation loss is the best we've seen so far.
@@ -142,11 +143,11 @@ class LSTM_Enc_Dec(Algorithm):
                     self.model.save_checkpoint(model_dictionary, is_best)
 
         except KeyboardInterrupt:
-            print('-' * 89)
-            print('Exiting from training early')
+            logging.info('-' * 89)
+            logging.info('Exiting from training early')
 
         # Calculate mean and covariance for each channel's prediction errors, and save them with the trained model
-        print('=> calculating mean and covariance')
+        logging.info('=> calculating mean and covariance')
         means, covs = list(), list()
         train_dataset = train_timeseries_data.batchify(self.args, train_timeseries_data.trainData, bsz=1)
         for channel_idx in range(self.model.enc_input_size):
@@ -164,7 +165,7 @@ class LSTM_Enc_Dec(Algorithm):
                             'covs': covs
                             }
         self.model.save_checkpoint(model_dictionary, True)
-        print('-' * 89)
+        logging.info('-' * 89)
 
     # For prediction the data is not augmented and not batchified in 64-chunks
     def _predict(self, test_timeseries_data):
