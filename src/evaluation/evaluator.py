@@ -100,7 +100,7 @@ class Evaluator:
                 subplot_num += 1
         plt.legend()
         plt.tight_layout()
-        # plt.show()
+        plt.show()
         # self.plot_roc_curves()
 
     def plot_roc_curves(self):
