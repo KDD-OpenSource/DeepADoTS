@@ -196,13 +196,16 @@ class Donut(Algorithm):
                 test_score = predictor.get_score(test_values, test_missing)
             tf_session.close()
             test_score = np.power(np.e, test_score)  # Convert to reconstruction probability
-            test_score = Donut.binarize(test_score)  # Binarize so 1 is an anomaly
+            threshold = np.mean(test_score) - np.std(test_score)
+            test_score = np.where(test_score <= threshold, 1, 0)  # Binarize so 1 is an anomaly
             test_scores[self.x_dims - 1:, col_idx] = test_score
         aggregated_test_scores = np.amax(test_scores, axis=1)
         return aggregated_test_scores, prediction_mask
 
+    def get_threshold(self, score):
+        return 0
+
     @staticmethod
     def binarize(y_pred, threshold=None):
+        """The predicted values are already binary so do nothing."""
         return y_pred
-        threshold = np.mean(y_pred) - np.std(y_pred)
-        return np.where(y_pred <= threshold, 1, 0)

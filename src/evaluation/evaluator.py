@@ -1,10 +1,10 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.metrics import precision_recall_fscore_support as prf
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import roc_curve, auc
 import progressbar
-import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_recall_fscore_support as prf
+from sklearn.metrics import roc_curve, auc
 
 
 class Evaluator:
@@ -41,11 +41,19 @@ class Evaluator:
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
             for det in self.detectors:
+                y_test_copy = y_test.copy()
                 score = self.results[(ds.name, det.name)]
-                acc, prec, rec, f_score, fpr = self.get_accuracy_precision_recall_fscore(y_test,
-                                                                                         det.binarize(score))
+                if isinstance(score, tuple):
+                    # Check if the second element is a prediction mask. If so, apply it to y_test as well
+                    if type(score[1]) is np.ndarray and score[1].dtype == 'bool':
+                        prediction_mask = score[1]
+                        y_pred = det.binarize(score[0][prediction_mask])
+                        y_test_copy = y_test[prediction_mask]
+                else:
+                    y_pred = det.binarize(score)
+                acc, prec, rec, f_score, fpr = self.get_accuracy_precision_recall_fscore(y_test_copy, y_pred)
                 df = df.append({"dataset":
-                                ds.name,
+                                    ds.name,
                                 "approach": det.name,
                                 "accuracy": acc,
                                 "precision": prec,
@@ -61,27 +69,33 @@ class Evaluator:
             _, _, X_test, y_test = ds.data()
             subtitle_loc = 'left'
             fig = plt.figure(figsize=(15, 15))
-            sp = fig.add_subplot((2*len(self.detectors)+2) * 100 + 11)
+            sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 1)
             sp.set_title("original test set", loc=subtitle_loc)
             for col in X_test.columns:
                 plt.plot(X_test[col])
-            sp = fig.add_subplot((2*len(self.detectors)+2) * 100 + 12)
+            sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 2)
             sp.set_title("binary labels of test set", loc=subtitle_loc)
             plt.plot(y_test)
 
             subplot_num = 3
             for det in self.detectors:
-                sp = fig.add_subplot((2*len(self.detectors)+2) * 100 + 10 + subplot_num)
+                sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 1 + subplot_num)
                 sp.set_title("scores of " + det.name, loc=subtitle_loc)
-                y_pred = self.results[(ds.name, det.name)]
-                plt.plot(np.arange(len(X_test)), [x for x in y_pred])
-                threshold_line = len(X_test) * [det.get_threshold(y_pred)]
+                score = self.results[(ds.name, det.name)]
+                if isinstance(score, tuple):
+                    # Check if the second element is a prediction mask. If so, apply it to y_test as well
+                    if type(score[1]) is np.ndarray and score[1].dtype == 'bool':
+                        prediction_mask = score[1]
+                        score = det.binarize(score[0][prediction_mask])
+
+                plt.plot(np.arange(len(score)), [x for x in score])
+                threshold_line = len(score) * [det.get_threshold(score)]
                 plt.plot([x for x in threshold_line])
                 subplot_num += 1
 
-                sp = fig.add_subplot((2*len(self.detectors)+2) * 100 + 10 + subplot_num)
+                sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, subplot_num)
                 sp.set_title("binary labels of " + det.name, loc=subtitle_loc)
-                plt.plot(np.arange(len(X_test)), [x for x in det.binarize(y_pred)])
+                plt.plot(np.arange(len(score)), [x for x in det.binarize(score)])
                 subplot_num += 1
         plt.legend()
         plt.tight_layout()

@@ -35,8 +35,8 @@ def evaluate_on_real_world_data_sets():
 
 def main():
     datasets = [SyntheticData("Synthetic Extreme Outliers", ".")]
-    #detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
-    detectors = [Donut(), DAGMM()]
+    detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
+    detectors = [DAGMM(), DAGMM(), DAGMM(), DAGMM()]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()

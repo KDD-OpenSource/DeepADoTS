@@ -184,7 +184,7 @@ class DAGMM(Algorithm):
         self.gmm_k = gmm_k  # Number of Gaussian mixtures
         self.normal_percentile = normal_percentile  # Up to which percentile data should be considers normal
         self.dagmm, self.optimizer, self.train_phi, self.train_mu, self.train_cov, self.train_energy, \
-        self.thresh = None, None, None, None, None, None, None
+        self.threshold = None, None, None, None, None, None, None
 
     def _reset_grad(self):
         self.dagmm.zero_grad()
@@ -250,10 +250,13 @@ class DAGMM(Algorithm):
         test_energy = np.concatenate(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
-        self.thresh = np.percentile(combined_energy, self.normal_percentile)
+        self.threshold = np.percentile(combined_energy, self.normal_percentile)
         return test_energy
+
+    def get_threshold(self, score):
+        return self.threshold
 
     def binarize(self, y, threshold=None):
         if threshold is None:
-            threshold = self.thresh
-        return (y > threshold).astype(int)
+            threshold = self.threshold
+        return np.where(y > threshold, 1, 0)
