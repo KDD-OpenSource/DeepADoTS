@@ -7,10 +7,10 @@ import pandas as pd
 
 class Dataset:
 
-    def __init__(self, name: str, processed_path: str):
+    def __init__(self, name: str, file_name: str):
         self.name = name
         self.processed_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../data/processed/",
-                                           processed_path)
+                                           file_name)
 
         self._data = None
 
