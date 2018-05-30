@@ -162,21 +162,8 @@ class DAGMM_Module(nn.Module):
 
         return sample_energy, cov_diag
 
-    def loss_function(self, x, x_hat, z, gamma, lambda_energy, lambda_cov_diag):
-
-        recon_error = torch.mean((x - x_hat) ** 2)
-
-        phi, mu, cov = self.compute_gmm_params(z, gamma)
-
-        sample_energy, cov_diag = self.compute_energy(z, phi, mu, cov)
-
-        loss = recon_error + lambda_energy * sample_energy + lambda_cov_diag * cov_diag
-
-        return loss, sample_energy, recon_error, cov_diag
-
 
 class DAGMM(Algorithm):
-
     def __init__(self, lr=1e-4, batch_size=1024, gmm_k=4, normal_percentile=80):
         self.name = "DAGMM"
         self.lr = lr
@@ -185,9 +172,6 @@ class DAGMM(Algorithm):
         self.normal_percentile = normal_percentile  # Up to which percentile data should be considers normal
         self.dagmm, self.optimizer, self.train_phi, self.train_mu, self.train_cov, self.train_energy, \
             self.threshold = None, None, None, None, None, None, None
-
-    def _reset_grad(self):
-        self.dagmm.zero_grad()
 
     def fit(self, X, _):
         """Learn the mixture probability, mean and covariance for each component k.
