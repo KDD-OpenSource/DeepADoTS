@@ -1,9 +1,9 @@
 import pandas as pd
 
-from .dataset import Dataset
+from . import RealDataset
 
 
-class AirQuality(Dataset):
+class AirQuality(RealDataset):
     """
     https://archive.ics.uci.edu/ml/datasets/Air+Quality
 
@@ -19,16 +19,16 @@ class AirQuality(Dataset):
     9 True hourly averaged NO2 concentration in microg/m^3 (reference analyzer)
     10 PT08.S4 (tungsten oxide) hourly averaged sensor response (nominally NO2 targeted)
     11 PT08.S5 (indium oxide) hourly averaged sensor response (nominally O3 targeted)
-    12 Temperature in Â°C
+    12 Temperature in °C
     13 Relative Humidity (%)
     14 AH Absolute Humidity
     """
 
     def __init__(self):
-        super(AirQuality, self).__init__("AirQuality", "AirQualityUCI.csv", "air_quality.npz")
+        super().__init__(
+            name="AirQuality", raw_path="AirQualityUCI.csv", processed_path="air_quality.npz"
+        )
 
-    def data(self):
+    def load(self):
         raw = pd.read_csv(self.raw_path, sep=';', decimal=',')
-        data = raw.dropna(how='all')
-        # ToDo: wrong return value!
-        return data
+        self._data = raw.dropna(how='all')
