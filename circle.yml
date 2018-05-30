@@ -32,7 +32,7 @@ jobs:
           name: run linting and metrics
           command: |
             . venv/bin/activate
-            echo "backend: Agg" > ~/.config/matplotlib/matplotlibrc
+            echo "backend: Agg" > /home/circleci/repo/venv/lib/python3.6/site-packages/matplotlib/mpl-data/matplotlibrc
             flake8 --exclude=third_party,venv
             python main.py
       - store_artifacts:
