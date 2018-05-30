@@ -184,7 +184,7 @@ class DAGMM(Algorithm):
         self.gmm_k = gmm_k  # Number of Gaussian mixtures
         self.normal_percentile = normal_percentile  # Up to which percentile data should be considers normal
         self.dagmm, self.optimizer, self.train_phi, self.train_mu, self.train_cov, self.train_energy, \
-        self.threshold = None, None, None, None, None, None, None
+            self.threshold = None, None, None, None, None, None, None
 
     def _reset_grad(self):
         self.dagmm.zero_grad()
