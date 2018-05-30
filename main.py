@@ -1,18 +1,23 @@
+import numpy as np
+import pandas as pd
+
 from src.algorithms import LSTMAD
 from src.algorithms import RecurrentEBM
-from src.algorithms.donut import Donut
 from src.algorithms.dagmm import DAGMM
+from src.algorithms.donut import Donut
+from src.datasets.air_quality import AirQuality
+from src.datasets.kdd_cup import KDDCup
 from src.datasets.synthetic_data_generator import SyntheticData
 from src.evaluation.evaluator import Evaluator
 
 
 def evaluate_on_real_world_data_sets():
     dagmm = DAGMM()
-    kdd_cup = KDD_Cup()
+    kdd_cup = KDDCup()
     (X_train, y_train), (X_test, y_test) = kdd_cup.get_data_dagmm()
     dagmm.fit(X_train, y_train)
     pred = dagmm.predict(X_test)
-    print(get_accuracy_precision_recall_fscore(y_test, pred))
+    print(Evaluator.get_accuracy_precision_recall_fscore(y_test, pred))
 
     donut = Donut()
     air_quality = AirQuality().get_data()
@@ -30,8 +35,8 @@ def evaluate_on_real_world_data_sets():
 
 def main():
     datasets = [SyntheticData("Synthetic Extreme Outliers", ".")]
-    print("jo")
-    detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
+    #detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
+    detectors = [Donut(), DAGMM()]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()

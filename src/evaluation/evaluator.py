@@ -43,7 +43,7 @@ class Evaluator:
             for det in self.detectors:
                 score = self.results[(ds.name, det.name)]
                 acc, prec, rec, f_score, fpr = self.get_accuracy_precision_recall_fscore(y_test,
-                                                                                         det.get_binary_label(score))
+                                                                                         det.binarize(score))
                 df = df.append({"dataset":
                                 ds.name,
                                 "approach": det.name,
@@ -81,7 +81,7 @@ class Evaluator:
 
                 sp = fig.add_subplot((2*len(self.detectors)+2) * 100 + 10 + subplot_num)
                 sp.set_title("binary labels of " + det.name, loc=subtitle_loc)
-                plt.plot(np.arange(len(X_test)), [x for x in det.get_binary_label(y_pred)])
+                plt.plot(np.arange(len(X_test)), [x for x in det.binarize(y_pred)])
                 subplot_num += 1
         plt.legend()
         plt.tight_layout()

@@ -142,6 +142,7 @@ class Donut(Algorithm):
 
     def __init__(self):
         super(Donut).__init__()
+        self.name = "Donut"
         self.x_dims = 120
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
@@ -202,5 +203,6 @@ class Donut(Algorithm):
 
     @staticmethod
     def binarize(y_pred, threshold=None):
+        return y_pred
         threshold = np.mean(y_pred) - np.std(y_pred)
         return np.where(y_pred <= threshold, 1, 0)

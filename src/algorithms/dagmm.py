@@ -183,8 +183,8 @@ class DAGMM(Algorithm):
         self.batch_size = batch_size
         self.gmm_k = gmm_k  # Number of Gaussian mixtures
         self.normal_percentile = normal_percentile  # Up to which percentile data should be considers normal
-        self.dagmm, self.optimizer, self.train_phi, self.train_mu, self.train_cov, self.train_energy = \
-            None, None, None, None, None, None
+        self.dagmm, self.optimizer, self.train_phi, self.train_mu, self.train_cov, self.train_energy, \
+        self.thresh = None, None, None, None, None, None, None
 
     def _reset_grad(self):
         self.dagmm.zero_grad()
@@ -192,7 +192,7 @@ class DAGMM(Algorithm):
     def fit(self, X, _):
         """Learn the mixture probability, mean and covariance for each component k.
         Store the computed energy based on the training data and the aforementioned parameters."""
-        data_loader = DataLoader(dataset=CustomDataLoader(X), batch_size=self.batch_size, shuffle=True)
+        data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=True)
 
         self.dagmm = DAGMM_Module(n_features=X.shape[1], n_gmm=self.gmm_k)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
@@ -236,7 +236,7 @@ class DAGMM(Algorithm):
 
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
-        given data and label an anomaly if it is outside of the `self.normal_percentile` percentile."""
+        given data."""
         data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
 
         test_energy = []
@@ -250,5 +250,10 @@ class DAGMM(Algorithm):
         test_energy = np.concatenate(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
-        thresh = np.percentile(combined_energy, self.normal_percentile)
-        return (test_energy > thresh).astype(int), test_energy, thresh
+        self.thresh = np.percentile(combined_energy, self.normal_percentile)
+        return test_energy
+
+    def binarize(self, y, threshold=None):
+        if threshold is None:
+            threshold = self.thresh
+        return (y > threshold).astype(int)
