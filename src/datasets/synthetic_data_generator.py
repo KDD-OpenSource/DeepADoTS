@@ -327,7 +327,7 @@ class SyntheticDataGenerator:
         n = 1
         k = 1
         shift_config = {}
-        behavior = None
+        behavior = sine_generator
         behavior_config = {'cycle_duration': cycle_length, 'amplitude': 1.5}
         baseline_config = {}
         outlier_config = {}
@@ -339,6 +339,3 @@ class SyntheticDataGenerator:
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,
                                 train_split=train_split, random_state=random_state)
-
-
-
