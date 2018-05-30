@@ -1,3 +1,5 @@
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -32,7 +34,7 @@ class Evaluator:
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
             for det in progressbar.progressbar(self.detectors):
-                print("Training " + det.name)
+                logging.info("Training " + det.name)
                 det.fit(X_train, y_train)
                 score = det.predict(X_test)
                 self.results[(ds.name, det.name)] = score
