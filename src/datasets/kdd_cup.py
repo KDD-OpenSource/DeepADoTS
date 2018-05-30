@@ -1,14 +1,17 @@
-from .dataset import Dataset
 import numpy as np
 
+from . import RealDataset
 
-class KDDCup(Dataset):
+
+class KDDCup(RealDataset):
     def __init__(self):
-        super(KDDCup, self).__init__("KDD Cup '99", "kddcup-data_10_percent_corrected.txt", "kdd_cup.npz")
+        super().__init__(
+            name="KDD Cup '99", raw_path="kddcup-data_10_percent_corrected.txt", processed_path="kdd_cup.npz"
+        )
 
-    def data(self):
+    def load(self):
         (a, b), (c, d) = self.get_data_dagmm()
-        return a, b, c, d
+        self.data = (a, b, c, d)
 
     def get_data_dagmm(self):
         """
