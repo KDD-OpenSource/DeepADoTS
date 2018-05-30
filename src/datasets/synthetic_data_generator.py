@@ -1,6 +1,6 @@
-from agots.multivariate_generators.multivariate_data_generator import MultivariateDataGenerator
 import numpy as np
 import pandas as pd
+from agots.multivariate_generators.multivariate_data_generator import MultivariateDataGenerator
 
 from src.datasets.dataset import Dataset
 
