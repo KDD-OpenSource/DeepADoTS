@@ -75,7 +75,7 @@ class SyntheticDataGenerator:
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['extreme'][0]['timestamps']
         pollution_count = min(1, pollution_percentage*len(anomalies))
-        pollutions = [((pos - offset) * factor,) for pos in anomalies[:pollution_count]]
+        pollutions = [((pos - offset) * factor,) for (pos,) in anomalies[:pollution_count]]
         pollution_config['extreme'][0]['timestamps'] = pollutions
 
         dataset.pollution_config = pollution_config
