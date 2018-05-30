@@ -41,9 +41,9 @@ class SyntheticData(Dataset):
 
     def data(self):
         dg = MultivariateDataGenerator(self.length, self.n, self.k, shift_config={1: 25, 2: 20})
-        df = dg.generate_baseline(initial_value_min=-4, initial_value_max=4)
-        df['y'] = np.zeros(self.length)
-        baseline = df.copy()
+        x_test = dg.generate_baseline(initial_value_min=-4, initial_value_max=4)
+        x_test['y'] = np.zeros(self.length)
+        x_train = x_test.copy()
 
         for timeseries in range(self.n):
             num_outliers = 10
@@ -53,33 +53,33 @@ class SyntheticData(Dataset):
             for outlier in outlier_pos:
                 timestamps.append((outlier,))
 
-            df = dg.add_outliers(self.config)
-            df['y'] = np.where(df.index.isin(outlier_pos), 1, 0)
+            x_test = dg.add_outliers(self.config)
+            x_test['y'] = np.where(x_test.index.isin(outlier_pos), 1, 0)
 
-        y_train = baseline['y']
-        y_test = df['y']
-        del baseline['y']
-        del df['y']
+        y_train = x_train['y']
+        y_test = x_train['y']
+        del x_train['y']
+        del x_test['y']
 
-        return baseline, y_train, df, y_test
+        return x_train, y_train, x_test, y_test
 
 
 class MissingValuesDataset(SyntheticData):
 
     def __init__(self, missing_percentage: float, separate: bool=False, **kwargs):
-        super.__init__(kwargs)
+        super().__init__(**kwargs)
         self.missing_percentage = missing_percentage
         self.separate = separate
 
     def data(self):
-        baseline, y_train, df, y_test = super.data()
+        x_train, y_train, x_test, y_test = super().data()
 
         if self.separate:
-            for col in df.columns:
-                missing_idxs = np.random.choice(np.arange(self.length), self.missing_percentage*self.length)
-                df[col][missing_idxs] = np.nan
+            for col in x_train.columns:
+                missing_idxs = np.random.choice(self.length, int(self.missing_percentage*self.length), replace=False)
+                x_train[col][missing_idxs] = np.nan
         else:
-            missing_idxs = np.random.choice(np.arange(self.length), self.missing_percentage*self.length)
-            df.iloc[missing_idxs] = [np.nan] * self.n
+            missing_idxs = np.random.choice(self.length, int(self.missing_percentage*self.length), replace=False)
+            x_train.iloc[missing_idxs] = [np.nan] * self.n
 
-        return baseline, y_train, df, y_test
+        return x_train, y_train, x_test, y_test
