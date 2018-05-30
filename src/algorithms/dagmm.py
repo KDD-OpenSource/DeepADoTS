@@ -162,37 +162,21 @@ class DAGMM_Module(nn.Module):
 
         return sample_energy, cov_diag
 
-    def loss_function(self, x, x_hat, z, gamma, lambda_energy, lambda_cov_diag):
-
-        recon_error = torch.mean((x - x_hat) ** 2)
-
-        phi, mu, cov = self.compute_gmm_params(z, gamma)
-
-        sample_energy, cov_diag = self.compute_energy(z, phi, mu, cov)
-
-        loss = recon_error + lambda_energy * sample_energy + lambda_cov_diag * cov_diag
-
-        return loss, sample_energy, recon_error, cov_diag
-
 
 class DAGMM(Algorithm):
-
     def __init__(self, lr=1e-4, batch_size=1024, gmm_k=4, normal_percentile=80):
         self.name = "DAGMM"
         self.lr = lr
         self.batch_size = batch_size
         self.gmm_k = gmm_k  # Number of Gaussian mixtures
         self.normal_percentile = normal_percentile  # Up to which percentile data should be considers normal
-        self.dagmm, self.optimizer, self.train_phi, self.train_mu, self.train_cov, self.train_energy = \
-            None, None, None, None, None, None
-
-    def _reset_grad(self):
-        self.dagmm.zero_grad()
+        self.dagmm, self.optimizer, self.train_phi, self.train_mu, self.train_cov, self.train_energy, \
+            self.threshold = None, None, None, None, None, None, None
 
     def fit(self, X, _):
         """Learn the mixture probability, mean and covariance for each component k.
         Store the computed energy based on the training data and the aforementioned parameters."""
-        data_loader = DataLoader(dataset=CustomDataLoader(X), batch_size=self.batch_size, shuffle=True)
+        data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=True)
 
         self.dagmm = DAGMM_Module(n_features=X.shape[1], n_gmm=self.gmm_k)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
@@ -236,7 +220,7 @@ class DAGMM(Algorithm):
 
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
-        given data and label an anomaly if it is outside of the `self.normal_percentile` percentile."""
+        given data."""
         data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
 
         test_energy = []
@@ -250,5 +234,13 @@ class DAGMM(Algorithm):
         test_energy = np.concatenate(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
-        thresh = np.percentile(combined_energy, self.normal_percentile)
-        return (test_energy > thresh).astype(int), test_energy, thresh
+        self.threshold = np.percentile(combined_energy, self.normal_percentile)
+        return test_energy
+
+    def get_threshold(self, score):
+        return self.threshold
+
+    def binarize(self, y, threshold=None):
+        if threshold is None:
+            threshold = self.threshold
+        return np.where(y > threshold, 1, 0)

@@ -140,8 +140,10 @@ class Donut(Algorithm):
     is smaller than mean - std of the reconstruction probabilities for that feature. For each point
     in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
 
-    def __init__(self):
+    def __init__(self, max_epoch=256):
         super(Donut).__init__()
+        self.name = "Donut"
+        self.max_epoch = max_epoch
         self.x_dims = 120
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
@@ -173,7 +175,7 @@ class Donut(Algorithm):
                     z_dims=5,
                 )
 
-            trainer = QuietDonutTrainer(model=model, model_vs=model_vs)
+            trainer = QuietDonutTrainer(model=model, model_vs=model_vs, max_epoch=self.max_epoch)
             with tf_session.as_default():
                 trainer.fit(features, labels, missing, mean, std)
             self.means.append(mean)
@@ -182,9 +184,9 @@ class Donut(Algorithm):
             self.models.append(model)
 
     def predict(self, X: pd.DataFrame):
+        """Since we predict the anomaly scores for each feature independently, we already return a binarized one-
+        dimensional anomaly score array."""
         test_scores = np.zeros_like(X)
-        prediction_mask = np.zeros(X.shape[0], dtype=bool)
-        prediction_mask[self.x_dims - 1:] = 1  # The first x_dims-1 values can not be predicted
         for col_idx, col in enumerate(X.columns):
             mean, std, tf_session, model = \
                 self.means[col_idx], self.stds[col_idx], self.tf_sessions[col_idx], self.models[col_idx]
@@ -195,12 +197,14 @@ class Donut(Algorithm):
                 test_score = predictor.get_score(test_values, test_missing)
             tf_session.close()
             test_score = np.power(np.e, test_score)  # Convert to reconstruction probability
-            test_score = Donut.binarize(test_score)  # Binarize so 1 is an anomaly
+            threshold = np.mean(test_score) - np.std(test_score)
+            test_score = np.where(test_score <= threshold, 1, 0)  # Binarize so 1 is an anomaly
             test_scores[self.x_dims - 1:, col_idx] = test_score
         aggregated_test_scores = np.amax(test_scores, axis=1)
-        return aggregated_test_scores, prediction_mask
+        return aggregated_test_scores
 
-    @staticmethod
-    def binarize(y_pred, threshold=None):
-        threshold = np.mean(y_pred) - np.std(y_pred)
-        return np.where(y_pred <= threshold, 1, 0)
+    def binarize(self, score, threshold=None):
+        return score
+
+    def get_threshold(self, score):
+        return 0

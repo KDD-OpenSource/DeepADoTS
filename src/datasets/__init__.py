@@ -1,11 +1,9 @@
-from .dataset import Dataset
-from .real_dataset import RealDataset
-from .synthetic_dataset import SyntheticDataset
-
 from .air_quality import AirQuality
+from .dataset import Dataset
 from .kdd_cup import KDDCup
+from .real_dataset import RealDataset
 from .synthetic_data_generator import SyntheticDataGenerator
-
+from .synthetic_dataset import SyntheticDataset
 
 __all__ = [
     'Dataset',
