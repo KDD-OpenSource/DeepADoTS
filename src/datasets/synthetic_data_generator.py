@@ -1,4 +1,4 @@
-from . import SyntheticDataset
+from .synthetic_dataset import SyntheticDataset
 
 
 class SyntheticDataGenerator:
@@ -42,7 +42,7 @@ class SyntheticDataGenerator:
         pollution_config = {}
         random_state = 42
 
-        return SyntheticDataset(name="no_config", processed_path="empty_path", length=length, n=n, k=k,
+        return SyntheticDataset(name="no_config", file_name="empty_path", length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,

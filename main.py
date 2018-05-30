@@ -9,7 +9,7 @@ from src.algorithms.dagmm import DAGMM
 from src.algorithms.donut import Donut
 from src.datasets.air_quality import AirQuality
 from src.datasets.kdd_cup import KDDCup
-from src.datasets.synthetic_data_generator import SyntheticData
+from src.datasets.synthetic_data_generator import SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
 
 
@@ -36,7 +36,7 @@ def evaluate_on_real_world_data_sets():
 
 
 def main():
-    datasets = [SyntheticData("Synthetic Extreme Outliers", ".")]
+    datasets = [SyntheticDataGenerator.extreme_1()]
     if os.environ.get("CIRCLECI", False):
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=15), Donut(max_epoch=5), DAGMM()]
     else:
