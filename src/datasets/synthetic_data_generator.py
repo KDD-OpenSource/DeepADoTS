@@ -1,8 +1,4 @@
-import numpy as np
-import pandas as pd
-from agots.multivariate_generators.multivariate_data_generator import MultivariateDataGenerator
-
-from src.datasets.dataset import Dataset
+from . import SyntheticDataset
 
 
 class SyntheticDataGenerator:
@@ -16,7 +12,7 @@ class SyntheticDataGenerator:
         random_state = 1337
         outlier_config = {
         }
-        return SyntheticData(name, path, length, n, k, outlier_config, random_state)
+        return SyntheticDataset(name, path, length, n, k, outlier_config, random_state)
 
     @staticmethod
     def get_schwifty():
