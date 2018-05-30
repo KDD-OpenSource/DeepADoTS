@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+import os
 from src.algorithms import LSTMAD
 from src.algorithms import RecurrentEBM
 from src.algorithms.dagmm import DAGMM
@@ -35,7 +35,10 @@ def evaluate_on_real_world_data_sets():
 
 def main():
     datasets = [SyntheticData("Synthetic Extreme Outliers", ".")]
-    detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
+    if os.environ.get("CIRCLECI", False):
+        detectors = [RecurrentEBM(num_epochs=15), DAGMM()]
+    else:
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()
