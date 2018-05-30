@@ -79,7 +79,7 @@ class Evaluator:
 
             subplot_num = 3
             for det in self.detectors:
-                sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 1 + subplot_num)
+                sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, subplot_num)
                 sp.set_title("scores of " + det.name, loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
                 if isinstance(score, tuple):
