@@ -2,7 +2,7 @@
 # import numpy as np
 # from src.algorithms.donut import Donut
 # from src.datasets.air_quality import AirQuality
-from src.datasets.synthetic_data_generator import SyntheticData
+from src.datasets import SyntheticDataGenerator
 from src.algorithms import RecurrentEBM
 from src.algorithms import LSTMAD
 from src.evaluation.evaluator import Evaluator
@@ -29,7 +29,7 @@ def main():
     # pred = donut.predict(X_test)
     # print(pred)
 
-    datasets = [SyntheticData("Synthetic Extreme Outliers", ".")]
+    datasets = [SyntheticDataGenerator.extreme_1()]
     detectors = [RecurrentEBM(num_epochs=15), LSTMAD()]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
