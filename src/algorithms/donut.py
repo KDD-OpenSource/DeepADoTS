@@ -184,9 +184,9 @@ class Donut(Algorithm):
             self.models.append(model)
 
     def predict(self, X: pd.DataFrame):
+        """Since we predict the anomaly scores for each feature independently, we already return a binarized one-
+        dimensional anomaly score array."""
         test_scores = np.zeros_like(X)
-        prediction_mask = np.zeros(X.shape[0], dtype=bool)
-        prediction_mask[self.x_dims - 1:] = 1  # The first x_dims-1 values can not be predicted
         for col_idx, col in enumerate(X.columns):
             mean, std, tf_session, model = \
                 self.means[col_idx], self.stds[col_idx], self.tf_sessions[col_idx], self.models[col_idx]
@@ -201,12 +201,10 @@ class Donut(Algorithm):
             test_score = np.where(test_score <= threshold, 1, 0)  # Binarize so 1 is an anomaly
             test_scores[self.x_dims - 1:, col_idx] = test_score
         aggregated_test_scores = np.amax(test_scores, axis=1)
-        return aggregated_test_scores, prediction_mask
+        return aggregated_test_scores
+
+    def binarize(self, score, threshold=None):
+        return score
 
     def get_threshold(self, score):
         return 0
-
-    @staticmethod
-    def binarize(y_pred, threshold=None):
-        """The predicted values are already binary so do nothing."""
-        return y_pred

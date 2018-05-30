@@ -44,17 +44,9 @@ class Evaluator:
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
             for det in self.detectors:
-                y_test_copy = y_test.copy()
                 score = self.results[(ds.name, det.name)]
-                if isinstance(score, tuple):
-                    # Check if the second element is a prediction mask. If so, apply it to y_test as well
-                    if type(score[1]) is np.ndarray and score[1].dtype == 'bool':
-                        prediction_mask = score[1]
-                        y_pred = det.binarize(score[0][prediction_mask])
-                        y_test_copy = y_test[prediction_mask]
-                else:
-                    y_pred = det.binarize(score)
-                acc, prec, rec, f_score, fpr = self.get_accuracy_precision_recall_fscore(y_test_copy, y_pred)
+                y_pred = det.binarize(score)
+                acc, prec, rec, f_score, fpr = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
                 df = df.append({"dataset": ds.name,
                                 "approach": det.name,
                                 "accuracy": acc,
@@ -83,12 +75,6 @@ class Evaluator:
                 sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, subplot_num)
                 sp.set_title("scores of " + det.name, loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
-                if isinstance(score, tuple):
-                    # Check if the second element is a prediction mask. If so, apply it to y_test as well
-                    if type(score[1]) is np.ndarray and score[1].dtype == 'bool':
-                        prediction_mask = score[1]
-                        score = det.binarize(score[0][prediction_mask])
-
                 plt.plot(np.arange(len(score)), [x for x in score])
                 threshold_line = len(score) * [det.get_threshold(score)]
                 plt.plot([x for x in threshold_line])
