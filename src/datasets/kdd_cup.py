@@ -11,7 +11,7 @@ class KDDCup(RealDataset):
 
     def load(self):
         (a, b), (c, d) = self.get_data_dagmm()
-        self.data = (a, b, c, d)
+        self._data = (a, b, c, d)
 
     def get_data_dagmm(self):
         """

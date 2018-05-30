@@ -32,4 +32,4 @@ class AirQuality(RealDataset):
     def load(self):
         raw = pd.read_csv(self.raw_path, sep=';', decimal=',')
         # ToDo: wrong type
-        self.data = raw.dropna(how='all')
+        self._data = raw.dropna(how='all')
