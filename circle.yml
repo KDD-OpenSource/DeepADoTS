@@ -33,6 +33,7 @@ jobs:
           command: |
             . venv/bin/activate
             flake8 --exclude=third_party,venv
+            python main.py
       - store_artifacts:
           path: test-reports
           destination: test-reports
