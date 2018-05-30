@@ -31,6 +31,7 @@ class SyntheticDataGenerator:
     def extreme_1():
         # train begins at 2100
         length = 3000
+        train_split = 0.7
         n = 1
         k = 1
         shift_config = {}
@@ -46,7 +47,7 @@ class SyntheticDataGenerator:
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,
-                                random_state=random_state)
+                                train_split=train_split, random_state=random_state)
 
     @staticmethod
     def shift_1():
