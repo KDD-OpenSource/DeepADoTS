@@ -3,7 +3,7 @@ import pickle
 import pandas as pd
 import numpy as np
 
-from src.datasets import AirQuality, SyntheticData, KDD_Cup
+from src.datasets import AirQuality, SyntheticData, KDDCup
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTM_Enc_Dec, LSTMAD
 from src.evaluation.evaluator import Evaluator
 
@@ -42,7 +42,7 @@ def execute_donut():
 
 def execute_dagmm():
     dagmm = DAGMM()
-    kdd_cup = KDD_Cup()
+    kdd_cup = KDDCup()
     (X_train, y_train), (X_test, y_test) = kdd_cup.get_data_dagmm()
     dagmm.fit(X_train, y_train)
     pred = dagmm.predict(X_test)
