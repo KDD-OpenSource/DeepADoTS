@@ -63,23 +63,12 @@ class SyntheticData(Dataset):
 
         return x_train, y_train, x_test, y_test
 
-
-class MissingValuesDataset(SyntheticData):
-
-    def __init__(self, missing_percentage: float, separate: bool=False, **kwargs):
-        super().__init__(**kwargs)
-        self.missing_percentage = missing_percentage
-        self.separate = separate
-
-    def data(self):
-        x_train, y_train, x_test, y_test = super().data()
-
-        if self.separate:
+    def add_missing_values(x_train: pd.DataFrame, missing_percentage: float, per_column: bool=True):
+        if per_column:
             for col in x_train.columns:
-                missing_idxs = np.random.choice(self.length, int(self.missing_percentage*self.length), replace=False)
+                missing_idxs = np.random.choice(len(x_train), int(self.missing_percentage*len(x_train)), replace=False)
                 x_train[col][missing_idxs] = np.nan
         else:
-            missing_idxs = np.random.choice(self.length, int(self.missing_percentage*self.length), replace=False)
-            x_train.iloc[missing_idxs] = [np.nan] * self.n
-
-        return x_train, y_train, x_test, y_test
+            missing_idxs = np.random.choice(len(x_train), int(self.missing_percentage*len(x_train)), replace=False)
+            x_train.iloc[missing_idxs] = [np.nan] * x_train.shape[-1]
+        return x_train
