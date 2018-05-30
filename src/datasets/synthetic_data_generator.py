@@ -1,5 +1,3 @@
-from agots.generators.behavior_generators import sine_generator
-
 from . import SyntheticDataset
 
 
@@ -81,7 +79,6 @@ class SyntheticDataGenerator:
     @staticmethod
     def combined_polluted_1():
         pass
-
 
     @staticmethod
     def behavior_extreme_1():
