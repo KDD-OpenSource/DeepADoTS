@@ -22,7 +22,7 @@ def evaluate_on_real_world_data_sets():
     print(Evaluator.get_accuracy_precision_recall_fscore(y_test, pred))
 
     donut = Donut()
-    air_quality = AirQuality().get_data()
+    air_quality = AirQuality().data()
     X = air_quality.loc[:, [air_quality.columns[2], "timestamps"]]
     X["timestamps"] = X.index
     split_ratio = 0.8
@@ -36,7 +36,22 @@ def evaluate_on_real_world_data_sets():
 
 
 def main():
-    datasets = [SyntheticDataGenerator.extreme_1()]
+    datasets = [
+        SyntheticDataGenerator.extreme_1(),
+        SyntheticDataGenerator.variance_1(),
+        SyntheticDataGenerator.shift_1(),
+        SyntheticDataGenerator.trend_1(),
+        SyntheticDataGenerator.combined_1(),
+        SyntheticDataGenerator.combined_4(),
+        SyntheticDataGenerator.variance_1_missing(0.1),
+        SyntheticDataGenerator.variance_1_missing(0.3),
+        SyntheticDataGenerator.variance_1_missing(0.5),
+        SyntheticDataGenerator.variance_1_missing(0.8),
+        SyntheticDataGenerator.extreme_1_polluted(0.1),
+        SyntheticDataGenerator.extreme_1_polluted(0.3),
+        SyntheticDataGenerator.extreme_1_polluted(0.5),
+        SyntheticDataGenerator.extreme_1_polluted(1)
+    ]
     if os.environ.get("CIRCLECI", False):
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=15), Donut(max_epoch=5), DAGMM()]
     else:

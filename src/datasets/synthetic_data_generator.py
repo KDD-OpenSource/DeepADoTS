@@ -2,7 +2,7 @@ from copy import deepcopy
 
 from agots.generators.behavior_generators import sine_generator
 
-from . import SyntheticDataset
+from .synthetic_dataset import SyntheticDataset
 
 
 class SyntheticDataGenerator:
@@ -276,10 +276,10 @@ class SyntheticDataGenerator:
     @staticmethod
     def combined_4():
         # train begins at 2100
-        length = 10000
+        length = 3000
         train_split = 0.7
         n = 4
-        k = 2
+        k = 1
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -328,7 +328,7 @@ class SyntheticDataGenerator:
         k = 1
         shift_config = {}
         behavior = sine_generator
-        behavior_config = {'cycle_duration': cycle_length, 'amplitude': 1.5}
+        behavior_config = {'cycle_duration': cycle_length, 'amplitude': 0.1}
         baseline_config = {}
         outlier_config = {}
         pollution_config = {}
