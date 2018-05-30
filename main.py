@@ -1,6 +1,8 @@
+import os
+
 import numpy as np
 import pandas as pd
-import os
+
 from src.algorithms import LSTMAD
 from src.algorithms import RecurrentEBM
 from src.algorithms.dagmm import DAGMM
@@ -8,7 +10,11 @@ from src.algorithms.donut import Donut
 from src.datasets.air_quality import AirQuality
 from src.datasets.kdd_cup import KDDCup
 from src.datasets.synthetic_data_generator import SyntheticData
-from src.evaluation.evaluator import Evaluator
+
+if os.environ.get("CIRCLECI", False):
+    os.environ["MPLBACKEND"] = "agg"
+
+from src.evaluation.evaluator import Evaluator  # noqa E402
 
 
 def evaluate_on_real_world_data_sets():
@@ -36,9 +42,7 @@ def evaluate_on_real_world_data_sets():
 def main():
     datasets = [SyntheticData("Synthetic Extreme Outliers", ".")]
     if os.environ.get("CIRCLECI", False):
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM()]
-        import matplotlib
-        matplotlib.use('Agg')
+        detectors = [RecurrentEBM(num_epochs=15), Donut(max_epoch=5), DAGMM()]
     else:
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
     evaluator = Evaluator(datasets, detectors)
