@@ -1,4 +1,4 @@
-from . import SyntheticDataset
+from .synthetic_dataset import SyntheticDataset
 
 
 class SyntheticDataGenerator:
