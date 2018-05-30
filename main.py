@@ -37,7 +37,8 @@ def main():
     datasets = [SyntheticData("Synthetic Extreme Outliers", ".")]
     if os.environ.get("CIRCLECI", False):
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM()]
-        os.environ["DISPLAY"] = ":0.0"
+        import matplotlib
+        matplotlib.use('Agg')
     else:
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
     evaluator = Evaluator(datasets, detectors)
