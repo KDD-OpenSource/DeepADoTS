@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import progressbar
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
 from sklearn.metrics import roc_curve, auc
 
@@ -21,8 +21,8 @@ class Evaluator:
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
         accuracy = accuracy_score(y_true, y_pred)
         precision, recall, f_score, support = prf(y_true, y_pred, average='binary')
-        fpr, _, _ = roc_curve(y_true, y_pred, pos_label=1)
-        return accuracy, precision, recall, f_score, fpr
+        f01_score = fbeta_score(y_true, y_pred, average='binary', beta=0.1)
+        return accuracy, precision, recall, f_score, f01_score
 
     def evaluate(self):
         for ds in progressbar.progressbar(self.datasets):
@@ -44,14 +44,14 @@ class Evaluator:
             for det in self.detectors:
                 score = self.results[(ds.name, det.name)]
                 y_pred = det.binarize(score)
-                acc, prec, rec, f_score, fpr = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
+                acc, prec, rec, f1_score, f01_score = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
                 df = df.append({"dataset": ds.name,
-                                "approach": det.name,
+                                "algorithm": det.name,
                                 "accuracy": acc,
                                 "precision": prec,
                                 "recall": rec,
-                                "F1-score": f_score,
-                                "fpr": fpr[0]},
+                                "F1-score": f1_score,
+                                "F0.1-score": f01_score},
                                ignore_index=True)
         return df
 
