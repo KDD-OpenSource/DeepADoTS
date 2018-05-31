@@ -65,6 +65,7 @@ def main():
         print("Dataset: " + ds)
         print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
         print(tabulate(df[df['dataset'] == ds][print_order], headers='keys', tablefmt='psql'))
+        df[df['dataset'] == ds].to_csv(f'{ds}.csv')
     evaluator.plot_scores()
 
 
