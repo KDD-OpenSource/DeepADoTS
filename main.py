@@ -2,40 +2,15 @@ import os
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from tabulate import tabulate
 
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD
 from src.evaluation.evaluator import Evaluator
 
-
-def evaluate_on_real_world_data_sets():
-    dagmm = DAGMM()
-    kdd_cup = KDDCup()
-    X_train, y_train, X_test, y_test = kdd_cup.data()
-    dagmm.fit(X_train, y_train)
-    pred = dagmm.predict(X_test)
-    print(Evaluator.get_accuracy_precision_recall_fscore(y_test, pred))
-
-    donut = Donut()
-    air_quality = AirQuality().data()
-    X = air_quality.loc[:, [air_quality.columns[2], "timestamps"]]
-    X["timestamps"] = X.index
-    split_ratio = 0.8
-    split_point = int(split_ratio * len(X))
-    X_train = X[:split_point]
-    X_test = X[split_point:]
-    y_train = pd.Series(0, index=np.arange(len(X_train)))
-    donut.fit(X_train, y_train)
-    pred = donut.predict(X_test)
-    print("Donut results: ", pred)
-
-
 def main():
-    if os.environ.get("CIRCLECI", False):
+    if os.environ.get("CIRCLECI", True):
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [RecurrentEBM(num_epochs=15)]
+        detectors = [RecurrentEBM(num_epochs=1), LSTMAD(num_epochs=1), Donut(), DAGMM()]
     else:
         datasets = [
             SyntheticDataGenerator.extreme_1(),
@@ -58,15 +33,32 @@ def main():
     evaluator.evaluate()
     df = evaluator.benchmarks()
 
-    for ds in df['dataset']:
-        print("Dataset: " + ds)
-        print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-        print(tabulate(df[df['dataset'] == ds][print_order], headers='keys', tablefmt='psql'))
-
+    evaluator.print_tables()
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
-    evaluator.plot_scores()
+
+
+def evaluate_on_real_world_data_sets():
+    dagmm = DAGMM()
+    kdd_cup = KDDCup()
+    X_train, y_train, X_test, y_test = kdd_cup.data()
+    dagmm.fit(X_train, y_train)
+    pred = dagmm.predict(X_test)
+    print(Evaluator.get_accuracy_precision_recall_fscore(y_test, pred))
+
+    donut = Donut()
+    air_quality = AirQuality().data()
+    X = air_quality.loc[:, [air_quality.columns[2], "timestamps"]]
+    X["timestamps"] = X.index
+    split_ratio = 0.8
+    split_point = int(split_ratio * len(X))
+    X_train = X[:split_point]
+    X_test = X[split_point:]
+    y_train = pd.Series(0, index=np.arange(len(X_train)))
+    donut.fit(X_train, y_train)
+    pred = donut.predict(X_test)
+    print("Donut results: ", pred)
 
 
 if __name__ == '__main__':

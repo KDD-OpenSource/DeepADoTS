@@ -5,6 +5,7 @@ import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from tabulate import tabulate
 import progressbar
 from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
@@ -28,13 +29,13 @@ class Evaluator:
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
             for det in progressbar.progressbar(self.detectors):
-                logging.info("Training " + det.name + " on " + str(ds))
+                print("Training " + det.name + " on " + str(ds))
                 try:
                     det.fit(X_train, y_train)
                     score = det.predict(X_test)
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
-                    logging.info("While training " + det.name + " on " + str(ds) + " an exception occured:" + str(e))
+                    print(f"ERROR: An error occured while training {det.name} on {ds}: {e}")
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
     def benchmarks(self) -> pd.DataFrame:
@@ -55,7 +56,23 @@ class Evaluator:
                                ignore_index=True)
         return df
 
-    def plot_scores(self):
+    def store(self, fig, title, extension="pdf"):
+        # ToDo: Add more information (algorithms, datasets) in title
+        timestamp = int(time.time())
+        dir = "reports/figures/"
+        path = os.path.join(dir, f"{title}-{timestamp}.{extension}")
+        fig.savefig(path)
+        logging.info(f"Stored plot at {path}")
+
+    @staticmethod
+    def get_metrics_by_thresholds(det, y_true: list, y_pred: list, thresholds: list):
+        for threshold in thresholds:
+            anomaly = det.binarize(y_pred, threshold=threshold)
+            metrics = Evaluator.get_accuracy_precision_recall_fscore(y_true, anomaly)
+            yield (anomaly.sum(), *metrics)
+
+    def plot_scores(self, store=True):
+        figures = []
         for ds in self.datasets:
             _, _, X_test, y_test = ds.data()
             subtitle_loc = 'left'
@@ -71,7 +88,7 @@ class Evaluator:
             subplot_num = 3
             for det in self.detectors:
                 sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, subplot_num)
-                sp.set_title("scores of " + det.name, loc=subtitle_loc)
+                sp.set_title(f"scores of {det.name}", loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
                 plt.plot(np.arange(len(score)), [x for x in score])
                 threshold_line = len(score) * [det.get_threshold(score)]
@@ -79,27 +96,15 @@ class Evaluator:
                 subplot_num += 1
 
                 sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, subplot_num)
-                sp.set_title("binary labels of " + det.name, loc=subtitle_loc)
+                sp.set_title(f"binary labels of {det.name}", loc=subtitle_loc)
                 plt.plot(np.arange(len(score)), [x for x in det.binarize(score)])
                 subplot_num += 1
-        plt.legend()
-        plt.tight_layout()
-        return fig
-
-    def store(self, fig, title, extension="pdf"):
-        # ToDo: Add more information (algorithms, datasets) in title
-        timestamp = int(time.time())
-        dir = "reports/figures/"
-        path = os.path.join(dir, f"{title}-{timestamp}.{extension}")
-        fig.savefig(path)
-        logging.info(f"Stored plot at {path}")
-
-    @staticmethod
-    def get_metrics_by_thresholds(det, y_true: list, y_pred: list, thresholds: list):
-        for threshold in thresholds:
-            anomaly = det.binarize(y_pred, threshold=threshold)
-            metrics = Evaluator.get_accuracy_precision_recall_fscore(y_true, anomaly)
-            yield (anomaly.sum(), *metrics)
+            fig.subplots_adjust(top=0.9, hspace=0.4)
+            fig.tight_layout()
+            if store:
+                self.store(fig, f"scores_{ds.name}")
+            figures.append(fig)
+        return figures
 
     def plot_threshold_comparison(self, steps=40, store=True):
         plots_shape = len(self.detectors), len(self.datasets)
@@ -135,17 +140,18 @@ class Evaluator:
 
         fig.tight_layout()
         # Avoid overlapping title and axis labels
-        fig.subplots_adjust(top=0.85, hspace=0.4)
+        fig.subplots_adjust(top=0.9, hspace=0.4)
         if store:
             self.store(fig, "metrics_by_thresholds")
         return fig
 
-    def plot_roc_curves(self):
+    def plot_roc_curves(self, store=True):
+        figures = []
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
             fig_scale = 3
             fig = plt.figure(figsize=(fig_scale*len(self.detectors), fig_scale))
-            fig.suptitle(ds.name, fontsize=14, y="1.1")
+            fig.suptitle(f"ROC curve on {ds.name}", fontsize=14, y="1.1")
             subplot_count = 1
             for det in self.detectors:
                 print(f"Plotting {det.name} on {ds.name}")
@@ -166,4 +172,15 @@ class Evaluator:
                 plt.title(det.name)
                 plt.legend(loc="lower right")
             plt.tight_layout()
-            return fig
+            if store:
+                self.store(fig, f"roc_{ds.name}")
+            figures.append(fig)
+        return figures
+
+    def print_tables(self):
+        benchmarks = self.benchmarks()
+        for ds in self.datasets:
+            print(f"Dataset: {ds.name}")
+            print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
+            print(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+                  headers='keys', tablefmt='psql'))
