@@ -156,7 +156,7 @@ class SyntheticDataGenerator:
         pollution_config = {}
         random_state = 42
 
-        return SyntheticDataset(name="Synthetic Shift Outliers", file_name="variance1.pkl", length=length, n=n, k=k,
+        return SyntheticDataset(name="Synthetic Variance Outliers", file_name="variance1.pkl", length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,
@@ -204,7 +204,7 @@ class SyntheticDataGenerator:
         pollution_config = {}
         random_state = 42
 
-        return SyntheticDataset(name="Synthetic Shift Outliers", file_name="trend1.pkl", length=length, n=n, k=k,
+        return SyntheticDataset(name="Synthetic Trend Outliers", file_name="trend1.pkl", length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,
