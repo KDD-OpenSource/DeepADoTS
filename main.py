@@ -3,7 +3,7 @@ import pickle
 import pandas as pd
 import numpy as np
 
-from src.datasets import AirQuality, SyntheticData, KDDCup
+from src.datasets import AirQuality, SyntheticDataset, KDDCup
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD
 from src.evaluation.evaluator import Evaluator
 
@@ -11,17 +11,18 @@ from src.evaluation.evaluator import Evaluator
 def main():
     # execute_dagmm()
     # execute_donut()
-    # execute_pipeline()
+    execute_pipeline()
 
 
 def execute_pipeline():
-    datasets = [SyntheticData("Synthetic Extreme Outliers", ".")]
+    datasets = [SyntheticDataset(name="Synthetic Extreme Outliers", file_name="synthetic"), SyntheticDataset(name="Synthetic Extreme Outliers 2", file_name="synthetic2")]
     detectors = [RecurrentEBM(num_epochs=15), LSTMAD()]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()
     print('Evaluated benchmarks: ', df)
-    evaluator.plot_scores()
+    evaluator.plot_threshold_comparison()
+    # evaluator.plot_scores()
 
 
 def execute_donut():

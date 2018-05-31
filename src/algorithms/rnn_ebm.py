@@ -151,7 +151,7 @@ class RecurrentEBM(Algorithm):
     def delete(self):
         self.tf_session.close()
 
-    def get_binary_label(self, score):
+    def binarize(self, score):
         threshold = self.get_threshold(score)
         score = np.where(np.isnan(score), threshold - 1, score)
         return np.where(score >= threshold, 1, 0)

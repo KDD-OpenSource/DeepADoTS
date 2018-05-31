@@ -117,7 +117,7 @@ class LSTMAD(Algorithm):
         loss_train.backward()
         return loss_train
 
-    def get_binary_label(self, score):
+    def binarize(self, score):
         threshold = self.get_threshold(score)
         score = np.where(np.isnan(score), threshold - 1, score)
         return np.where(score >= threshold, 1, 0)
