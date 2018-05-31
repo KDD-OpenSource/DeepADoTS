@@ -16,7 +16,7 @@ def main():
 
 
 def execute_pipeline():
-    datasets = [SyntheticData("Synthetic Extreme Outliers", ".")]
+    datasets = [SyntheticDataGenerator.extreme_1()]
     detectors = [RecurrentEBM(num_epochs=15), LSTMAD()]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()

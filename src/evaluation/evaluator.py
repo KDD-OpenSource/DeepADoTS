@@ -22,7 +22,7 @@ class Evaluator:
         self.results = dict()
 
     @staticmethod
-    def get_accuracy_precision_recall_fscore(y_true, y_pred):
+    def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
         accuracy = accuracy_score(y_true, y_pred)
         precision, recall, f_score, support = prf(y_true, y_pred, average='binary')
         fpr, _, _ = roc_curve(y_true, y_pred, pos_label=1)
@@ -43,9 +43,8 @@ class Evaluator:
             for det in self.detectors:
                 score = self.results[(ds.name, det.name)]
                 acc, prec, rec, f_score, fpr = self.get_accuracy_precision_recall_fscore(y_test,
-                                                                                         det.get_binary_label(score))
-                df = df.append({"dataset":
-                                ds.name,
+                                                                                         det.binarize(score))
+                df = df.append({"dataset": ds.name,
                                 "approach": det.name,
                                 "accuracy": acc,
                                 "precision": prec,
@@ -53,7 +52,6 @@ class Evaluator:
                                 "F1-score": f_score,
                                 "fpr": fpr[0]},
                                ignore_index=True)
-        self.benchmark_df = df
         return df
 
     def plot_scores(self):
@@ -81,7 +79,7 @@ class Evaluator:
 
                 sp = fig.add_subplot((2*len(self.detectors)+2) * 100 + 10 + subplot_num)
                 sp.set_title("binary labels of " + det.name, loc=subtitle_loc)
-                plt.plot(np.arange(len(X_test)), [x for x in det.get_binary_label(y_pred)])
+                plt.plot(np.arange(len(X_test)), [x for x in det.binarize(y_pred)])
                 subplot_num += 1
         plt.legend()
         plt.tight_layout()
@@ -90,8 +88,10 @@ class Evaluator:
 
     def plot_roc_curves(self):
         # Plot of a ROC curve for all classes
+
+        benchmark_df = self.benchmarks()
         for ds in self.datasets:
-            res = self.benchmark_df[self.benchmark_df["dataset"] == ds.name]
+            res = benchmark_df[benchmark_df["dataset"] == ds.name]
             plt.figure()
             len_subplot = len(res)
             subplot_count = 1
