@@ -98,9 +98,10 @@ class Evaluator:
     def get_metrics_by_thresholds(det, y_true: list, y_pred: list, thresholds: list):
         for threshold in thresholds:
             anomaly = det.binarize(y_pred, threshold=threshold)
-            yield anomaly.sum(), Evaluator.get_accuracy_precision_recall_fscore(y_true, anomaly)
+            metrics = Evaluator.get_accuracy_precision_recall_fscore(y_true, anomaly)
+            yield (anomaly.sum(), *metrics)
 
-    def plot_threshold_comparison(self, steps=40):
+    def plot_threshold_comparison(self, steps=40, store=True):
         plots_shape = len(self.detectors), len(self.datasets)
         fig, axes = plt.subplots(*plots_shape, figsize=(15, 15))
         # Ensure two dimensions for iteration
@@ -117,23 +118,26 @@ class Evaluator:
 
                 maximum = y_pred.max()
                 th = np.linspace(0, maximum, steps)
-                metrics = np.array(list(self.get_metrics_by_thresholds(det, y_test, y_pred, th))).T
-                anomalies, acc, prec, rec, f_score = metrics
+                metrics = list(self.get_metrics_by_thresholds(det, y_test, y_pred, th))
+                metrics = np.array(metrics).T
+                anomalies, acc, prec, rec, f_score, f01_score = metrics
 
                 ax.plot(th, anomalies / len(y_test),
-                        label=r"anomalies ({} $\rightarrow$ 1)".format(y_test.shape[0]))
+                        label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
                 ax.plot(th, acc, label="accuracy")
                 ax.plot(th, prec, label="precision")
                 ax.plot(th, rec, label="recall")
                 ax.plot(th, f_score, label="f_score")
-                ax.set_title("{det.name} on {ds.name}")
+                ax.plot(th, f01_score, label="f01_score")
+                ax.set_title(f"{det.name} on {ds.name}")
                 ax.set_xlabel("Threshold")
                 ax.legend()
 
         fig.tight_layout()
         # Avoid overlapping title and axis labels
         fig.subplots_adjust(top=0.85, hspace=0.4)
-        self.store(fig, "metrics_by_thresholds")
+        if store:
+            self.store(fig, "metrics_by_thresholds")
         return fig
 
     def plot_roc_curves(self):

@@ -35,7 +35,7 @@ def evaluate_on_real_world_data_sets():
 def main():
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=15), Donut(max_epoch=5), DAGMM()]
+        detectors = [RecurrentEBM(num_epochs=15)]
     else:
         datasets = [
             SyntheticDataGenerator.extreme_1(),
@@ -63,9 +63,9 @@ def main():
         print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
         print(tabulate(df[df['dataset'] == ds][print_order], headers='keys', tablefmt='psql'))
 
-    plt.show(evaluator.plot_threshold_comparison())
-    plt.show(evaluator.plot_scores())
-    plt.show(evaluator.plot_roc_curves())
+    evaluator.plot_threshold_comparison()
+    evaluator.plot_scores()
+    evaluator.plot_roc_curves()
     evaluator.plot_scores()
 
 
