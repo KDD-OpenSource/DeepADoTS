@@ -70,7 +70,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.extreme_1()
 
         offset = int(dataset.train_split * dataset.length)
-        factor = (1 - dataset.train_split) / dataset.train_split
+        factor = dataset.train_split / (1 - dataset.train_split)
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['extreme'][0]['timestamps']
@@ -127,7 +127,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.shift_1()
 
         offset = int(dataset.train_split * dataset.length)
-        factor = (1 - dataset.train_split) / dataset.train_split
+        factor = dataset.train_split / (1 - dataset.train_split)
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['shift'][0]['timestamps']
@@ -175,7 +175,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.variance_1()
 
         offset = int(dataset.train_split * dataset.length)
-        factor = (1 - dataset.train_split) / dataset.train_split
+        factor = dataset.train_split / (1 - dataset.train_split)
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['variance'][0]['timestamps']
@@ -223,7 +223,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.trend_1()
 
         offset = int(dataset.train_split * dataset.length)
-        factor = (1 - dataset.train_split) / dataset.train_split
+        factor = dataset.train_split / (1 - dataset.train_split)
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['trend'][0]['timestamps']
