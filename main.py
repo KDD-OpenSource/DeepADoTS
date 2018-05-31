@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from tabulate import tabulate
 
 from src.algorithms import LSTMAD
 from src.algorithms import RecurrentEBM
@@ -60,7 +61,10 @@ def main():
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()
-    print(df)
+    for ds in df['dataset']:
+        print("Dataset: " + ds)
+        print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
+        print(tabulate(df[df['dataset'] == ds][print_order], headers='keys', tablefmt='psql'))
     evaluator.plot_scores()
 
 
