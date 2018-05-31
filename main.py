@@ -61,7 +61,7 @@ def main():
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()
-    for ds in df['dataset']:
+    for ds in df['dataset'].unique():
         print("Dataset: " + ds)
         print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
         print(tabulate(df[df['dataset'] == ds][print_order], headers='keys', tablefmt='psql'))
