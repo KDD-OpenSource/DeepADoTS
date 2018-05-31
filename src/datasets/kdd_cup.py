@@ -1,6 +1,6 @@
 import numpy as np
 
-from . import RealDataset
+from .real_dataset import RealDataset
 
 
 class KDDCup(RealDataset):

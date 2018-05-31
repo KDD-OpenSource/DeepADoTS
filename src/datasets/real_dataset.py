@@ -1,6 +1,6 @@
 import os
 
-from . import Dataset
+from .dataset import Dataset
 
 
 class RealDataset(Dataset):
