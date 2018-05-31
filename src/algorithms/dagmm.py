@@ -171,7 +171,7 @@ class DAGMM(Algorithm):
         self.gmm_k = gmm_k  # Number of Gaussian mixtures
         self.normal_percentile = normal_percentile  # Up to which percentile data should be considers normal
         self.dagmm, self.optimizer, self.train_phi, self.train_mu, self.train_cov, self.train_energy, \
-            self.threshold = None, None, None, None, None, None, None
+            self._threshold = None, None, None, None, None, None, None
 
     def fit(self, X, _):
         """Learn the mixture probability, mean and covariance for each component k.
@@ -234,13 +234,13 @@ class DAGMM(Algorithm):
         test_energy = np.concatenate(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
-        self.threshold = np.percentile(combined_energy, self.normal_percentile)
+        self._threshold = np.percentile(combined_energy, self.normal_percentile)
         return test_energy
 
     def threshold(self, score):
-        return self.threshold
+        return self._threshold
 
     def binarize(self, y, threshold=None):
         if threshold is None:
-            threshold = self.threshold
+            threshold = self._threshold
         return np.where(y > threshold, 1, 0)
