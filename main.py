@@ -3,7 +3,7 @@ import pickle
 import pandas as pd
 import numpy as np
 
-from src.datasets import AirQuality, SyntheticData, KDDCup
+from src.datasets import AirQuality, SyntheticDataGenerator, KDDCup
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTM_Enc_Dec, LSTMAD
 from src.evaluation.evaluator import Evaluator
 
