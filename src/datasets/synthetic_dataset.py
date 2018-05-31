@@ -49,8 +49,10 @@ class SyntheticDataset(Dataset):
         for outlier_type, outliers in config.items():
             for outlier in outliers:
                 for ts in outlier['timestamps']:
-                    timestamp = (int(*ts), int(*ts)+1) if len(ts) == 1 else ts
-                    timestamps.extend(list(range(*timestamp)))
+                    if outlier_type == 'extreme':
+                        timestamps.append(int(*ts))
+                    else:
+                        timestamps.extend(list(ts))
 
         y = np.zeros(self.length)
         y[timestamps] = 1
