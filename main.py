@@ -36,25 +36,26 @@ def evaluate_on_real_world_data_sets():
 
 
 def main():
-    datasets = [
-        SyntheticDataGenerator.extreme_1(),
-        SyntheticDataGenerator.variance_1(),
-        SyntheticDataGenerator.shift_1(),
-        SyntheticDataGenerator.trend_1(),
-        SyntheticDataGenerator.combined_1(),
-        SyntheticDataGenerator.combined_4(),
-        SyntheticDataGenerator.variance_1_missing(0.1),
-        SyntheticDataGenerator.variance_1_missing(0.3),
-        SyntheticDataGenerator.variance_1_missing(0.5),
-        SyntheticDataGenerator.variance_1_missing(0.8),
-        SyntheticDataGenerator.extreme_1_polluted(0.1),
-        SyntheticDataGenerator.extreme_1_polluted(0.3),
-        SyntheticDataGenerator.extreme_1_polluted(0.5),
-        SyntheticDataGenerator.extreme_1_polluted(1)
-    ]
     if os.environ.get("CIRCLECI", False):
+        datasets = [SyntheticDataGenerator.extreme_1()]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=15), Donut(max_epoch=5), DAGMM()]
     else:
+        datasets = [
+            SyntheticDataGenerator.extreme_1(),
+            SyntheticDataGenerator.variance_1(),
+            SyntheticDataGenerator.shift_1(),
+            SyntheticDataGenerator.trend_1(),
+            SyntheticDataGenerator.combined_1(),
+            SyntheticDataGenerator.combined_4(),
+            SyntheticDataGenerator.variance_1_missing(0.1),
+            SyntheticDataGenerator.variance_1_missing(0.3),
+            SyntheticDataGenerator.variance_1_missing(0.5),
+            SyntheticDataGenerator.variance_1_missing(0.8),
+            SyntheticDataGenerator.extreme_1_polluted(0.1),
+            SyntheticDataGenerator.extreme_1_polluted(0.3),
+            SyntheticDataGenerator.extreme_1_polluted(0.5),
+            SyntheticDataGenerator.extreme_1_polluted(1)
+        ]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()

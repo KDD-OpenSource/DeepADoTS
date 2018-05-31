@@ -195,7 +195,6 @@ class Donut(Algorithm):
             predictor = DonutPredictor(model)
             with tf_session.as_default():
                 test_score = predictor.get_score(test_values, test_missing)
-            tf_session.close()
             test_score = np.power(np.e, test_score)  # Convert to reconstruction probability
             threshold = np.mean(test_score) - np.std(test_score)
             test_score = np.where(test_score <= threshold, 1, 0)  # Binarize so 1 is an anomaly

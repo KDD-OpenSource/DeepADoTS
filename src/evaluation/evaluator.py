@@ -34,10 +34,14 @@ class Evaluator:
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
             for det in progressbar.progressbar(self.detectors):
-                logging.info("Training " + det.name)
-                det.fit(X_train, y_train)
-                score = det.predict(X_test)
-                self.results[(ds.name, det.name)] = score
+                logging.info("Training " + det.name + " on " + str(ds))
+                try:
+                    det.fit(X_train, y_train)
+                    score = det.predict(X_test)
+                    self.results[(ds.name, det.name)] = score
+                except Exception as e:
+                    logging.info("While training " + det.name + " on " + str(ds) + " an exception occured:" + str(e))
+                    self.results[(ds.name, det.name)] = 0
 
     def benchmarks(self) -> pd.DataFrame:
         df = pd.DataFrame()
