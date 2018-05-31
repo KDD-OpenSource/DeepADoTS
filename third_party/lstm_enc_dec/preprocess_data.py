@@ -1,12 +1,9 @@
-import os
+import pickle
+from pathlib import Path
+
+import numpy as np
 import torch
 from torch import device
-import glob
-import datetime
-import numpy as np
-import shutil
-from pathlib import Path
-import pickle
 
 
 def normalization(seqData, max, min):
@@ -45,10 +42,12 @@ class PickleDataLoad(object):
 
         else:
             assert len(filename) > 0
-            self.trainData, self.trainLabel = self.preprocessing_ecg(Path('data', 'processed', data_type, 'train', filename),
-                                                                     train=True)
-            self.testData, self.testLabel = self.preprocessing_ecg(Path('data', 'processed', data_type, 'test', filename),
-                                                                   train=False)
+            self.trainData, self.trainLabel = self.preprocessing_ecg(
+                Path('data', 'processed', data_type, 'train', filename),
+                train=True)
+            self.testData, self.testLabel = self.preprocessing_ecg(
+                Path('data', 'processed', data_type, 'test', filename),
+                train=False)
 
     def augmentation(self, data, label, noise_ratio=0.05, noise_interval=0.0005, max_length=100000):
         noiseSeq = torch.randn(data.size())

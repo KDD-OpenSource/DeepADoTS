@@ -1,24 +1,19 @@
-import argparse
-import torch
-import pickle
 import logging
-
-from .preprocess_data import *
-from .model import RNNPredictor
-from torch import optim
 from pathlib import Path
-from matplotlib import pyplot as plt
-import numpy as np
-from sklearn.svm import SVR
-from sklearn.model_selection import GridSearchCV
 
-from .anomalyDetector import fit_norm_distribution_param
+import argparse
+import numpy as np
+from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVR
+
 from .anomalyDetector import anomalyScore
+from .anomalyDetector import fit_norm_distribution_param
+from .model import RNNPredictor
+from .preprocess_data import *
 from .train_predictor import get_args as get_train_args
 
 REPORT_PICKLES_DIR = 'reports/data'
 REPORT_FIGURES_DIR = 'reports/figures'
-
 
 
 def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
@@ -58,12 +53,12 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
     ###############################################################################
     nfeatures = TimeseriesData.trainData.size(-1)
     model = RNNPredictor(rnn_type=args.model,
-                               enc_inp_size=nfeatures,
-                               rnn_inp_size=args.emsize,
-                               rnn_hid_size=args.nhid,
-                               dec_out_size=nfeatures,
-                               nlayers=args.nlayers,
-                               res_connection=args.res_connection).to(args.device)
+                         enc_inp_size=nfeatures,
+                         rnn_inp_size=args.emsize,
+                         rnn_hid_size=args.nhid,
+                         dec_out_size=nfeatures,
+                         nlayers=args.nlayers,
+                         res_connection=args.res_connection).to(args.device)
     model.load_state_dict(checkpoint['state_dict'])
     # del checkpoint
 
@@ -86,7 +81,8 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             # Predicted anomaly scores on test dataset can be used for the baseline of the adaptive threshold.
             if args.compensate:
                 logging.info('=> training an SVR as anomaly score predictor')
-                train_score, _, _, hiddens, _ = anomalyScore(args, model, train_dataset, mean, cov, channel_idx=channel_idx)
+                train_score, _, _, hiddens, _ = anomalyScore(args, model, train_dataset, mean, cov,
+                                                             channel_idx=channel_idx)
                 score_predictor = GridSearchCV(SVR(), cv=5,
                                                param_grid={"C": [1e0, 1e1, 1e2], "gamma": np.logspace(-1, 1, 3)})
                 score_predictor.fit(torch.cat(hiddens, dim=0).numpy(), train_score.cpu().numpy())

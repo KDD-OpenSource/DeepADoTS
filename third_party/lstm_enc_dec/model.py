@@ -1,11 +1,13 @@
-import shutil
 import logging
 from pathlib import Path
 
-import torch.nn as nn
+import shutil
 import torch
-from torch.autograd import Variable
+import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
+
+
 # from cuda_functional import SRU, SRUCell
 
 

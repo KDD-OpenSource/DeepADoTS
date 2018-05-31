@@ -1,6 +1,5 @@
-from torch.autograd import Variable
-import torch
 import numpy as np
+import torch
 
 
 def fit_norm_distribution_param(args, model, train_dataset, channel_idx=0):
