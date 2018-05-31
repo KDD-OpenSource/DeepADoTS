@@ -54,7 +54,10 @@ class LSTM_Enc_Dec(Algorithm):
 
     def predict(self, X_test: pd.DataFrame) -> pd.Series:
         channels_scores = self.predict_channel_scores(X_test)
-        binary_decisions = np.array(list(self._create_validation_set(channels_scores)))
+        return channels_scores
+
+    def binarize(self, score, threshold=None):
+        binary_decisions = np.array(list(self._create_validation_set(score)))
         return np.max(binary_decisions, axis=0)
 
     """
