@@ -6,6 +6,7 @@ import logging
 # Use: logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL
 LOG_LEVEL = logging.DEBUG
 
+
 def init_logging():
     # Prepare directory and file path for storing the logs
     timestamp = time.strftime("%Y%m%d-%H%M%S")
