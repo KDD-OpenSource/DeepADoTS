@@ -7,6 +7,7 @@ from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD
 from src.evaluation.evaluator import Evaluator
 
+
 def main():
     if os.environ.get("CIRCLECI", True):
         datasets = [SyntheticDataGenerator.extreme_1()]
@@ -31,7 +32,7 @@ def main():
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
-    df = evaluator.benchmarks()
+    # df = evaluator.benchmarks()
 
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
