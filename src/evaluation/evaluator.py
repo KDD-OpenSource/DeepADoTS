@@ -90,7 +90,7 @@ class Evaluator:
                 subplot_num += 1
         plt.legend()
         plt.tight_layout()
-        plt.show()
+        plt.savefig(f'summary.png')
         self.plot_roc_curves()
 
     def plot_roc_curves(self):
@@ -119,4 +119,4 @@ class Evaluator:
                 plt.title(det.name)
                 plt.legend(loc="lower right")
             plt.tight_layout()
-            plt.show()
+            plt.savefig(f'roc_{ds}.png')
