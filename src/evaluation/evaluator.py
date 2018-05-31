@@ -44,7 +44,7 @@ class Evaluator:
                     score = det.predict(X_test)
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
-                    self.logger.warning("Exception occured while training '{}' on '{}': {}".format(det.name, ds, e))
+                    self.logger.error("Exception occured while training '{}' on '{}': {}".format(det.name, ds, e))
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
     def benchmarks(self) -> pd.DataFrame:
@@ -105,7 +105,7 @@ class Evaluator:
             fig.suptitle(ds.name, fontsize=14, y="1.1")
             subplot_count = 1
             for det in self.detectors:
-                print("Plotting " + det.name + " on " + ds.name)
+                self.logger.info(f"Plotting ROC curve for {det.name} on {ds.name}")
                 score = self.results[(ds.name, det.name)]
                 y_pred = det.binarize(score)
                 fpr, tpr, _ = roc_curve(y_test, y_pred)

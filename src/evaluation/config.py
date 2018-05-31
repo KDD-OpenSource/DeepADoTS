@@ -19,7 +19,7 @@ def init_logging():
     rootLogger = logging.getLogger()
     rootLogger.setLevel(LOG_LEVEL)
 
-    # Store logs in a log file in the temporary directory
+    # Store logs in a log file in reports/logs
     fileHandler = logging.FileHandler(log_file_path)
     fileHandler.setFormatter(logFormatter)
     rootLogger.addHandler(fileHandler)
@@ -31,4 +31,4 @@ def init_logging():
 
     # Create logger instance for the config file
     logger = logging.getLogger(__name__)
-    logger.info("Logger initialized")
+    logger.debug("Logger initialized")
