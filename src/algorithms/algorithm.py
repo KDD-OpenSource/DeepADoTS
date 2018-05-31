@@ -31,6 +31,7 @@ class Algorithm(metaclass=abc.ABCMeta):
         :return binary_labels
         """
 
+
     @abc.abstractmethod
     def threshold(self, score):
         """
