@@ -60,7 +60,7 @@ class Evaluator:
         # ToDo: Add more information (algorithms, datasets) in title
         timestamp = int(time.time())
         dir = "reports/figures/"
-        path = os.path.join(dir, f"{title}-{timestamp}.{extension}")
+        path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
         logging.info(f"Stored plot at {path}")
 
