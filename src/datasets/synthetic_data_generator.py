@@ -79,6 +79,7 @@ class SyntheticDataGenerator:
         pollution_config['extreme'][0]['timestamps'] = pollutions
 
         dataset.pollution_config = pollution_config
+        dataset.name = dataset.name + f'Polluted {pollution_percentage}'
         return dataset
 
     @staticmethod
@@ -86,6 +87,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.extreme_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.name = dataset.name + f'Missing {missing_percentage}'
         return dataset
 
     @staticmethod
@@ -117,6 +119,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.shift_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.name = dataset.name + f'Missing {missing_percentage}'
         return dataset
 
     @staticmethod
@@ -134,6 +137,7 @@ class SyntheticDataGenerator:
         pollution_config['extreme'][0]['timestamps'] = pollutions
 
         dataset.pollution_config = pollution_config
+        dataset.name = dataset.name + f'Polluted {pollution_percentage}'
         return dataset
 
     @staticmethod
@@ -163,6 +167,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.variance_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.name = dataset.name + f'Missing {missing_percentage}'
         return dataset
 
     @staticmethod
@@ -180,6 +185,7 @@ class SyntheticDataGenerator:
         pollution_config['extreme'][0]['timestamps'] = pollutions
 
         dataset.pollution_config = pollution_config
+        dataset.name = dataset.name + f'Polluted {pollution_percentage}'
         return dataset
 
     @staticmethod
@@ -209,6 +215,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.trend_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.name = dataset.name + f'Missing {missing_percentage}'
         return dataset
 
     @staticmethod
@@ -226,6 +233,7 @@ class SyntheticDataGenerator:
         pollution_config['extreme'][0]['timestamps'] = pollutions
 
         dataset.pollution_config = pollution_config
+        dataset.name = dataset.name + f'Polluted {pollution_percentage}'
         return dataset
 
     @staticmethod
@@ -271,6 +279,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.combined_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.name = dataset.name + f'Missing {missing_percentage}'
         return dataset
 
     @staticmethod
