@@ -1,15 +1,9 @@
-import time
 import logging
-from pathlib import Path
 
 import argparse
-import torch
-import torch.nn as nn
+import time
+
 from .preprocess_data import *
-from .model import RNNPredictor
-from torch import optim
-from matplotlib import pyplot as plt
-from .anomalyDetector import fit_norm_distribution_param
 
 REPORT_FIGURES_DIR = 'reports/figures'
 
@@ -76,6 +70,7 @@ torch.cuda.manual_seed(args.seed)
 def get_args():
     return args
 
+
 def set_args(**kwargs):
     global args
     parser.set_defaults(**kwargs)
@@ -90,6 +85,7 @@ def get_batch(args, source, i):
     data = source[i:i + seq_len]  # [ seq_len * batch_size * feature_size ]
     target = source[i + 1:i + 1 + seq_len]  # [ (seq_len x batch_size x feature_size) ]
     return data, target
+
 
 def train(args, model, train_dataset, epoch, optimizer, criterion):
     with torch.enable_grad():
@@ -143,7 +139,7 @@ def train(args, model, train_dataset, epoch, optimizer, criterion):
                 cur_loss = total_loss / args.log_interval
                 elapsed = time.time() - start_time
                 logging.info('| epoch {:3d} | {:5d}/{:5d} batches | ms/batch {:5.4f} | '
-                      'loss {:5.2f} '.format(
+                             'loss {:5.2f} '.format(
                     epoch, batch, len(train_dataset) // args.bptt,
                                   elapsed * 1000 / args.log_interval, cur_loss))
                 total_loss = 0
