@@ -17,7 +17,7 @@ from third_party.lstm_enc_dec import preprocess_data
 from third_party.lstm_enc_dec.model import RNNPredictor
 
 from .algorithm import Algorithm
-from src.algorithms import LSTM_Enc_Dec
+from src.algorithms import LSTMEncDec
 
 
 class EnsembleLSTMEncDec(Algorithm):
@@ -29,9 +29,9 @@ class EnsembleLSTMEncDec(Algorithm):
         self.best_val_loss = None
         self.train_timeseries_dataset: preprocess_data.PickleDataLoad = None
         self.test_timeseries_dataset: preprocess_data.PickleDataLoad = None
-        self.lstm_enc_dec1 = LSTM_Enc_Dec(epochs=1, augment_train_data=True, prediction_window_size=5)
-        self.lstm_enc_dec2 = LSTM_Enc_Dec(epochs=1, augment_train_data=True, prediction_window_size=10)
-        self.lstm_enc_dec3 = LSTM_Enc_Dec(epochs=1, augment_train_data=True, prediction_window_size=15)
+        self.lstm_enc_dec1 = LSTMEncDec(epochs=1, augment_train_data=True, prediction_window_size=5)
+        self.lstm_enc_dec2 = LSTMEncDec(epochs=1, augment_train_data=True, prediction_window_size=10)
+        self.lstm_enc_dec3 = LSTMEncDec(epochs=1, augment_train_data=True, prediction_window_size=15)
 
     def fit(self, X, y):
         self.lstm_enc_dec1.fit(X, y)
@@ -47,10 +47,10 @@ class EnsembleLSTMEncDec(Algorithm):
 
 
     def binarize(self, score, threshold=None):
-        LSTM_Enc_Dec.binarize(score)
+        return self.lstm_enc_dec1.binarize(score)
 
     def threshold(self, score):
-        LSTM_Enc_Dec.threshold(score)
+        return self.lstm_enc_dec1.threshold(score)
 
 
     def eval_anomaly_scores(self, anomaly_scores1, anomaly_scores2, anomaly_scores3):
