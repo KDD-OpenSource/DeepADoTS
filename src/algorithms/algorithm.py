@@ -1,7 +1,7 @@
 import abc
 
 
-class Algorithm:
+class Algorithm(metaclass=abc.ABCMeta):
     def __init__(self, name):
         self.name = name
 
@@ -29,4 +29,11 @@ class Algorithm:
         :param threshold:
         :param score
         :return binary_labels
+        """
+
+    @abc.abstractmethod
+    def threshold(self, score):
+        """
+        :param score
+        :return threshold:
         """
