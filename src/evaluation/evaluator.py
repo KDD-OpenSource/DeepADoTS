@@ -88,9 +88,9 @@ class Evaluator:
                 sp.set_title("binary labels of " + det.name, loc=subtitle_loc)
                 plt.plot(np.arange(len(score)), [x for x in det.binarize(score)])
                 subplot_num += 1
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(f'summary.png')
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig(f'summary_{ds.name}.png')
         self.plot_roc_curves()
 
     def plot_roc_curves(self):
