@@ -22,6 +22,7 @@ from .algorithm import Algorithm
 class LSTM_Enc_Dec(Algorithm):
 
     def __init__(self, **kwargs):
+        self.name = "LSTM-Enc-Dec"
         train_predictor.set_args(**kwargs)
         self.args = train_predictor.get_args()
         self.best_val_loss = None
@@ -52,13 +53,14 @@ class LSTM_Enc_Dec(Algorithm):
         channels_scores, _ = self._predict(test_timeseries_dataset)
         return [x.numpy() for x in channels_scores]
 
-    def predict(self, X_test: pd.DataFrame) -> pd.Series:
+    def predict(self, X_test: pd.DataFrame) -> np.ndarray:
         channels_scores = self.predict_channel_scores(X_test)
-        return channels_scores
+        return np.max(channels_scores, axis=0)
 
     def binarize(self, score, threshold=None):
-        binary_decisions = np.array(list(self._create_validation_set(score)))
-        return np.max(binary_decisions, axis=0)
+        threshold = self.threshold(score)
+        score = np.where(np.isnan(score), threshold - 1, score)
+        return np.where(score >= threshold, 1, 0)
 
     """
         Because the algorithm returns only an anomaly score we need to find and
@@ -189,3 +191,6 @@ class LSTM_Enc_Dec(Algorithm):
             # the anomaly threshold
             train_dataset = test_dataset
         return anomaly_detection.calc_anomalies(test_timeseries_dataset, train_dataset, test_dataset)
+
+    def threshold(self, score):
+        return np.nanmean(score) + 2*np.nanstd(score)
