@@ -1,5 +1,3 @@
-import pickle
-
 import pandas as pd
 import numpy as np
 
@@ -15,8 +13,14 @@ def main():
 
 
 def execute_pipeline():
-    datasets = [SyntheticDataset(name="Synthetic Extreme Outliers", file_name="synthetic"), SyntheticDataset(name="Synthetic Extreme Outliers 2", file_name="synthetic2")]
-    detectors = [RecurrentEBM(num_epochs=15), LSTMAD()]
+    datasets = [
+        SyntheticDataset(name="Synthetic Extreme Outliers", file_name="synthetic"),
+        SyntheticDataset(name="Synthetic Extreme Outliers 2", file_name="synthetic2")
+    ]
+    detectors = [
+        RecurrentEBM(num_epochs=15),
+        LSTMAD()
+    ]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()

@@ -112,10 +112,9 @@ class Evaluator:
             prec_by_threshold[i] = prec
             recall_by_threshold[i] = recall
             f_score_by_threshold[i] = f_score
-        return anomalies_by_threshold, acc_by_threshold, prec_by_threshold, \
-               recall_by_threshold, f_score_by_threshold
+        return anomalies_by_threshold, acc_by_threshold, prec_by_threshold, recall_by_threshold, f_score_by_threshold
 
-    def plot_threshold_comparison(self, steps = 40):
+    def plot_threshold_comparison(self, steps=40):
         plots_shape = len(self.detectors), len(self.datasets)
         fig, axes = plt.subplots(*plots_shape, figsize=(15, 15))
         # Ensure two dimensions for iteration
@@ -149,7 +148,6 @@ class Evaluator:
         fig.subplots_adjust(top=0.85, hspace=0.4)
         self.store(fig, 'metrics_by_thresholds')
         plt.show()
-
 
     def plot_roc_curves(self):
         # Plot of a ROC curve for all classes
