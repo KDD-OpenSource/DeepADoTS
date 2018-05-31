@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTM_Enc_Dec, LSTMAD
+from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMEncDec, LSTMAD, EnsembleLSTMEncDec
 from src.datasets.air_quality import AirQuality
 from src.datasets.kdd_cup import KDDCup
 from src.datasets.synthetic_data_generator import SyntheticDataGenerator
@@ -39,21 +39,9 @@ def main():
     else:
         datasets = [
             SyntheticDataGenerator.extreme_1(),
-            SyntheticDataGenerator.variance_1(),
-            SyntheticDataGenerator.shift_1(),
-            SyntheticDataGenerator.trend_1(),
-            SyntheticDataGenerator.combined_1(),
-            SyntheticDataGenerator.combined_4(),
-            SyntheticDataGenerator.variance_1_missing(0.1),
-            SyntheticDataGenerator.variance_1_missing(0.3),
-            SyntheticDataGenerator.variance_1_missing(0.5),
-            SyntheticDataGenerator.variance_1_missing(0.8),
-            SyntheticDataGenerator.extreme_1_polluted(0.1),
-            SyntheticDataGenerator.extreme_1_polluted(0.3),
-            SyntheticDataGenerator.extreme_1_polluted(0.5),
-            SyntheticDataGenerator.extreme_1_polluted(1)
         ]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(epochs=200)]
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(epochs=200), Ensem]
+        detectors = [LSTM_Enc_Dec(epochs=10)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()

@@ -20,7 +20,7 @@ from .algorithm import Algorithm
 from src.algorithms import LSTM_Enc_Dec
 
 
-class Ensemble_LSTM_Enc_Dec(Algorithm):
+class EnsembleLSTMEncDec(Algorithm):
 
     def __init__(self, **kwargs):
         self.name = "Ensemble_LSTM_Enc_Dec"
@@ -43,10 +43,19 @@ class Ensemble_LSTM_Enc_Dec(Algorithm):
         pred1 = self.lstm_enc_dec1.predict(X)
         pred2 = self.lstm_enc_dec2.predict(X)
         pred3 = self.lstm_enc_dec3.predict(X)
+        return self.eval_anomaly_scores(pred1, pred2, pred3)
 
 
     def binarize(self, score, threshold=None):
-
+        LSTM_Enc_Dec.binarize(score)
 
     def threshold(self, score):
         LSTM_Enc_Dec.threshold(score)
+
+
+    def eval_anomaly_scores(self, anomaly_scores1, anomaly_scores2, anomaly_scores3):
+        #avg = np.average((anomaly_scores1, anomaly_scores2, anomaly_scores3), axis=0)
+        #_min = np.min((anomaly_scores1, anomaly_scores2, anomaly_scores3), axis=0)
+        _max = np.max((anomaly_scores1, anomaly_scores2, anomaly_scores3), axis=0)
+
+        return _max
