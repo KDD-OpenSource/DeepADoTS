@@ -29,4 +29,24 @@ class Ensemble_LSTM_Enc_Dec(Algorithm):
         self.best_val_loss = None
         self.train_timeseries_dataset: preprocess_data.PickleDataLoad = None
         self.test_timeseries_dataset: preprocess_data.PickleDataLoad = None
+        self.lstm_enc_dec1 = LSTM_Enc_Dec(epochs=1, augment_train_data=True, prediction_window_size=5)
+        self.lstm_enc_dec2 = LSTM_Enc_Dec(epochs=1, augment_train_data=True, prediction_window_size=10)
+        self.lstm_enc_dec3 = LSTM_Enc_Dec(epochs=1, augment_train_data=True, prediction_window_size=15)
 
+    def fit(self, X, y):
+        self.lstm_enc_dec1.fit(X, y)
+        self.lstm_enc_dec2.fit(X, y)
+        self.lstm_enc_dec3.fit(X, y)
+
+
+    def predict(self, X):
+        pred1 = self.lstm_enc_dec1.predict(X)
+        pred2 = self.lstm_enc_dec2.predict(X)
+        pred3 = self.lstm_enc_dec3.predict(X)
+
+
+    def binarize(self, score, threshold=None):
+
+
+    def threshold(self, score):
+        LSTM_Enc_Dec.threshold(score)
