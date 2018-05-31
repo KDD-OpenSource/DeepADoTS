@@ -1,11 +1,32 @@
+import abc
+
+
 class Algorithm:
+    def __init__(self, name):
+        self.name = name
+
+    def __str__(self) -> str:
+        return self.name
+
+    @abc.abstractmethod
     def fit(self, X, y):
         """
         Train the algorithm on the given dataset
-        :param dataset: Wrapper around the raw and processed data
+        :param X:
+        :param y:
         :return: self
         """
-        raise NotImplementedError
 
+    @abc.abstractmethod
     def predict(self, X):
-        raise NotImplementedError
+        """
+        :return score
+        """
+
+    @abc.abstractmethod
+    def binarize(self, score, threshold=None):
+        """
+        :param threshold:
+        :param score
+        :return binary_labels
+        """

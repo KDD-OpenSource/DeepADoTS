@@ -1,5 +1,5 @@
 # Data Generator
--e git+https://github.com/WGierke/agots#egg=agots
+git+https://github.com/WGierke/agots#egg=agots
 
 # Requirements for donut (https://github.com/korepwx/donut)
 git+https://github.com/thu-ml/zhusuan.git
@@ -11,6 +11,12 @@ torch>=0.4.0
 torchvision
 h5py
 
+# Requirements for LSTM-Enc-Dec
+argparse
+pyparsing
+cycler
+
+
 # Remaining requirements that should be installed if not already done so
 numpy
 pandas
@@ -18,9 +24,5 @@ tqdm
 scipy>=0.14.0
 scikit-learn>=0.19.1
 flake8
-
-# Requirements for LSTM-Enc-Dec
-argparse
-pyparsing
-cycler
 matplotlib
+progressbar2

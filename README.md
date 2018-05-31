@@ -41,3 +41,5 @@ pip install -r requirements.txt
 ```
 
 ## Credits
+
+[dagmm](https://github.com/danieltan07/dagmm)

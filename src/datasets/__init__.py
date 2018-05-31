@@ -1,5 +1,17 @@
 from .dataset import Dataset
-from .kdd_cup import KDD_Cup
-from .ecg import ECG
+from .real_dataset import RealDataset
+from .synthetic_dataset import SyntheticDataset
 
-__all__ = ['Dataset', 'KDD_Cup', 'ECG']
+from .air_quality import AirQuality
+from .kdd_cup import KDDCup
+from .synthetic_data_generator import SyntheticDataGenerator
+
+
+__all__ = [
+    'Dataset',
+    'SyntheticDataset',
+    'RealDataset',
+    'AirQuality',
+    'KDDCup',
+    'SyntheticDataGenerator'
+]

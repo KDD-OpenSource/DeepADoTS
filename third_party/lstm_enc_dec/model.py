@@ -1,10 +1,12 @@
+import shutil
+import logging
+from pathlib import Path
+
 import torch.nn as nn
 import torch
 from torch.autograd import Variable
 import torch.nn.functional as F
 # from cuda_functional import SRU, SRUCell
-import shutil
-from pathlib import Path
 
 
 class RNNPredictor(nn.Module):
@@ -40,8 +42,6 @@ class RNNPredictor(nn.Module):
         self.rnn_type = rnn_type
         self.rnn_hid_size = rnn_hid_size
         self.nlayers = nlayers
-        # self.layerNorm1=nn.LayerNorm(normalized_shape=rnn_inp_size)
-        # self.layerNorm2=nn.LayerNorm(normalized_shape=rnn_hid_size)
 
     def init_weights(self):
         initrange = 0.1
@@ -54,17 +54,9 @@ class RNNPredictor(nn.Module):
             self.encoder(input.contiguous().view(-1, self.enc_input_size)))  # [(seq_len x batch_size) * feature_size]
         emb = emb.view(-1, input.size(1), self.rnn_hid_size)  # [ seq_len * batch_size * feature_size]
         if noise:
-            # emb_noise = Variable(torch.randn(emb.size()))
-            # hidden_noise = Variable(torch.randn(hidden[0].size()))
-            # if next(self.parameters()).is_cuda:
-            #     emb_noise=emb_noise.cuda()
-            #     hidden_noise=hidden_noise.cuda()
-            # emb = emb+emb_noise
             hidden = (F.dropout(hidden[0], training=True, p=0.9), F.dropout(hidden[1], training=True, p=0.9))
 
-        # emb = self.layerNorm1(emb)
         output, hidden = self.rnn(emb, hidden)
-        # output = self.layerNorm2(output)
 
         output = self.drop(output)
         decoded = self.decoder(
@@ -94,7 +86,7 @@ class RNNPredictor(nn.Module):
             return h.detach()
 
     def save_checkpoint(self, state, is_best):
-        print("=> saving checkpoint ..")
+        logging.info("=> saving checkpoint ..")
         args = state['args']
         checkpoint_dir = Path('models', args.data, 'checkpoint')
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -107,7 +99,7 @@ class RNNPredictor(nn.Module):
 
             shutil.copyfile(checkpoint, model_best_dir.joinpath(args.filename).with_suffix('.pth'))
 
-        print('=> checkpoint saved.')
+        logging.info('=> checkpoint saved.')
 
     def extract_hidden(self, hidden):
         if self.rnn_type == 'LSTM':

@@ -40,6 +40,7 @@ class LSTMAD(Algorithm):
     """
 
     def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=128, optimizer=torch.optim.Rprop):
+        self.name = "LSTM-AD"
         self.len_in = len_in
         self.len_out = len_out
 
@@ -115,3 +116,11 @@ class LSTMAD(Algorithm):
         loss_train = self.loss(output_data, target_data)
         loss_train.backward()
         return loss_train
+
+    def get_binary_label(self, score):
+        threshold = self.get_threshold(score)
+        score = np.where(np.isnan(score), threshold - 1, score)
+        return np.where(score >= threshold, 1, 0)
+
+    def get_threshold(self, score):
+        return np.nanmean(score) + 2*np.nanstd(score)
