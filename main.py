@@ -36,6 +36,18 @@ def evaluate_on_real_world_data_sets():
 
 
 def main():
+    # run_pipeline()
+    run_test_pipeline()
+
+def run_test_pipeline():
+    datasets = [SyntheticDataGenerator.extreme_1()]
+    detectors = [LSTMAD(num_epochs=15), RecurrentEBM(num_epochs=15)]
+    evaluator = Evaluator(datasets, detectors)
+    evaluator.evaluate()
+    df = evaluator.benchmarks()
+    evaluator.plot_scores()
+
+def run_pipeline():
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=15), Donut(max_epoch=5), DAGMM()]
@@ -60,7 +72,6 @@ def main():
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()
-    print(df)
     evaluator.plot_scores()
 
 

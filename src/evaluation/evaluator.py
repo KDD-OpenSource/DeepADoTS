@@ -8,6 +8,8 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_recall_fscore_support as prf
 from sklearn.metrics import roc_curve, auc
 
+from .config import init_logging
+
 
 class Evaluator:
     """
@@ -22,11 +24,13 @@ class Evaluator:
         self.datasets = datasets
         self.detectors = detectors
         self.results = dict()
+        init_logging()
+        self.logger = logging.getLogger(__name__)
 
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
         accuracy = accuracy_score(y_true, y_pred)
-        precision, recall, f_score, support = prf(y_true, y_pred, average='binary')
+        precision, recall, f_score, support = prf(y_true, y_pred, average="binary")
         fpr, _, _ = roc_curve(y_true, y_pred, pos_label=1)
         return accuracy, precision, recall, f_score, fpr
 
@@ -34,13 +38,13 @@ class Evaluator:
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
             for det in progressbar.progressbar(self.detectors):
-                logging.info("Training " + det.name + " on " + str(ds))
+                self.logger.info("Training {} on {}".format(det.name, ds))
                 try:
                     det.fit(X_train, y_train)
                     score = det.predict(X_test)
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
-                    logging.info("While training " + det.name + " on " + str(ds) + " an exception occured:" + str(e))
+                    self.logger.warning("Exception occured while training '{}' on '{}': {}".format(det.name, ds, e))
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
     def benchmarks(self) -> pd.DataFrame:
@@ -64,7 +68,7 @@ class Evaluator:
     def plot_scores(self):
         for ds in self.datasets:
             _, _, X_test, y_test = ds.data()
-            subtitle_loc = 'left'
+            subtitle_loc = "left"
             fig = plt.figure(figsize=(15, 15))
             sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 1)
             sp.set_title("original test set", loc=subtitle_loc)
@@ -107,15 +111,15 @@ class Evaluator:
                 fpr, tpr, _ = roc_curve(y_test, y_pred)
                 roc_auc = auc(fpr, tpr)
                 plt.subplot(1, len(self.detectors), subplot_count)
-                plt.plot(fpr, tpr, color='darkorange',
-                         lw=2, label='area = %0.2f' % roc_auc)
+                plt.plot(fpr, tpr, color="darkorange",
+                         lw=2, label="area = %0.2f" % roc_auc)
                 subplot_count += 1
-                plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+                plt.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--")
                 plt.xlim([0.0, 1.0])
                 plt.ylim([0.0, 1.05])
-                plt.xlabel('False Positive Rate')
-                plt.ylabel('True Positive Rate')
-                plt.gca().set_aspect('equal', adjustable='box')
+                plt.xlabel("False Positive Rate")
+                plt.ylabel("True Positive Rate")
+                plt.gca().set_aspect("equal", adjustable="box")
                 plt.title(det.name)
                 plt.legend(loc="lower right")
             plt.tight_layout()
