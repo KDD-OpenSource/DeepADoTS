@@ -72,7 +72,7 @@ class DAGMM_Module(nn.Module):
         self.register_buffer("cov", torch.zeros(n_gmm, latent_dim, latent_dim))
 
     def relative_euclidean_distance(self, a, b):
-        return (a - b).norm(2, dim=1) / a.norm(2, dim=1)
+        return (a - b).norm(2, dim=1) / torch.clamp(a.norm(2, dim=1),  min=1e-10)
 
     def forward(self, x):
 
