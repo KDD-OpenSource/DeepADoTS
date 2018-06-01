@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import pandas as pd
-from tabulate import tabulate
 
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTM_Enc_Dec, LSTMAD
 from src.datasets.air_quality import AirQuality
