@@ -91,7 +91,7 @@ class Evaluator:
                 sp.set_title(f"scores of {det.name}", loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
                 plt.plot(np.arange(len(score)), [x for x in score])
-                threshold_line = len(score) * [det.get_threshold(score)]
+                threshold_line = len(score) * [det.threshold(score)]
                 plt.plot([x for x in threshold_line])
                 subplot_num += 1
 

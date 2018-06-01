@@ -205,5 +205,5 @@ class Donut(Algorithm):
     def binarize(self, score, threshold=None):
         return score
 
-    def get_threshold(self, score):
+    def threshold(self, score):
         return 0
