@@ -117,7 +117,7 @@ class Evaluator:
 
             for det, ax in zip(self.detectors, axes_row):
                 y_pred = np.array(self.results[(ds.name, det.name)])
-                if sum(np.isnan(y_pred)) > 0:
+                if np.isnan(y_pred).any():
                     logging.warning("Prediction contains NaN values. Replacing with 0 for plotting!")
                     y_pred[np.isnan(y_pred)] = 0
 
@@ -154,7 +154,7 @@ class Evaluator:
             fig.suptitle(f"ROC curve on {ds.name}", fontsize=14, y="1.1")
             subplot_count = 1
             for det in self.detectors:
-                print(f"Plotting {det.name} on {ds.name}")
+                logging.info(f"Plotting {det.name} on {ds.name}")
                 score = self.results[(ds.name, det.name)]
                 y_pred = det.binarize(score)
                 fpr, tpr, _ = roc_curve(y_test, y_pred)
