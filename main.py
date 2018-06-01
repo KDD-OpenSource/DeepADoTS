@@ -10,17 +10,7 @@ from src.evaluation.evaluator import Evaluator
 
 
 def main():
-    # run_pipeline()
-    run_test_pipeline()
-
-
-def run_test_pipeline():
-    datasets = [SyntheticDataGenerator.extreme_1()]
-    detectors = [LSTMAD(num_epochs=15), RecurrentEBM(num_epochs=15)]
-    evaluator = Evaluator(datasets, detectors)
-    evaluator.evaluate()
-    # df = evaluator.benchmarks()
-    evaluator.plot_scores()
+    run_pipeline()
 
 
 def run_pipeline():
