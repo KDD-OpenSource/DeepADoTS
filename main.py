@@ -8,7 +8,7 @@ from src.evaluation.evaluator import Evaluator
 
 
 def main():
-    if os.environ.get("CIRCLECI", True):
+    if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
         detectors = [RecurrentEBM(num_epochs=2), Donut(max_epoch=5), DAGMM(),
                      LSTM_Enc_Dec(epochs=2)]
