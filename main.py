@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import pandas as pd
-from tabulate import tabulate
 
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTM_Enc_Dec, LSTMAD
 from src.datasets.air_quality import AirQuality
@@ -62,6 +61,7 @@ def main():
     # df = evaluator.benchmarks()
     # evaluator.plot_scores()
 
+
 def test_poluttion():
     datasets = [
         SyntheticDataGenerator.extreme_1(),
@@ -70,10 +70,11 @@ def test_poluttion():
         SyntheticDataGenerator.extreme_1_polluted(0.5),
         SyntheticDataGenerator.extreme_1_polluted(1)
     ]
-    detectors = [RecurrentEBM(num_epochs=30), Donut() , DAGMM()] #, LSTM_Enc_Dec(epochs=200)
+    detectors = [RecurrentEBM(num_epochs=30), Donut(), DAGMM()]  # , LSTM_Enc_Dec(epochs=200)
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for missing values')
+
 
 if __name__ == '__main__':
     main()
