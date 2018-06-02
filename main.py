@@ -70,7 +70,7 @@ def test_poluttion():
         SyntheticDataGenerator.extreme_1_polluted(0.5),
         SyntheticDataGenerator.extreme_1_polluted(1)
     ]
-    detectors = [RecurrentEBM(num_epochs=15)] #, Donut() , DAGMM(), LSTM_Enc_Dec(epochs=200)
+    detectors = [RecurrentEBM(num_epochs=30), Donut() , DAGMM()] #, LSTM_Enc_Dec(epochs=200)
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for missing values')
