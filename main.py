@@ -38,6 +38,8 @@ def main():
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM(),
                      LSTM_Enc_Dec(epochs=10)]
     else:
+        test_poluttion()
+        return
         datasets = [
             SyntheticDataGenerator.extreme_1(),
             SyntheticDataGenerator.variance_1(),
@@ -57,13 +59,21 @@ def main():
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(epochs=200)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
-    df = evaluator.benchmarks()
-    for ds in df['dataset'].unique():
-        print("Dataset: " + ds)
-        print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-        print(tabulate(df[df['dataset'] == ds][print_order], headers='keys', tablefmt='psql'))
-    evaluator.plot_scores()
+    # df = evaluator.benchmarks()
+    # evaluator.plot_scores()
 
+def test_poluttion():
+    datasets = [
+        SyntheticDataGenerator.extreme_1(),
+        SyntheticDataGenerator.extreme_1_polluted(0.1),
+        SyntheticDataGenerator.extreme_1_polluted(0.3),
+        SyntheticDataGenerator.extreme_1_polluted(0.5),
+        SyntheticDataGenerator.extreme_1_polluted(1)
+    ]
+    detectors = [RecurrentEBM(num_epochs=15)] #, Donut() , DAGMM(), LSTM_Enc_Dec(epochs=200)
+    evaluator = Evaluator(datasets, detectors)
+    evaluator.evaluate()
+    evaluator.plot_auroc(title='Area under the curve for missing values')
 
 if __name__ == '__main__':
     main()
