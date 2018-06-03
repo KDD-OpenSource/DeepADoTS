@@ -37,8 +37,6 @@ def main():
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM(),
                      LSTM_Enc_Dec(epochs=10)]
     else:
-        test_poluttion()
-        return
         datasets = [
             SyntheticDataGenerator.extreme_1(),
             SyntheticDataGenerator.variance_1(),
