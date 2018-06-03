@@ -46,7 +46,7 @@ class SyntheticDataset(Dataset):
 
     def _label_outliers(self, config: dict) -> pd.Series:
         timestamps = []
-        for outlier_type, outliers in config.items():
+        for _, outliers in config.items():
             for outlier in outliers:
                 for ts in outlier['timestamps']:
                     timestamp = (int(*ts), int(*ts)+1) if len(ts) == 1 else ts

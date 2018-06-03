@@ -4,23 +4,21 @@ import logging
 import time
 from typing import List
 
-from sklearn.model_selection import train_test_split
-import torch
-import torch.nn as nn
-from torch import optim
 import numpy as np
 import pandas as pd
-from third_party.lstm_enc_dec.anomalyDetector import fit_norm_distribution_param
-from third_party.lstm_enc_dec import train_predictor
+import torch.nn as nn
+from sklearn.model_selection import train_test_split
+from torch import optim
+
 from third_party.lstm_enc_dec import anomaly_detection
 from third_party.lstm_enc_dec import preprocess_data
+from third_party.lstm_enc_dec import train_predictor
+from third_party.lstm_enc_dec.anomalyDetector import fit_norm_distribution_param
 from third_party.lstm_enc_dec.model import RNNPredictor
-
 from .algorithm import Algorithm
 
 
 class LSTM_Enc_Dec(Algorithm):
-
     def __init__(self, **kwargs):
         self.name = "LSTM-Enc-Dec"
         train_predictor.set_args(**kwargs)
@@ -62,31 +60,6 @@ class LSTM_Enc_Dec(Algorithm):
         score = np.where(np.isnan(score), threshold - 1, score)
         return np.where(score >= threshold, 1, 0)
 
-    """
-        Because the algorithm returns only an anomaly score we need to find and
-        apply our own threshold for the evaluation. This is done by looking at
-        each channel seperately and testing different thresholds (from zero to
-        max).
-        The resulting amounts of anomalies by threshold are distributed in a
-        logarithmic way. We decided to select the threshold by considering
-        the mean of all found anomaly amounts.
-    """
-    def _create_validation_set(self, channels_scores):
-        for score in channels_scores:
-            maximum = score.max()
-            steps = 40
-            th = torch.tensor(np.linspace(0, maximum, steps))
-            anomalies_by_threshold = np.zeros(len(th))
-            for i in range(len(th)):
-                anomaly = (score > th[i]).float()
-                amount_anomalies = anomaly.sum()
-                anomalies_by_threshold[i] = amount_anomalies
-            # Find threshold which amount is the closest to the mean of all anomaly amounts
-            idx = (np.abs(anomalies_by_threshold - anomalies_by_threshold.mean())).argmin()
-            threshold = th[idx]
-            logging.info('Selecting threshold #{}: {}'.format(idx, threshold))
-            yield np.array(score > threshold, dtype=int)
-
     def _transform_fit_data(self, X_orig_train, y_orig_train):
         X_train, X_test, y_train, y_test = train_test_split(
             X_orig_train, y_orig_train, test_size=0.25, shuffle=False,
@@ -96,7 +69,7 @@ class LSTM_Enc_Dec(Algorithm):
             input_data=(X_train, y_train, X_test, y_test),
             augment_train_data=self.args.augment_train_data,
         )
-        logging.info('-'*89)
+        logging.info('-' * 89)
         logging.info('Splitting and transforming input data:')
         logging.info('X_orig_train', X_orig_train.shape)
         logging.info('y_orig_train', y_orig_train.shape)
@@ -104,18 +77,18 @@ class LSTM_Enc_Dec(Algorithm):
         logging.info('y_train', self.train_timeseries_dataset.trainLabel.shape)
         logging.info('X_val', self.train_timeseries_dataset.testData.shape)
         logging.info('y_val', self.train_timeseries_dataset.testLabel.shape)
-        logging.info('-'*89)
+        logging.info('-' * 89)
         return self.train_timeseries_dataset
 
     def _transform_predict_data(self, X_orig_test):
         self.test_timeseries_dataset = preprocess_data.PickleDataLoad(
             input_data=X_orig_test,
         )
-        logging.info('-'*89)
+        logging.info('-' * 89)
         logging.info('Input data:')
         logging.info('X_orig_test', X_orig_test.shape)
         logging.info('X_test', self.test_timeseries_dataset.testData.shape)
-        logging.info('-'*89)
+        logging.info('-' * 89)
 
         return self.test_timeseries_dataset
 
@@ -133,7 +106,7 @@ class LSTM_Enc_Dec(Algorithm):
                 val_loss = train_predictor.evaluate(self.args, self.model, test_dataset, self.criterion)
                 logging.info('-' * 89)
                 logging.info('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.4f} | '.format(epoch, (
-                        time.time() - epoch_start_time), val_loss))
+                    time.time() - epoch_start_time), val_loss))
                 logging.info('-' * 89)
 
                 if epoch % self.args.save_interval == 0:
@@ -193,4 +166,4 @@ class LSTM_Enc_Dec(Algorithm):
         return anomaly_detection.calc_anomalies(test_timeseries_dataset, train_dataset, test_dataset)
 
     def threshold(self, score):
-        return np.nanmean(score) + 2*np.nanstd(score)
+        return np.nanmean(score) + 2 * np.nanstd(score)

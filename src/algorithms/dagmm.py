@@ -191,7 +191,7 @@ class DAGMM(Algorithm):
         cov_sum = 0
         gamma_sum = 0
 
-        for it, input_data in enumerate(data_loader):
+        for input_data in data_loader:
             input_data = to_var(input_data)
             enc, dec, z, gamma = self.dagmm(input_data)
             phi, mu, cov = self.dagmm.compute_gmm_params(z, gamma)
@@ -209,7 +209,7 @@ class DAGMM(Algorithm):
         self.train_cov = cov_sum / gamma_sum.unsqueeze(-1).unsqueeze(-1)
 
         train_energy = []
-        for it, input_data in enumerate(data_loader):
+        for input_data in data_loader:
             input_data = to_var(input_data)
             enc, dec, z, gamma = self.dagmm(input_data)
             sample_energy, cov_diag = self.dagmm.compute_energy(z, phi=self.train_phi, mu=self.train_mu,
@@ -224,7 +224,7 @@ class DAGMM(Algorithm):
         data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
 
         test_energy = []
-        for it, input_data in enumerate(data_loader):
+        for input_data in data_loader:
             input_data = to_var(input_data)
             enc, dec, z, gamma = self.dagmm(input_data)
             sample_energy, cov_diag = self.dagmm.compute_energy(z, phi=self.train_phi, mu=self.train_mu,
