@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from .real_dataset import RealDataset
 
@@ -6,7 +7,7 @@ from .real_dataset import RealDataset
 class KDDCup(RealDataset):
     def __init__(self):
         super().__init__(
-            name="KDD Cup '99", raw_path="kddcup-data_10_percent_corrected.txt", processed_path="kdd_cup.npz"
+            name="KDD Cup '99", raw_path="kddcup-data_10_percent_corrected.txt", file_name="kdd_cup.npz"
         )
 
     def load(self):
@@ -48,4 +49,5 @@ class KDDCup(RealDataset):
         test = np.concatenate((test, normal_data), axis=0)
         test_labels = np.concatenate((test_labels, normal_labels), axis=0)
 
-        return (train, train_labels), (test, test_labels)
+        return (pd.DataFrame(data=train), pd.DataFrame(data=train_labels)), (
+        pd.DataFrame(data=test), pd.DataFrame(data=test_labels))

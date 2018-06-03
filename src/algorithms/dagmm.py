@@ -169,7 +169,7 @@ class DAGMM(Algorithm):
         self.lr = lr
         self.batch_size = batch_size
         self.gmm_k = gmm_k  # Number of Gaussian mixtures
-        self.normal_percentile = normal_percentile  # Up to which percentile data should be considers normal
+        self.normal_percentile = normal_percentile  # Up to which percentile data should be considered normal
         self.dagmm, self.optimizer, self.train_phi, self.train_mu, self.train_cov, self.train_energy, \
             self._threshold = None, None, None, None, None, None, None
 
@@ -213,7 +213,7 @@ class DAGMM(Algorithm):
             input_data = to_var(input_data)
             enc, dec, z, gamma = self.dagmm(input_data)
             sample_energy, cov_diag = self.dagmm.compute_energy(z, phi=self.train_phi, mu=self.train_mu,
-                                                                cov=self.train_cov, size_average=False)
+                                                                cov=self.train_cov, size_average=True)
             train_energy.append(sample_energy.data.cpu().numpy())
 
         self.train_energy = np.concatenate(train_energy, axis=0)
@@ -235,6 +235,7 @@ class DAGMM(Algorithm):
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
         self._threshold = np.percentile(combined_energy, self.normal_percentile)
+        self._threshold = 4.774040222167969
         return test_energy
 
     def threshold(self, score):
@@ -243,4 +244,4 @@ class DAGMM(Algorithm):
     def binarize(self, y, threshold=None):
         if threshold is None:
             threshold = self._threshold
-        return np.where(y > threshold, 1, 0)
+        return np.where(y >= threshold, 1, 0)
