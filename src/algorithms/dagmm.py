@@ -188,7 +188,7 @@ class DAGMM(Algorithm):
 
         for input_data in data_loader:
             input_data = to_var(input_data)
-            enc, dec, z, gamma = self.dagmm(input_data)
+            _, _, z, gamma = self.dagmm(input_data)
             phi, mu, cov = self.dagmm.compute_gmm_params(z, gamma)
 
             batch_gamma_sum = torch.sum(gamma, dim=0)
@@ -204,7 +204,7 @@ class DAGMM(Algorithm):
         train_cov = cov_sum / gamma_sum.unsqueeze(-1).unsqueeze(-1)
 
         train_energy = []
-        for it, input_data in enumerate(data_loader):
+        for input_data in enumerate(data_loader):
             input_data = to_var(input_data)
             _, _, z, _ = self.dagmm(input_data)
             sample_energy, _ = self.dagmm.compute_energy(z, phi=train_phi, mu=train_mu, cov=train_cov,
@@ -236,5 +236,8 @@ class DAGMM(Algorithm):
 
     def binarize(self, y, threshold=None):
         if threshold is None:
-            threshold = self._threshold
-        return np.where(y >= threshold, 1, 0)
+            if self._threshold is None:
+                threshold = 0
+            else:
+                threshold = self._threshold
+        return np.where(y > threshold, 1, 0)
