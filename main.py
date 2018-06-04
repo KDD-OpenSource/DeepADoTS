@@ -60,7 +60,7 @@ def main():
     # evaluator.plot_scores()
 
 
-def test_poluttion():
+def test_pollution():
     datasets = [
         SyntheticDataGenerator.extreme_1(),
         SyntheticDataGenerator.extreme_1_polluted(0.1),
