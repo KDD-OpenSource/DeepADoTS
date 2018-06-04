@@ -41,7 +41,7 @@ class Evaluator:
                     score = det.predict(X_test)
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
-                    print("While training " + det.name + " on " + str(ds) + " an exception occured:" + str(e))
+                    logging.info("While training " + det.name + " on " + str(ds) + " an exception occurred:" + str(e))
                     traceback.print_exc()
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
