@@ -176,15 +176,12 @@ class DAGMM(Algorithm):
     def fit(self, X, _):
         """Learn the mixture probability, mean and covariance for each component k.
         Store the computed energy based on the training data and the aforementioned parameters."""
+        #X = np.load("data/processed/X_train.npy")
+        X = pd.DataFrame(data=X)
+        #X = X.dropna()
         data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=True)
-
         self.dagmm = DAGMM_Module(n_features=X.shape[1], n_gmm=self.gmm_k)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
-
-        if torch.cuda.is_available():
-            self.dagmm.cuda()
-
-        self.dagmm.eval()
 
         N = 0
         mu_sum = 0
@@ -216,11 +213,13 @@ class DAGMM(Algorithm):
                                                                 cov=self.train_cov, size_average=True)
             train_energy.append(sample_energy.data.cpu().numpy())
 
-        self.train_energy = np.concatenate(train_energy, axis=0)
+        self.train_energy = np.array(train_energy)
 
-    def predict(self, X: pd.DataFrame):
+    def predict2(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
         given data."""
+        X = pd.DataFrame(data=X)
+        #X = X.dropna()
         data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
 
         test_energy = []
@@ -235,7 +234,6 @@ class DAGMM(Algorithm):
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
         self._threshold = np.percentile(combined_energy, self.normal_percentile)
-        self._threshold = 4.774040222167969
         return test_energy
 
     def threshold(self, score):
@@ -245,3 +243,129 @@ class DAGMM(Algorithm):
         if threshold is None:
             threshold = self._threshold
         return np.where(y >= threshold, 1, 0)
+
+    def predict(self, _):
+        X_train = np.load("data/processed/X_train.npy")
+        X_train = pd.DataFrame(data=X_train)
+        data_loader = DataLoader(dataset=CustomDataLoader(X_train.values), batch_size=self.batch_size, shuffle=True)
+        #data_loader = get_loader("", self.batch_size, mode='train')
+        print("======================TEST MODE======================")
+        #self.dagmm.eval()
+
+        N = 0
+        mu_sum = 0
+        cov_sum = 0
+        gamma_sum = 0
+
+        for it, input_data in enumerate(data_loader):
+            input_data = to_var(input_data)
+            enc, dec, z, gamma = self.dagmm(input_data)
+            phi, mu, cov = self.dagmm.compute_gmm_params(z, gamma)
+
+            batch_gamma_sum = torch.sum(gamma, dim=0)
+
+            gamma_sum += batch_gamma_sum
+            mu_sum += mu * batch_gamma_sum.unsqueeze(-1)  # keep sums of the numerator only
+            cov_sum += cov * batch_gamma_sum.unsqueeze(-1).unsqueeze(-1)  # keep sums of the numerator only
+
+            N += input_data.size(0)
+
+        train_phi = gamma_sum / N
+        train_mu = mu_sum / gamma_sum.unsqueeze(-1)
+        train_cov = cov_sum / gamma_sum.unsqueeze(-1).unsqueeze(-1)
+
+        print("N:", N)
+        print("phi :\n", train_phi)
+        print("mu :\n", train_mu)
+        print("cov :\n", train_cov)
+
+        train_energy = []
+        train_z = []
+        for it, input_data in enumerate(data_loader):
+            input_data = to_var(input_data)
+            enc, dec, z, gamma = self.dagmm(input_data)
+            sample_energy, cov_diag = self.dagmm.compute_energy(z, phi=train_phi, mu=train_mu, cov=train_cov,
+                                                                size_average=False)
+
+            train_energy.append(sample_energy.data.cpu().numpy())
+            train_z.append(z.data.cpu().numpy())
+
+        train_energy = np.concatenate(train_energy, axis=0)
+        train_z = np.concatenate(train_z, axis=0)
+
+        X_test = np.load("data/processed/X_test.npy")
+        y_test = np.load("data/processed/y_test.npy")
+        X_test = pd.DataFrame(data=X_test)
+
+        test_energy = []
+        test_z = []
+        data_loader = DataLoader(dataset=CustomDataLoader(X_test.values), batch_size=self.batch_size, shuffle=False)
+        #data_loader = get_loader("", self.batch_size, mode='test')
+        for it, input_data  in enumerate(data_loader):
+            input_data = to_var(input_data)
+            enc, dec, z, gamma = self.dagmm(input_data)
+            sample_energy, cov_diag = self.dagmm.compute_energy(z, size_average=False)
+            test_energy.append(sample_energy.data.cpu().numpy())
+            test_z.append(z.data.cpu().numpy())
+
+        test_energy = np.concatenate(test_energy, axis=0)
+        test_z = np.concatenate(test_z, axis=0)
+        test_labels = y_test
+
+        combined_energy = np.concatenate([train_energy, test_energy], axis=0)
+
+        thresh = np.percentile(combined_energy, 100 - 20)
+        print("Threshold :", thresh)
+
+        pred = (test_energy > thresh).astype(int)
+        gt = test_labels.astype(int)
+
+        from sklearn.metrics import precision_recall_fscore_support as prf, accuracy_score
+
+        accuracy = accuracy_score(gt, pred)
+        precision, recall, f_score, support = prf(gt, pred, average='binary')
+
+        print("Accuracy : {:0.4f}, Precision : {:0.4f}, Recall : {:0.4f}, F-score : {:0.4f}".format(accuracy, precision,
+                                                                                                    recall, f_score))
+
+        return accuracy, precision, recall, f_score
+
+
+class KDD99Loader(object):
+    def __init__(self, data_path, mode="train"):
+        self.mode = mode
+        self.train = np.load("data/processed/X_train.npy")
+        self.train_labels = np.zeros_like(self.train)
+
+        self.test = np.load("data/processed/X_test.npy")
+        self.test_labels = np.load("data/processed/y_test.npy")
+
+    def __len__(self):
+        """
+        Number of images in the object dataset.
+        """
+        if self.mode == "train":
+            return self.train.shape[0]
+        else:
+            return self.test.shape[0]
+
+    def __getitem__(self, index):
+        if self.mode == "train":
+            return np.float32(self.train[index]), np.float32(self.train_labels[index])
+        else:
+            return np.float32(self.test[index]), np.float32(self.test_labels[index])
+
+
+def get_loader(data_path, batch_size, mode='train'):
+    """Build and return data loader."""
+
+    dataset = KDD99Loader(data_path, mode)
+
+    shuffle = False
+    if mode == 'train':
+        shuffle = True
+
+    data_loader = DataLoader(dataset=dataset,
+                             batch_size=batch_size,
+                             shuffle=shuffle)
+    return data_loader
