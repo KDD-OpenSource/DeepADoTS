@@ -126,7 +126,7 @@ class DAGMM_Module(nn.Module):
         if cov is None:
             cov = to_var(self.cov)
 
-        k, D, _ = cov.size()
+        k, d, _ = cov.size()
 
         z_mu = (z.unsqueeze(1) - mu.unsqueeze(0))
 
@@ -136,7 +136,7 @@ class DAGMM_Module(nn.Module):
         eps = 1e-12
         for i in range(k):
             # K x D x D
-            cov_k = cov[i] + to_var(torch.eye(D) * eps)
+            cov_k = cov[i] + to_var(torch.eye(d) * eps)
             cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
 
             det_cov.append(np.linalg.det(cov_k.data.cpu().numpy() * (2 * np.pi)))
@@ -181,7 +181,7 @@ class DAGMM(Algorithm):
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
         self.dagmm.eval()
 
-        N = 0
+        n = 0
         mu_sum = 0
         cov_sum = 0
         gamma_sum = 0
@@ -197,9 +197,9 @@ class DAGMM(Algorithm):
             mu_sum += mu * batch_gamma_sum.unsqueeze(-1)  # keep sums of the numerator only
             cov_sum += cov * batch_gamma_sum.unsqueeze(-1).unsqueeze(-1)  # keep sums of the numerator only
 
-            N += input_data.size(0)
+            n += input_data.size(0)
 
-        train_phi = gamma_sum / N
+        train_phi = gamma_sum / n
         train_mu = mu_sum / gamma_sum.unsqueeze(-1)
         train_cov = cov_sum / gamma_sum.unsqueeze(-1).unsqueeze(-1)
 
