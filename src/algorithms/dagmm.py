@@ -204,7 +204,7 @@ class DAGMM(Algorithm):
         train_cov = cov_sum / gamma_sum.unsqueeze(-1).unsqueeze(-1)
 
         train_energy = []
-        for input_data in enumerate(data_loader):
+        for input_data in data_loader:
             input_data = to_var(input_data)
             _, _, z, _ = self.dagmm(input_data)
             sample_energy, _ = self.dagmm.compute_energy(z, phi=train_phi, mu=train_mu, cov=train_cov,
@@ -216,15 +216,14 @@ class DAGMM(Algorithm):
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
         given data."""
+        X = X.dropna()
         test_energy = []
-        test_z = []
         data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
         for input_data in data_loader:
             input_data = to_var(input_data)
             _, _, z, _ = self.dagmm(input_data)
             sample_energy, _ = self.dagmm.compute_energy(z, size_average=False)
             test_energy.append(sample_energy.data.cpu().numpy())
-            test_z.append(z.data.cpu().numpy())
 
         test_energy = np.concatenate(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)

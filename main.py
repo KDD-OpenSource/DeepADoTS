@@ -8,7 +8,7 @@ from src.datasets.air_quality import AirQuality
 from src.datasets.kdd_cup import KDDCup
 from src.datasets.synthetic_data_generator import SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
-
+import logging
 
 def evaluate_on_real_world_data_sets():
     dagmm = DAGMM()
@@ -34,9 +34,11 @@ def evaluate_on_real_world_data_sets():
 
 def main():
     if os.environ.get("CIRCLECI", False):
+        rootLogger = logging.getLogger()
+        rootLogger.setLevel(logging.INFO)
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM(),
-                     LSTM_Enc_Dec(epochs=10)]
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM()]
+                     #LSTM_Enc_Dec(epochs=10)]
     else:
         datasets = [
             SyntheticDataGenerator.extreme_1(),
