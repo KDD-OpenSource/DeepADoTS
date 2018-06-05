@@ -17,9 +17,12 @@ class EnsembleLSTMEncDec(Algorithm):
         self.best_val_loss = None
         self.train_timeseries_dataset: preprocess_data.PickleDataLoad = None
         self.test_timeseries_dataset: preprocess_data.PickleDataLoad = None
-        self.lstm_enc_dec1 = LSTMEncDec(epochs=1, augment_train_data=False, prediction_window_size=5)
-        self.lstm_enc_dec2 = LSTMEncDec(epochs=1, augment_train_data=False, prediction_window_size=10)
-        self.lstm_enc_dec3 = LSTMEncDec(epochs=1, augment_train_data=False, prediction_window_size=15)
+        self.lstm_enc_dec1 = LSTMEncDec(augment_train_data=False,
+                                        prediction_window_size=kwargs["predicition_window_sizes"][0])
+        self.lstm_enc_dec2 = LSTMEncDec(augment_train_data=False,
+                                        prediction_window_size=kwargs["predicition_window_sizes"][1])
+        self.lstm_enc_dec3 = LSTMEncDec(augment_train_data=False,
+                                        prediction_window_size=kwargs["predicition_window_sizes"][2])
 
     def fit(self, X, y):
         self.lstm_enc_dec1.fit(X, y)
@@ -38,7 +41,7 @@ class EnsembleLSTMEncDec(Algorithm):
     def threshold(self, score):
         return self.lstm_enc_dec1.threshold(score)
 
-    def eval_anomaly_scores(self, anomaly_scores1, anomaly_scores2, anomaly_scores3):
+    def aggregate_scores(self, anomaly_scores1, anomaly_scores2, anomaly_scores3):
         # avg = np.average((anomaly_scores1, anomaly_scores2, anomaly_scores3), axis=0)
         # _min = np.min((anomaly_scores1, anomaly_scores2, anomaly_scores3), axis=0)
         _max = np.max((anomaly_scores1, anomaly_scores2, anomaly_scores3), axis=0)
