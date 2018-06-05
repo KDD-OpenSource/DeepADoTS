@@ -65,7 +65,7 @@ class Evaluator:
         dir = "reports/figures/"
         path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
-        logging.info(f"Stored plot at {path}")
+        self.logger.info(f"Stored plot at {path}")
 
     @staticmethod
     def get_metrics_by_thresholds(det, y_true: list, y_pred: list, thresholds: list):
@@ -121,7 +121,7 @@ class Evaluator:
             for det, ax in zip(self.detectors, axes_row):
                 y_pred = np.array(self.results[(ds.name, det.name)])
                 if np.isnan(y_pred).any():
-                    logging.warning("Prediction contains NaN values. Replacing with 0 for plotting!")
+                    self.logger.warning("Prediction contains NaN values. Replacing with 0 for plotting!")
                     y_pred[np.isnan(y_pred)] = 0
 
                 maximum = y_pred.max()
@@ -183,7 +183,7 @@ class Evaluator:
     def print_tables(self):
         benchmarks = self.benchmarks()
         for ds in self.datasets:
-            logging.info(f"Dataset: {ds.name}")
+            self.logger.info(f"Dataset: {ds.name}")
             print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            logging.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+            self.logger.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
                                   headers='keys', tablefmt='psql'))

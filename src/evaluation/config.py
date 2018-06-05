@@ -1,5 +1,6 @@
 import time
 import os
+import re
 import sys
 import logging
 
@@ -28,8 +29,23 @@ def init_logging():
     # Also print logs in the standard output
     consoleHandler = logging.StreamHandler(sys.stdout)
     consoleHandler.setFormatter(logFormatter)
+    consoleHandler.addFilter(DebugModuleFilter(['^src\.', '^root$']))
     rootLogger.addHandler(consoleHandler)
 
     # Create logger instance for the config file
     logger = logging.getLogger(__name__)
     logger.debug("Logger initialized")
+
+class DebugModuleFilter(logging.Filter):
+    def __init__(self, pattern=[]):
+        logging.Filter.__init__(self)
+        self.module_patterns = [re.compile(x) for x in pattern]
+
+    def filter(self, record):
+        # This filter assumes that we want INFO logging from all
+        # modules and DEBUG logging from only selected ones, but
+        # easily could be adapted for other policies.
+        if record.levelno == logging.DEBUG:
+            # e.g. src.evaluator.evaluation
+            return any([x.match(record.name) for x in self.module_patterns])
+        return True

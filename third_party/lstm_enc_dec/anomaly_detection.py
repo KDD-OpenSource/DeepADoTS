@@ -29,8 +29,8 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
                         help='compensate anomaly score using anomaly score esimation')
 
     args_ = parser.parse_args()
-    logging.info('-' * 89)
-    logging.info("=> loading checkpoint ")
+    logging.debug('-' * 89)
+    logging.debug("=> loading checkpoint ")
     checkpoint = torch.load(str(Path('models', args_.data, 'checkpoint', args_.filename).with_suffix('.pth')))
     args = checkpoint['args']
     args.prediction_window_size = args_.prediction_window_size
@@ -69,10 +69,10 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             ''' 1. Load mean and covariance if they are pre-calculated, if not calculate them. '''
             # Mean and covariance are calculated on train dataset.
             if 'means' in checkpoint.keys() and 'covs' in checkpoint.keys():
-                logging.info('=> loading pre-calculated mean and covariance')
+                logging.debug('=> loading pre-calculated mean and covariance')
                 mean, cov = checkpoint['means'][channel_idx], checkpoint['covs'][channel_idx]
             else:
-                logging.info('=> calculating mean and covariance')
+                logging.debug('=> calculating mean and covariance')
                 mean, cov = fit_norm_distribution_param(args, model, train_dataset, channel_idx=channel_idx)
 
             ''' 2. Train anomaly score predictor using support vector regression (SVR). (Optional) '''
@@ -80,7 +80,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             # given hidden layer output and the corresponding anomaly score on train dataset.
             # Predicted anomaly scores on test dataset can be used for the baseline of the adaptive threshold.
             if args.compensate:
-                logging.info('=> training an SVR as anomaly score predictor')
+                logging.debug('=> training an SVR as anomaly score predictor')
                 train_score, _, _, hiddens, _ = anomalyScore(args, model, train_dataset, mean, cov,
                                                              channel_idx=channel_idx)
                 score_predictor = GridSearchCV(SVR(), cv=5,
@@ -92,7 +92,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             ''' 3. Calculate anomaly scores'''
             # Anomaly scores are calculated on the test dataset
             # given the mean and the covariance calculated on the train dataset
-            logging.info('=> calculating anomaly scores')
+            logging.debug('=> calculating anomaly scores')
             score, _, _, _, predicted_score = anomalyScore(
                 args, model, test_dataset, mean, cov,
                 score_predictor=score_predictor, channel_idx=channel_idx
@@ -102,14 +102,14 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset):
             predicted_scores.append(predicted_score)
 
     except KeyboardInterrupt:
-        logging.info('-' * 89)
-        logging.info('Exiting from training early')
+        logging.warn('-' * 89)
+        logging.warn('Exiting from training early')
 
-    logging.info('=> saving the results as pickle extensions')
+    logging.debug('=> saving the results as pickle extensions')
     save_dir = Path(REPORT_PICKLES_DIR, args.data, args.filename).with_suffix('')
     save_dir.mkdir(parents=True, exist_ok=True)
     pickle.dump(scores, open(str(save_dir.joinpath('score.pkl')), 'wb'))
     pickle.dump(predicted_scores, open(str(save_dir.joinpath('predicted_scores.pkl')), 'wb'))
-    logging.info('-' * 89)
+    logging.debug('-' * 89)
 
     return scores, predicted_scores

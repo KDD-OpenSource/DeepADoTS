@@ -149,8 +149,8 @@ class LSTM_Enc_Dec(Algorithm):
                     self.model.save_checkpoint(model_dictionary, is_best)
 
         except KeyboardInterrupt:
-            logging.warn('-' * 89)
-            logging.warn('Exiting from training early')
+            logging.warning('-' * 89)
+            logging.warning('Exiting from training early')
 
         # Calculate mean and covariance for each channel's prediction errors, and save them with the trained model
         logging.info('=> calculating mean and covariance')
