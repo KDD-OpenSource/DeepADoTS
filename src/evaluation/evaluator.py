@@ -186,4 +186,4 @@ class Evaluator:
             self.logger.info(f"Dataset: {ds.name}")
             print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
             self.logger.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
-                                  headers='keys', tablefmt='psql'))
+                                      headers='keys', tablefmt='psql'))

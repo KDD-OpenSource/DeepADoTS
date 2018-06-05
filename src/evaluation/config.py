@@ -36,6 +36,7 @@ def init_logging():
     logger = logging.getLogger(__name__)
     logger.debug("Logger initialized")
 
+
 class DebugModuleFilter(logging.Filter):
     def __init__(self, pattern=[]):
         logging.Filter.__init__(self)
