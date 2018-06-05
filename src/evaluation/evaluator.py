@@ -99,7 +99,7 @@ class Evaluator:
             _, _, _, y_test = ds.data()
             fig_scale = 3
             fig = plt.figure(figsize=(fig_scale*len(self.detectors), fig_scale))
-            fig.canvas.set_window_title(ds.name + "ROC")
+            fig.canvas.set_window_title(ds.name + " ROC")
             fig.suptitle(ds.name, fontsize=14, y="1.1")
             subplot_count = 1
             for det in self.detectors:
