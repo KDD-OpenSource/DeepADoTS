@@ -22,4 +22,3 @@ class DAGMMTestCase(unittest.TestCase):
         assert df_evaluation['precision'].mean() >= 0.91
         assert df_evaluation['recall'].mean() >= 0.93
         assert df_evaluation['F1-score'].mean() >= 0.92
-
