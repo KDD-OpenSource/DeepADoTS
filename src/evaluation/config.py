@@ -17,7 +17,7 @@ def init_logging():
 
     # Actually initialize the logging module
     log_formatter = logging.Formatter(fmt='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-                                     datefmt='%Y-%m-%d %H:%M:%S')
+                                      datefmt='%Y-%m-%d %H:%M:%S')
     root_logger = logging.getLogger()
     root_logger.setLevel(LOG_LEVEL)
 
