@@ -34,22 +34,7 @@ def evaluate_on_real_world_data_sets():
 
 def main():
     if os.environ.get("CIRCLECI", False):
-        datasets = [
-            SyntheticDataGenerator.extreme_1(),
-            SyntheticDataGenerator.variance_1(),
-            SyntheticDataGenerator.shift_1(),
-            SyntheticDataGenerator.trend_1(),
-            SyntheticDataGenerator.combined_1(),
-            SyntheticDataGenerator.combined_4(),
-            SyntheticDataGenerator.variance_1_missing(0.1),
-            SyntheticDataGenerator.variance_1_missing(0.3),
-            SyntheticDataGenerator.variance_1_missing(0.5),
-            SyntheticDataGenerator.variance_1_missing(0.8),
-            SyntheticDataGenerator.extreme_1_polluted(0.1),
-            SyntheticDataGenerator.extreme_1_polluted(0.3),
-            SyntheticDataGenerator.extreme_1_polluted(0.5),
-            SyntheticDataGenerator.extreme_1_polluted(1)
-        ]
+        datasets = [SyntheticDataGenerator.extreme_1()]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM(),
                      LSTMEncDec(epochs=10), EnsembleLSTMEncDec(epochs=10)]
     else:
@@ -69,11 +54,12 @@ def main():
             SyntheticDataGenerator.extreme_1_polluted(0.5),
             SyntheticDataGenerator.extreme_1_polluted(1)
         ]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTMEncDec(epochs=200), EnsembleLSTMEncDec(epochs=200)]
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTMEncDec(epochs=150),
+                     EnsembleLSTMEncDec(epochs=150)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()
-    for ds in df['dataset']:
+    for ds in df['dataset'].unique():
         print("Dataset: " + ds)
         print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
         print(tabulate(df[df['dataset'] == ds][print_order], headers='keys', tablefmt='psql'))
