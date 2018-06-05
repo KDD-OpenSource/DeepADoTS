@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
-from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTM_Enc_Dec, LSTMAD
+from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD
 from src.datasets.air_quality import AirQuality
 from src.datasets.kdd_cup import KDDCup
 from src.datasets.synthetic_data_generator import SyntheticDataGenerator
@@ -39,7 +39,7 @@ def main():
         rootLogger = logging.getLogger()
         rootLogger.setLevel(logging.INFO)
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM()]
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM(num_epochs=1)]
         # LSTM_Enc_Dec(epochs=10)] TODO: Issue #48
     else:
         datasets = [
@@ -58,7 +58,8 @@ def main():
             SyntheticDataGenerator.extreme_1_polluted(0.5),
             SyntheticDataGenerator.extreme_1_polluted(1)
         ]
-        detectors = [ DAGMM()]
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM()]
+        # LSTM_Enc_Dec(epochs=200)] TODO: Issue #48
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()

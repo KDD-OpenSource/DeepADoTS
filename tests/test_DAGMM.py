@@ -9,10 +9,10 @@ from src.evaluation.evaluator import Evaluator
 
 class DAGMMTestCase(unittest.TestCase):
     def test_kdd_cup(self):
-        evaluator = Evaluator([KDDCup()], [DAGMM()])
+        evaluator = Evaluator([KDDCup()], [DAGMM(num_epochs=1)])
         df_evaluation = pd.DataFrame(
             columns=["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"])
-        for _ in range(10):
+        for _ in range(5):
             evaluator.evaluate()
             df = evaluator.benchmarks()
             df_evaluation = df_evaluation.append(df)
