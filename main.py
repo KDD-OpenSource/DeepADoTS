@@ -36,7 +36,9 @@ def main():
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM(),
-                     LSTMEncDec(epochs=3), EnsembleLSTMEncDec(epochs=3, predicition_window_sizes=[5, 10, 15])]
+                     LSTMEncDec(epochs=3), EnsembleLSTMEncDec(epochs=3, prediction_window_size1=5,
+                                                              prediction_window_size2=10, prediction_window_size3=15,
+                                                              aggregation_method="max")]
     else:
         datasets = [
             SyntheticDataGenerator.extreme_1(),
@@ -55,7 +57,9 @@ def main():
             SyntheticDataGenerator.extreme_1_polluted(1)
         ]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTMEncDec(epochs=150),
-                     EnsembleLSTMEncDec(epochs=150, predicition_window_sizes=[5, 10, 15])]
+                     EnsembleLSTMEncDec(epochs=150, prediction_window_size1=5,
+                                        prediction_window_size2=10, prediction_window_size3=15,
+                                        aggregation_method="max")]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     df = evaluator.benchmarks()
