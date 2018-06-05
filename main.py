@@ -1,41 +1,16 @@
 import os
 import numpy as np
 import pandas as pd
-from tabulate import tabulate
 
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMEncDec, LSTMAD, EnsembleLSTMEncDec
-from src.datasets.air_quality import AirQuality
-from src.datasets.kdd_cup import KDDCup
-from src.datasets.synthetic_data_generator import SyntheticDataGenerator
+from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
-
-
-def evaluate_on_real_world_data_sets():
-    dagmm = DAGMM()
-    kdd_cup = KDDCup()
-    (X_train, y_train), (X_test, y_test) = kdd_cup.get_data_dagmm()
-    dagmm.fit(X_train, y_train)
-    pred = dagmm.predict(X_test)
-    print(Evaluator.get_accuracy_precision_recall_fscore(y_test, pred))
-
-    donut = Donut()
-    air_quality = AirQuality().data()
-    X = air_quality.loc[:, [air_quality.columns[2], "timestamps"]]
-    X["timestamps"] = X.index
-    split_ratio = 0.8
-    split_point = int(split_ratio * len(X))
-    X_train = X[:split_point]
-    X_test = X[split_point:]
-    y_train = pd.Series(0, index=np.arange(len(X_train)))
-    donut.fit(X_train, y_train)
-    pred = donut.predict(X_test)
-    print(pred)
 
 
 def main():
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM(),
+        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM(),
                      LSTMEncDec(epochs=3), EnsembleLSTMEncDec(epochs=3, prediction_window_size1=5,
                                                               prediction_window_size2=10, prediction_window_size3=15,
                                                               aggregation_method="max")]
@@ -62,12 +37,33 @@ def main():
                                         aggregation_method="max")]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
-    df = evaluator.benchmarks()
-    for ds in df['dataset'].unique():
-        print("Dataset: " + ds)
-        print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-        print(tabulate(df[df['dataset'] == ds][print_order], headers='keys', tablefmt='psql'))
+
+    evaluator.print_tables()
+    evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
+    evaluator.plot_roc_curves()
+
+
+def evaluate_on_real_world_data_sets():
+    dagmm = DAGMM()
+    kdd_cup = KDDCup()
+    X_train, y_train, X_test, y_test = kdd_cup.data()
+    dagmm.fit(X_train, y_train)
+    pred = dagmm.predict(X_test)
+    print(Evaluator.get_accuracy_precision_recall_fscore(y_test, pred))
+
+    donut = Donut()
+    air_quality = AirQuality().data()
+    X = air_quality.loc[:, [air_quality.columns[2], "timestamps"]]
+    X["timestamps"] = X.index
+    split_ratio = 0.8
+    split_point = int(split_ratio * len(X))
+    X_train = X[:split_point]
+    X_test = X[split_point:]
+    y_train = pd.Series(0, index=np.arange(len(X_train)))
+    donut.fit(X_train, y_train)
+    pred = donut.predict(X_test)
+    print("Donut results: ", pred)
 
 
 if __name__ == '__main__':
