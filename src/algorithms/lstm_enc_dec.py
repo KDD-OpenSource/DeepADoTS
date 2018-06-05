@@ -132,7 +132,8 @@ class LSTM_Enc_Dec(Algorithm):
 
                 val_loss = train_predictor.evaluate(self.args, self.model, test_dataset, self.criterion)
                 logging.debug('-' * 89)
-                logging.debug('| end of epoch {epoch:3d} | time: {time.time():5.2f}s | valid loss {val_loss:5.4f} | ')
+                run_time = time.time() - epoch_start_time
+                logging.debug(f'| end of epoch {epoch:3d} | time: {run_time:5.2f}s | valid loss {val_loss:5.4f} | ')
                 logging.debug('-' * 89)
 
                 if epoch % self.args.save_interval == 0:
