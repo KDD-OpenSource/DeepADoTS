@@ -29,13 +29,13 @@ class Evaluator:
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
             for det in progressbar.progressbar(self.detectors):
-                print("Training " + det.name + " on " + str(ds))
+                logging.info("Training " + det.name + " on " + str(ds))
                 try:
                     det.fit(X_train, y_train)
                     score = det.predict(X_test)
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
-                    print(f"ERROR: An error occured while training {det.name} on {ds}: {e}")
+                    logging.error(f"ERROR: An error occured while training {det.name} on {ds}: {e}")
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
     def benchmarks(self) -> pd.DataFrame:
@@ -57,7 +57,6 @@ class Evaluator:
         return df
 
     def store(self, fig, title, extension="pdf"):
-        # ToDo: Add more information (algorithms, datasets) in title
         timestamp = int(time.time())
         dir = "reports/figures/"
         path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
@@ -180,7 +179,7 @@ class Evaluator:
     def print_tables(self):
         benchmarks = self.benchmarks()
         for ds in self.datasets:
-            print(f"Dataset: {ds.name}")
+            logging.info(f"Dataset: {ds.name}")
             print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            print(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+            logging.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
                   headers='keys', tablefmt='psql'))
