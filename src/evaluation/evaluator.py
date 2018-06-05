@@ -66,8 +66,9 @@ class Evaluator:
             _, _, X_test, y_test = ds.data()
             subtitle_loc = 'left'
             fig = plt.figure(figsize=(15, 15))
+            fig.canvas.set_window_title(ds.name)
             sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 1)
-            sp.set_title("original test set", loc=subtitle_loc)
+            sp.set_title("original test set: " + ds.name, loc=subtitle_loc)
             for col in X_test.columns:
                 plt.plot(X_test[col])
             sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 2)
@@ -98,6 +99,7 @@ class Evaluator:
             _, _, _, y_test = ds.data()
             fig_scale = 3
             fig = plt.figure(figsize=(fig_scale*len(self.detectors), fig_scale))
+            fig.canvas.set_window_title(ds.name + "ROC")
             fig.suptitle(ds.name, fontsize=14, y="1.1")
             subplot_count = 1
             for det in self.detectors:
