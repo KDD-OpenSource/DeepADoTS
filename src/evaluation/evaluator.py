@@ -77,21 +77,28 @@ class Evaluator:
     def plot_scores(self, store=True):
         figures = []
         for ds in self.datasets:
-            _, _, X_test, y_test = ds.data()
-            subtitle_loc = "left"
+            X_train, y_train, X_test, y_test = ds.data()
+            subtitle_loc = 'left'
             fig = plt.figure(figsize=(15, 15))
             fig.canvas.set_window_title(ds.name)
-            sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 1)
-            sp.set_title("original test set: " + ds.name, loc=subtitle_loc)
+
+            sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, 1)
+            sp.set_title("original training data", loc=subtitle_loc)
+            for col in X_train.columns:
+                plt.plot(X_train[col])
+
+            sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, 2)
+            sp.set_title("original test set", loc=subtitle_loc)
             for col in X_test.columns:
                 plt.plot(X_test[col])
-            sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 2)
+
+            sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, 3)
             sp.set_title("binary labels of test set", loc=subtitle_loc)
             plt.plot(y_test)
 
-            subplot_num = 3
+            subplot_num = 4
             for det in self.detectors:
-                sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, subplot_num)
+                sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, subplot_num)
                 sp.set_title(f"scores of {det.name}", loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
                 plt.plot(np.arange(len(score)), [x for x in score])
@@ -99,7 +106,7 @@ class Evaluator:
                 plt.plot([x for x in threshold_line])
                 subplot_num += 1
 
-                sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, subplot_num)
+                sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, subplot_num)
                 sp.set_title(f"binary labels of {det.name}", loc=subtitle_loc)
                 plt.plot(np.arange(len(score)), [x for x in det.binarize(score)])
                 subplot_num += 1
