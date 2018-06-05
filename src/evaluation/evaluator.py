@@ -11,17 +11,21 @@ from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
 from sklearn.metrics import roc_curve, auc
 
+from .config import init_logging
+
 
 class Evaluator:
     def __init__(self, datasets: list, detectors: list):
         self.datasets = datasets
         self.detectors = detectors
         self.results = dict()
+        init_logging()
+        self.logger = logging.getLogger(__name__)
 
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
         accuracy = accuracy_score(y_true, y_pred)
-        precision, recall, f_score, support = prf(y_true, y_pred, average='binary')
+        precision, recall, f_score, support = prf(y_true, y_pred, average="binary")
         f01_score = fbeta_score(y_true, y_pred, average='binary', beta=0.1)
         return accuracy, precision, recall, f_score, f01_score
 
@@ -29,13 +33,13 @@ class Evaluator:
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
             for det in progressbar.progressbar(self.detectors):
-                logging.info("Training " + det.name + " on " + str(ds))
+                self.logger.info(f"Training {det.name} on {ds}")
                 try:
                     det.fit(X_train, y_train)
                     score = det.predict(X_test)
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
-                    logging.error(f"ERROR: An error occured while training {det.name} on {ds}: {e}")
+                    self.logger.error(f"An exception occured while training {det.name} on {ds}: {e}")
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
     def benchmarks(self) -> pd.DataFrame:
@@ -61,7 +65,7 @@ class Evaluator:
         dir = "reports/figures/"
         path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
-        logging.info(f"Stored plot at {path}")
+        self.logger.info(f"Stored plot at {path}")
 
     @staticmethod
     def get_metrics_by_thresholds(det, y_true: list, y_pred: list, thresholds: list):
@@ -125,7 +129,7 @@ class Evaluator:
             for det, ax in zip(self.detectors, axes_row):
                 y_pred = np.array(self.results[(ds.name, det.name)])
                 if np.isnan(y_pred).any():
-                    logging.warning("Prediction contains NaN values. Replacing with 0 for plotting!")
+                    self.logger.warning("Prediction contains NaN values. Replacing with 0 for plotting!")
                     y_pred[np.isnan(y_pred)] = 0
 
                 maximum = y_pred.max()
@@ -162,16 +166,16 @@ class Evaluator:
             fig.suptitle(f"ROC curve on {ds.name}", fontsize=14, y="1.1")
             subplot_count = 1
             for det in self.detectors:
-                logging.info(f"Plotting {det.name} on {ds.name}")
+                self.logger.info(f"Plotting ROC curve for {det.name} on {ds.name}")
                 score = self.results[(ds.name, det.name)]
                 y_pred = det.binarize(score)
                 fpr, tpr, _ = roc_curve(y_test, y_pred)
                 roc_auc = auc(fpr, tpr)
                 plt.subplot(1, len(self.detectors), subplot_count)
                 plt.plot(fpr, tpr, color="darkorange",
-                         lw=2, label='area = %0.2f' % roc_auc)
+                         lw=2, label="area = %0.2f" % roc_auc)
                 subplot_count += 1
-                plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+                plt.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--")
                 plt.xlim([0.0, 1.0])
                 plt.ylim([0.0, 1.05])
                 plt.xlabel("False Positive Rate")
@@ -188,7 +192,7 @@ class Evaluator:
     def print_tables(self):
         benchmarks = self.benchmarks()
         for ds in self.datasets:
-            logging.info(f"Dataset: {ds.name}")
+            self.logger.info(f"Dataset: {ds.name}")
             print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            logging.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
-                                  headers='keys', tablefmt='psql'))
+            self.logger.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+                                      headers='keys', tablefmt='psql'))
