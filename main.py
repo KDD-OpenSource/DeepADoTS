@@ -37,6 +37,7 @@ def main():
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
+    evaluator.generate_latex()
 
 
 def evaluate_on_real_world_data_sets():

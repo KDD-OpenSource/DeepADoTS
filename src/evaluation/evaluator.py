@@ -2,14 +2,14 @@ import logging
 import os
 import time
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from tabulate import tabulate
 import progressbar
 from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
 from sklearn.metrics import roc_curve, auc
+from tabulate import tabulate
 
 
 class Evaluator:
@@ -150,7 +150,7 @@ class Evaluator:
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
             fig_scale = 3
-            fig = plt.figure(figsize=(fig_scale*len(self.detectors), fig_scale))
+            fig = plt.figure(figsize=(fig_scale * len(self.detectors), fig_scale))
             fig.canvas.set_window_title(ds.name + " ROC")
             fig.suptitle(f"ROC curve on {ds.name}", fontsize=14, y="1.1")
             subplot_count = 1
@@ -185,3 +185,15 @@ class Evaluator:
             print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
             logging.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
                                   headers='keys', tablefmt='psql'))
+
+    def generate_latex(self):
+        benchmarks = self.benchmarks()
+        timestamp = str(time.time())
+        dir = "reports/figures/"
+        for ds in self.datasets:
+            print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
+            print(ds.name + ": ", file=open(dir + "table_results" + timestamp + ".tex", "a"))
+            print(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+                           headers='keys', tablefmt='latex'), file=open(dir + "table_results" + timestamp +
+                                                                        ".tex", "a"))
+            print("\n", file=open(dir + "table_results" + timestamp + ".tex", "a"))
