@@ -83,6 +83,7 @@ class DAGMM_Module(nn.Module):
         rec_cosine = F.cosine_similarity(x, dec, dim=1)
         rec_euclidean = self.relative_euclidean_distance(x, dec)
 
+        # Concatenate latent representation, cosine similarity and relative Euclidean distance between x and dec(enc(x))
         z = torch.cat([enc, rec_euclidean.unsqueeze(-1), rec_cosine.unsqueeze(-1)], dim=1)
 
         gamma = self.estimation(z)
