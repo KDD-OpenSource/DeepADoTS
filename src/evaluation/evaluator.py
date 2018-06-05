@@ -29,6 +29,13 @@ class Evaluator:
         f01_score = fbeta_score(y_true, y_pred, average='binary', beta=0.1)
         return accuracy, precision, recall, f_score, f01_score
 
+    @staticmethod
+    def get_auroc(det, ds, score):
+        _, _, _, y_test = ds.data()
+        y_pred = det.binarize(score)
+        fpr, tpr, _ = roc_curve(y_test, y_pred)
+        return auc(fpr, tpr)
+
     def evaluate(self):
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
@@ -50,13 +57,16 @@ class Evaluator:
                 score = self.results[(ds.name, det.name)]
                 y_pred = det.binarize(score)
                 acc, prec, rec, f1_score, f01_score = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
+                score = self.results[(ds.name, det.name)]
+                auroc = self.get_auroc(det, ds, score)
                 df = df.append({"dataset": ds.name,
                                 "algorithm": det.name,
                                 "accuracy": acc,
                                 "precision": prec,
                                 "recall": rec,
                                 "F1-score": f1_score,
-                                "F0.1-score": f01_score},
+                                "F0.1-score": f01_score,
+                                "auroc": auroc},
                                ignore_index=True)
         return df
 
@@ -186,6 +196,24 @@ class Evaluator:
             plt.tight_layout()
             if store:
                 self.store(fig, f"roc_{ds.name}")
+            figures.append(fig)
+        return figures
+
+    def plot_auroc(self, store=True, title='AUROC'):
+        benchmarks = self.benchmarks()
+        dataset_names = [ds.name for ds in self.datasets]
+        figures = []
+        for det in self.detectors:
+            fig = plt.figure(figsize=(7, 7))
+            aurocs = benchmarks[benchmarks['algorithm'] == det.name]['auroc']
+            plt.plot(aurocs)
+            plt.xticks(aurocs.index, dataset_names, rotation=90)
+            plt.xlabel('Dataset')
+            plt.ylabel('Area under Receiver Operating Characteristic')
+            plt.title(f'{title}: {det.name}')
+            fig.tight_layout()
+            if store:
+                self.store(fig, f"auroc_{det.name}")
             figures.append(fig)
         return figures
 
