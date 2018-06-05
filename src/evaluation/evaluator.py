@@ -70,7 +70,7 @@ class Evaluator:
             metrics = Evaluator.get_accuracy_precision_recall_fscore(y_true, anomaly)
             yield (anomaly.sum(), *metrics)
 
-    def plot_scores(self, store=False):
+    def plot_scores(self, store=True):
         figures = []
         for ds in self.datasets:
             X_train, y_train, X_test, y_test = ds.data()
