@@ -70,12 +70,13 @@ class Evaluator:
             metrics = Evaluator.get_accuracy_precision_recall_fscore(y_true, anomaly)
             yield (anomaly.sum(), *metrics)
 
-    def plot_scores(self, store=True):
+    def plot_scores(self, store=False):
         figures = []
         for ds in self.datasets:
             X_train, y_train, X_test, y_test = ds.data()
             subtitle_loc = 'left'
             fig = plt.figure(figsize=(15, 15))
+            fig.canvas.set_window_title(ds.name)
 
             sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, 1)
             sp.set_title("original training data", loc=subtitle_loc)
@@ -157,6 +158,7 @@ class Evaluator:
             _, _, _, y_test = ds.data()
             fig_scale = 3
             fig = plt.figure(figsize=(fig_scale*len(self.detectors), fig_scale))
+            fig.canvas.set_window_title(ds.name + " ROC")
             fig.suptitle(f"ROC curve on {ds.name}", fontsize=14, y="1.1")
             subplot_count = 1
             for det in self.detectors:
