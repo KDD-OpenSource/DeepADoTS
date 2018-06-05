@@ -120,7 +120,7 @@ class LSTMAD(Algorithm):
     def binarize(self, score, threshold=None):
         threshold = self.threshold(score)
         score = np.where(np.isnan(score), threshold - 1, score)
-        return np.roll(np.where(score >= threshold, 1, 0), -self.len_out)
+        return np.roll(np.where(score >= threshold, 1, 0), -(self.len_out-self.len_in))
 
     def threshold(self, score):
-        return np.nanmean(score) + 2*np.nanstd(score)
+        return np.nanmean(score) + np.nanstd(score)
