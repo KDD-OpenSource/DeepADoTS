@@ -42,6 +42,7 @@ def run_pipeline():
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
 
+
 def evaluate_on_real_world_data_sets():
     dagmm = DAGMM()
     kdd_cup = KDDCup()
