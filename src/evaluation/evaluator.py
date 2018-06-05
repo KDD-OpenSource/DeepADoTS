@@ -73,14 +73,21 @@ class Evaluator:
     def plot_scores(self, store=True):
         figures = []
         for ds in self.datasets:
-            _, _, X_test, y_test = ds.data()
+            X_train, y_train, X_test, y_test = ds.data()
             subtitle_loc = 'left'
             fig = plt.figure(figsize=(15, 15))
+
             sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 1)
+            sp.set_title("original training data", loc=subtitle_loc)
+            for col in X_train.columns:
+                plt.plot(X_train[col])
+
+            sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 2)
             sp.set_title("original test set", loc=subtitle_loc)
             for col in X_test.columns:
                 plt.plot(X_test[col])
-            sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 2)
+
+            sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, 3)
             sp.set_title("binary labels of test set", loc=subtitle_loc)
             plt.plot(y_test)
 
