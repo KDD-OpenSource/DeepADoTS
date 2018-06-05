@@ -88,7 +88,7 @@ class RNNPredictor(nn.Module):
             return h.detach()
 
     def save_checkpoint(self, state, is_best):
-        logging.info("=> saving checkpoint ..")
+        logging.debug("=> saving checkpoint ..")
         args = state['args']
         checkpoint_dir = Path('models', args.data, 'checkpoint')
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
