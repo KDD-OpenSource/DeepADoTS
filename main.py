@@ -2,10 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 
-from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTM_Enc_Dec, LSTMAD
-from src.datasets.air_quality import AirQuality
-from src.datasets.kdd_cup import KDDCup
-from src.datasets.synthetic_data_generator import SyntheticDataGenerator
+from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
+from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
 from src.evaluation.evaluator import Evaluator
 
 
@@ -16,8 +14,8 @@ def main():
 def run_pipeline():
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM(),
-                     LSTM_Enc_Dec(epochs=10)]
+        detectors = [RecurrentEBM(num_epochs=2), Donut(max_epoch=5), DAGMM(),
+                     LSTM_Enc_Dec(epochs=2)]
     else:
         datasets = [
             SyntheticDataGenerator.extreme_1(),
@@ -38,9 +36,11 @@ def run_pipeline():
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(epochs=200)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
-    # df = evaluator.benchmarks()
-    evaluator.plot_scores()
 
+    evaluator.print_tables()
+    evaluator.plot_threshold_comparison()
+    evaluator.plot_scores()
+    evaluator.plot_roc_curves()
 
 def evaluate_on_real_world_data_sets():
     dagmm = DAGMM()

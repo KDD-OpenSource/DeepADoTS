@@ -1,8 +1,11 @@
 import logging
+import os
+import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from tabulate import tabulate
 import progressbar
 from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
@@ -12,14 +15,6 @@ from .config import init_logging
 
 
 class Evaluator:
-    """
-    ToDo:
-        * fix roc curve
-        * rename benchmarks()
-        * refine progressbar or remove (also in requirements)
-        * sort columns of df from benchmarks()
-    """
-
     def __init__(self, datasets: list, detectors: list):
         self.datasets = datasets
         self.detectors = detectors
@@ -44,7 +39,7 @@ class Evaluator:
                     score = det.predict(X_test)
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
-                    self.logger.error(f"Exception occured while training '{det.name}' on '{ds}': {e}")
+                    self.logger.error(f"An exception occured while training {det.name} on {ds}: {e}")
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
     def benchmarks(self) -> pd.DataFrame:
@@ -65,7 +60,22 @@ class Evaluator:
                                ignore_index=True)
         return df
 
-    def plot_scores(self):
+    def store(self, fig, title, extension="pdf"):
+        timestamp = int(time.time())
+        dir = "reports/figures/"
+        path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        fig.savefig(path)
+        logging.info(f"Stored plot at {path}")
+
+    @staticmethod
+    def get_metrics_by_thresholds(det, y_true: list, y_pred: list, thresholds: list):
+        for threshold in thresholds:
+            anomaly = det.binarize(y_pred, threshold=threshold)
+            metrics = Evaluator.get_accuracy_precision_recall_fscore(y_true, anomaly)
+            yield (anomaly.sum(), *metrics)
+
+    def plot_scores(self, store=True):
+        figures = []
         for ds in self.datasets:
             _, _, X_test, y_test = ds.data()
             subtitle_loc = "left"
@@ -81,7 +91,7 @@ class Evaluator:
             subplot_num = 3
             for det in self.detectors:
                 sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, subplot_num)
-                sp.set_title("scores of " + det.name, loc=subtitle_loc)
+                sp.set_title(f"scores of {det.name}", loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
                 plt.plot(np.arange(len(score)), [x for x in score])
                 threshold_line = len(score) * [det.threshold(score)]
@@ -89,20 +99,62 @@ class Evaluator:
                 subplot_num += 1
 
                 sp = fig.add_subplot((2 * len(self.detectors) + 2), 1, subplot_num)
-                sp.set_title("binary labels of " + det.name, loc=subtitle_loc)
+                sp.set_title(f"binary labels of {det.name}", loc=subtitle_loc)
                 plt.plot(np.arange(len(score)), [x for x in det.binarize(score)])
                 subplot_num += 1
-        plt.legend()
-        plt.tight_layout()
-        plt.show()
-        self.plot_roc_curves()
+            fig.subplots_adjust(top=0.9, hspace=0.4)
+            fig.tight_layout()
+            if store:
+                self.store(fig, f"scores_{ds.name}")
+            figures.append(fig)
+        return figures
 
-    def plot_roc_curves(self):
+    def plot_threshold_comparison(self, steps=40, store=True):
+        plots_shape = len(self.detectors), len(self.datasets)
+        fig, axes = plt.subplots(*plots_shape, figsize=(15, 15))
+        # Ensure two dimensions for iteration
+        axes = np.array(axes).reshape(*plots_shape).T
+        plt.suptitle("Compare thresholds", fontsize=16)
+        for ds, axes_row in zip(self.datasets, axes):
+            _, _, X_test, y_test = ds.data()
+
+            for det, ax in zip(self.detectors, axes_row):
+                y_pred = np.array(self.results[(ds.name, det.name)])
+                if np.isnan(y_pred).any():
+                    logging.warning("Prediction contains NaN values. Replacing with 0 for plotting!")
+                    y_pred[np.isnan(y_pred)] = 0
+
+                maximum = y_pred.max()
+                th = np.linspace(0, maximum, steps)
+                metrics = list(self.get_metrics_by_thresholds(det, y_test, y_pred, th))
+                metrics = np.array(metrics).T
+                anomalies, acc, prec, rec, f_score, f01_score = metrics
+
+                ax.plot(th, anomalies / len(y_test),
+                        label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
+                ax.plot(th, acc, label="accuracy")
+                ax.plot(th, prec, label="precision")
+                ax.plot(th, rec, label="recall")
+                ax.plot(th, f_score, label="f_score")
+                ax.plot(th, f01_score, label="f01_score")
+                ax.set_title(f"{det.name} on {ds.name}")
+                ax.set_xlabel("Threshold")
+                ax.legend()
+
+        fig.tight_layout()
+        # Avoid overlapping title and axis labels
+        fig.subplots_adjust(top=0.9, hspace=0.4)
+        if store:
+            self.store(fig, "metrics_by_thresholds")
+        return fig
+
+    def plot_roc_curves(self, store=True):
+        figures = []
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
             fig_scale = 3
             fig = plt.figure(figsize=(fig_scale*len(self.detectors), fig_scale))
-            fig.suptitle(ds.name, fontsize=14, y="1.1")
+            fig.suptitle(f"ROC curve on {ds.name}", fontsize=14, y="1.1")
             subplot_count = 1
             for det in self.detectors:
                 self.logger.info(f"Plotting ROC curve for {det.name} on {ds.name}")
@@ -123,4 +175,15 @@ class Evaluator:
                 plt.title(det.name)
                 plt.legend(loc="lower right")
             plt.tight_layout()
-            plt.show()
+            if store:
+                self.store(fig, f"roc_{ds.name}")
+            figures.append(fig)
+        return figures
+
+    def print_tables(self):
+        benchmarks = self.benchmarks()
+        for ds in self.datasets:
+            logging.info(f"Dataset: {ds.name}")
+            print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
+            logging.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+                                  headers='keys', tablefmt='psql'))
