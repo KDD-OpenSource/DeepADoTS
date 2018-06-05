@@ -84,7 +84,7 @@ class LSTM_Enc_Dec(Algorithm):
             # Find threshold which amount is the closest to the mean of all anomaly amounts
             idx = (np.abs(anomalies_by_threshold - anomalies_by_threshold.mean())).argmin()
             threshold = th[idx]
-            logging.info('Selecting threshold #{}: {}'.format(idx, threshold))
+            logging.info(f'Selecting threshold #{idx}: {threshold}')
             yield np.array(score > threshold, dtype=int)
 
     def _transform_fit_data(self, X_orig_train, y_orig_train):
@@ -96,26 +96,26 @@ class LSTM_Enc_Dec(Algorithm):
             input_data=(X_train, y_train, X_test, y_test),
             augment_train_data=self.args.augment_train_data,
         )
-        logging.info('-'*89)
-        logging.info('Splitting and transforming input data:')
-        logging.info('X_orig_train', X_orig_train.shape)
-        logging.info('y_orig_train', y_orig_train.shape)
-        logging.info('X_train', self.train_timeseries_dataset.trainData.shape)
-        logging.info('y_train', self.train_timeseries_dataset.trainLabel.shape)
-        logging.info('X_val', self.train_timeseries_dataset.testData.shape)
-        logging.info('y_val', self.train_timeseries_dataset.testLabel.shape)
-        logging.info('-'*89)
+        logging.debug('-'*89)
+        logging.debug('Splitting and transforming input data:')
+        logging.debug(f'X_orig_train: {X_orig_train.shape}')
+        logging.debug(f'y_orig_train: {y_orig_train.shape}')
+        logging.debug(f'X_train: {self.train_timeseries_dataset.trainData.shape}')
+        logging.debug(f'y_train: {self.train_timeseries_dataset.trainLabel.shape}')
+        logging.debug(f'X_val: {self.train_timeseries_dataset.testData.shape}')
+        logging.debug(f'y_val: {self.train_timeseries_dataset.testLabel.shape}')
+        logging.debug('-'*89)
         return self.train_timeseries_dataset
 
     def _transform_predict_data(self, X_orig_test):
         self.test_timeseries_dataset = preprocess_data.PickleDataLoad(
             input_data=X_orig_test,
         )
-        logging.info('-'*89)
-        logging.info('Input data:')
-        logging.info('X_orig_test', X_orig_test.shape)
-        logging.info('X_test', self.test_timeseries_dataset.testData.shape)
-        logging.info('-'*89)
+        logging.debug('-'*89)
+        logging.debug('Input data:')
+        logging.debug(f'X_orig_test: {X_orig_test.shape}')
+        logging.debug(f'X_test: {self.test_timeseries_dataset.testData.shape}')
+        logging.debug('-'*89)
 
         return self.test_timeseries_dataset
 
@@ -131,10 +131,9 @@ class LSTM_Enc_Dec(Algorithm):
                 train_predictor.train(self.args, self.model, train_dataset, epoch, self.optimizer, self.criterion)
 
                 val_loss = train_predictor.evaluate(self.args, self.model, test_dataset, self.criterion)
-                logging.info('-' * 89)
-                logging.info('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.4f} | '.format(epoch, (
-                        time.time() - epoch_start_time), val_loss))
-                logging.info('-' * 89)
+                logging.debug('-' * 89)
+                logging.debug('| end of epoch {epoch:3d} | time: {time.time():5.2f}s | valid loss {val_loss:5.4f} | ')
+                logging.debug('-' * 89)
 
                 if epoch % self.args.save_interval == 0:
                     # Save the model if the validation loss is the best we've seen so far.
@@ -149,8 +148,8 @@ class LSTM_Enc_Dec(Algorithm):
                     self.model.save_checkpoint(model_dictionary, is_best)
 
         except KeyboardInterrupt:
-            logging.info('-' * 89)
-            logging.info('Exiting from training early')
+            logging.warn('-' * 89)
+            logging.warn('Exiting from training early')
 
         # Calculate mean and covariance for each channel's prediction errors, and save them with the trained model
         logging.info('=> calculating mean and covariance')
