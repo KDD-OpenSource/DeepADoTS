@@ -8,6 +8,10 @@ from src.evaluation.evaluator import Evaluator
 
 
 def main():
+    run_pipeline()
+
+
+def run_pipeline():
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
         detectors = [RecurrentEBM(num_epochs=2), Donut(max_epoch=5), DAGMM(),
