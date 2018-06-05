@@ -13,7 +13,7 @@ def main():
         detectors = [RecurrentEBM(num_epochs=2), Donut(max_epoch=5), DAGMM(),
                      LSTM_Enc_Dec(epochs=2)]
     else:
-        '''datasets = [
+        datasets = [
             SyntheticDataGenerator.extreme_1(),
             SyntheticDataGenerator.variance_1(),
             SyntheticDataGenerator.shift_1(),
@@ -29,11 +29,7 @@ def main():
             SyntheticDataGenerator.extreme_1_polluted(0.5),
             SyntheticDataGenerator.extreme_1_polluted(1)
         ]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(epochs=200)]'''
-        datasets = [
-            SyntheticDataGenerator.extreme_1()
-        ]
-        detectors = [RecurrentEBM(num_epochs=1), LSTM_Enc_Dec(epochs=1)]
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(epochs=200)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
 
