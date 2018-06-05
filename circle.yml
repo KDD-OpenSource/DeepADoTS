@@ -35,6 +35,7 @@ jobs:
             echo "backend: Agg" > /home/circleci/repo/venv/lib/python3.6/site-packages/matplotlib/mpl-data/matplotlibrc
             flake8 --exclude=third_party,venv
             python main.py
+            vulture . --exclude=third_party,venv || true
       - store_artifacts:
           path: test-reports
           destination: test-reports
