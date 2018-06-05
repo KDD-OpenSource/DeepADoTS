@@ -36,9 +36,11 @@ class EnsembleLSTMEncDec(Algorithm):
         return self.eval_anomaly_scores(pred1, pred2, pred3)
 
     def binarize(self, score, threshold=None):
+        # independent of any external variables
         return self.lstm_enc_dec1.binarize(score)
 
     def threshold(self, score):
+        # independent of any external variables
         return self.lstm_enc_dec1.threshold(score)
 
     def aggregate_scores(self, anomaly_scores1, anomaly_scores2, anomaly_scores3):
