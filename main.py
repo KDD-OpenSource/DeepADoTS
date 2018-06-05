@@ -69,6 +69,7 @@ def test_missing():
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for missing values')
 
+
 def evaluate_on_real_world_data_sets():
     dagmm = DAGMM()
     kdd_cup = KDDCup()
