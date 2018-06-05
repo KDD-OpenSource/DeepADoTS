@@ -19,18 +19,18 @@ def init_logging():
     log_formatter = logging.Formatter(fmt='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
                                      datefmt='%Y-%m-%d %H:%M:%S')
     root_logger = logging.getLogger()
-    rootLogger.setLevel(LOG_LEVEL)
+    root_logger.setLevel(LOG_LEVEL)
 
     # Store logs in a log file in reports/logs
     file_handler = logging.FileHandler(log_file_path)
     file_handler.setFormatter(log_formatter)
-    rootLogger.addHandler(file_handler)
+    root_logger.addHandler(file_handler)
 
     # Also print logs in the standard output
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(log_formatter)
     console_handler.addFilter(DebugModuleFilter(['^src\.', '^root$']))
-    rootLogger.addHandler(console_handler)
+    root_logger.addHandler(console_handler)
 
     # Create logger instance for the config file
     logger = logging.getLogger(__name__)
