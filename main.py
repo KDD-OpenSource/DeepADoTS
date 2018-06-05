@@ -32,7 +32,6 @@ def main():
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(epochs=200)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
-    # df = evaluator.benchmarks()
 
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
