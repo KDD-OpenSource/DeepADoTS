@@ -21,13 +21,42 @@ from .algorithm import Algorithm
 
 class LSTM_Enc_Dec(Algorithm):
 
-    def __init__(self, **kwargs):
+    def __init__(self,
+        data='lstm_enc_dec',
+        filename='chfdb_chf13_45590.pkl',
+        model='LSTM',  # (RNN_TANH, RNN_RELU, LSTM, GRU, SRU)
+        augment_train_data=True,
+        emsize=32,  # size of rnn input features
+        nhid=32,  # number of hidden units per layer
+        nlayers=2,  #number of layers
+        res_connection=False,  # residual connection
+        learning_rate=0.0002,  # initial learning rate for Adam
+        weight_decay=1e-4,
+        gradient_clip=10,  # to avoid exploding gradients
+        epochs=20,
+        batch_size=64,
+        eval_batch_size=64,
+        seq_length=50,
+        dropout=0.2,
+        tied=False,  # tie the word embedding and softmax weights (deprecated)
+        seed=1111,
+        device='cpu',  # cuda/cpu
+        log_interval=10,
+        save_interval=10,
+        resume=False,  # use checkpoint model parameters as initial parameters
+        pretrained=False,  # use checkpoint model parameters and do not train anymore
+        prediction_window_size=10
+    ):
         self.name = "LSTM-Enc-Dec"
-        train_predictor.set_args(**kwargs)
-        self.args = train_predictor.get_args()
+        # train_predictor.set_args(**kwargs)
+        # self.args = train_predictor.get_args()
         self.best_val_loss = None
         self.train_timeseries_dataset: preprocess_data.PickleDataLoad = None
         self.test_timeseries_dataset: preprocess_data.PickleDataLoad = None
+
+        # Set the random seed manually for reproducibility.
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
 
     def _build_model(self, feature_dim):
         self.model = RNNPredictor(rnn_type=self.args.model,
@@ -39,7 +68,7 @@ class LSTM_Enc_Dec(Algorithm):
                                   dropout=self.args.dropout,
                                   tie_weights=self.args.tied,
                                   res_connection=self.args.res_connection).to(self.args.device)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
         self.criterion = nn.MSELoss()
 
     def fit(self, X_train: pd.DataFrame, y_train: pd.Series):
