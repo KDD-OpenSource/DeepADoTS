@@ -46,7 +46,7 @@ def run_pipeline():
 def evaluate_on_real_world_data_sets():
     dagmm = DAGMM()
     kdd_cup = KDDCup()
-     X_train, y_train, X_test, y_test = kdd_cup.data()
+    X_train, y_train, X_test, y_test = kdd_cup.data()
     dagmm.fit(X_train, y_train)
     pred = dagmm.predict(X_test)
     print(Evaluator.get_accuracy_precision_recall_fscore(y_test, pred))
