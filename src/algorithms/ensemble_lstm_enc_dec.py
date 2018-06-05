@@ -29,9 +29,9 @@ class EnsembleLSTMEncDec(Algorithm):
         self.best_val_loss = None
         self.train_timeseries_dataset: preprocess_data.PickleDataLoad = None
         self.test_timeseries_dataset: preprocess_data.PickleDataLoad = None
-        self.lstm_enc_dec1 = LSTMEncDec(epochs=1, augment_train_data=True, prediction_window_size=5)
-        self.lstm_enc_dec2 = LSTMEncDec(epochs=1, augment_train_data=True, prediction_window_size=10)
-        self.lstm_enc_dec3 = LSTMEncDec(epochs=1, augment_train_data=True, prediction_window_size=15)
+        self.lstm_enc_dec1 = LSTMEncDec(epochs=1, augment_train_data=False, prediction_window_size=5)
+        self.lstm_enc_dec2 = LSTMEncDec(epochs=1, augment_train_data=False, prediction_window_size=10)
+        self.lstm_enc_dec3 = LSTMEncDec(epochs=1, augment_train_data=False, prediction_window_size=15)
 
     def fit(self, X, y):
         self.lstm_enc_dec1.fit(X, y)
