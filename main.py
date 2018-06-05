@@ -46,7 +46,7 @@ def run_pipeline():
 def evaluate_on_real_world_data_sets():
     dagmm = DAGMM()
     kdd_cup = KDDCup()
-    (X_train, y_train), (X_test, y_test) = kdd_cup.get_data_dagmm()
+     X_train, y_train, X_test, y_test = kdd_cup.data()
     dagmm.fit(X_train, y_train)
     pred = dagmm.predict(X_test)
     print(Evaluator.get_accuracy_precision_recall_fscore(y_test, pred))
@@ -62,7 +62,7 @@ def evaluate_on_real_world_data_sets():
     y_train = pd.Series(0, index=np.arange(len(X_train)))
     donut.fit(X_train, y_train)
     pred = donut.predict(X_test)
-    print(pred)
+    print("Donut results: ", pred)
 
 
 if __name__ == '__main__':
