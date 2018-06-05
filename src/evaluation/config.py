@@ -16,21 +16,21 @@ def init_logging():
     os.makedirs(log_files_dir, exist_ok=True)
 
     # Actually initialize the logging module
-    logFormatter = logging.Formatter(fmt='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    log_formatter = logging.Formatter(fmt='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
                                      datefmt='%Y-%m-%d %H:%M:%S')
-    rootLogger = logging.getLogger()
+    root_logger = logging.getLogger()
     rootLogger.setLevel(LOG_LEVEL)
 
     # Store logs in a log file in reports/logs
-    fileHandler = logging.FileHandler(log_file_path)
-    fileHandler.setFormatter(logFormatter)
-    rootLogger.addHandler(fileHandler)
+    file_handler = logging.FileHandler(log_file_path)
+    file_handler.setFormatter(log_formatter)
+    rootLogger.addHandler(file_handler)
 
     # Also print logs in the standard output
-    consoleHandler = logging.StreamHandler(sys.stdout)
-    consoleHandler.setFormatter(logFormatter)
-    consoleHandler.addFilter(DebugModuleFilter(['^src\.', '^root$']))
-    rootLogger.addHandler(consoleHandler)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(log_formatter)
+    console_handler.addFilter(DebugModuleFilter(['^src\.', '^root$']))
+    rootLogger.addHandler(console_handler)
 
     # Create logger instance for the config file
     logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def init_logging():
 class DebugModuleFilter(logging.Filter):
     def __init__(self, pattern=[]):
         logging.Filter.__init__(self)
-        self.module_patterns = [re.compile(x) for x in pattern]
+        self.module_pattern = [re.compile(x) for x in pattern]
 
     def filter(self, record):
         # This filter assumes that we want INFO logging from all
@@ -48,5 +48,5 @@ class DebugModuleFilter(logging.Filter):
         # easily could be adapted for other policies.
         if record.levelno == logging.DEBUG:
             # e.g. src.evaluator.evaluation
-            return any([x.match(record.name) for x in self.module_patterns])
+            return any([x.match(record.name) for x in self.module_pattern])
         return True
