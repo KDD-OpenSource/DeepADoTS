@@ -10,7 +10,7 @@ from .algorithm import Algorithm
 
 class EnsembleLSTMEncDec(Algorithm):
 
-    def __init__(self, prediction_window_size1, prediction_window_size2, prediction_window_size3,
+    def __init__(self, prediction_window_size1=5, prediction_window_size2=10, prediction_window_size3=15,
                  aggregation_method="max", **kwargs):
         self.name = "Ensemble_LSTM_Enc_Dec"
         train_predictor.set_args(**kwargs)
