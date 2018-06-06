@@ -170,7 +170,7 @@ class DAGMM_Module(nn.Module):
 
 
 class DAGMM(Algorithm):
-    def __init__(self, num_epochs=5, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=1024, gmm_k=4,
+    def __init__(self, num_epochs=5, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=700, gmm_k=3,
                  normal_percentile=80):
         self.name = "DAGMM"
         self.num_epochs = num_epochs
@@ -201,7 +201,7 @@ class DAGMM(Algorithm):
         """Learn the mixture probability, mean and covariance for each component k.
         Store the computed energy based on the training data and the aforementioned parameters."""
         X = X.dropna()
-        data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=True)
+        data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
         self.dagmm = DAGMM_Module(n_features=X.shape[1], n_gmm=self.gmm_k)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
         self.dagmm.eval()
@@ -258,6 +258,8 @@ class DAGMM(Algorithm):
         test_energy = np.concatenate(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
         self._threshold = np.percentile(combined_energy, self.normal_percentile)
+        if np.isnan(self._threshold):
+            raise Exception("Threshold is NaN")
         return test_energy
 
     def threshold(self, score):
