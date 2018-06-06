@@ -1,9 +1,11 @@
+import logging
 import os
+
 import numpy as np
 import pandas as pd
 
-from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
+from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
 
 
@@ -13,9 +15,10 @@ def main():
 
 def run_pipeline():
     if os.environ.get("CIRCLECI", False):
+        rootLogger = logging.getLogger()
+        rootLogger.setLevel(logging.INFO)
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [RecurrentEBM(num_epochs=2), Donut(max_epoch=5), DAGMM(),
-                     LSTM_Enc_Dec(epochs=2)]
+        detectors = [RecurrentEBM(num_epochs=2), Donut(max_epoch=5), DAGMM(num_epochs=500), LSTM_Enc_Dec(epochs=2)]
     else:
         datasets = [
             SyntheticDataGenerator.extreme_1(),
