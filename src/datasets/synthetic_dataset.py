@@ -13,6 +13,7 @@ class SyntheticDataset(Dataset):
                  baseline_config: dict=None,
                  outlier_config: dict=None,
                  pollution_config: dict=None,
+                 label_config: dict=None,
                  train_split: float=0.7,
                  random_state: int=None, **kwargs):
         super().__init__(**kwargs)
@@ -26,6 +27,7 @@ class SyntheticDataset(Dataset):
         self.baseline_config = baseline_config if baseline_config is not None else {}
         self.outlier_config = outlier_config if outlier_config is not None else {}
         self.pollution_config = pollution_config if pollution_config is not None else {}
+        self.label_config = label_config
         self.train_split = train_split
         self.train_test_factor = (1 - train_split) / train_split
         np.random.seed(random_state)
@@ -38,10 +40,10 @@ class SyntheticDataset(Dataset):
         train_split_point = int(self.train_split * self.length)
 
         X_train = generator.add_outliers(self.pollution_config)[:train_split_point]
-        y_train = self._label_outliers(self.pollution_config)[:train_split_point]
+        y_train = self._label_outliers(self.label_config or self.pollution_config)[:train_split_point]
 
         X_test = generator.add_outliers(self.outlier_config)[train_split_point:]
-        y_test = self._label_outliers(self.outlier_config)[train_split_point:]
+        y_test = self._label_outliers(self.label_config or self.outlier_config)[train_split_point:]
 
         self._data = X_train, y_train, X_test, y_test
 
