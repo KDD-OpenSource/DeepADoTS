@@ -1,3 +1,4 @@
+.DS_Store
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -107,3 +108,5 @@ venv.bak/
 
 # SyncThing data
 data/
+reports/
+models/

@@ -1,8 +1,10 @@
 import abc
+import logging
 
 
 class Algorithm(metaclass=abc.ABCMeta):
     def __init__(self, name):
+        self.logger = logging.getLogger(__name__)
         self.name = name
 
     def __str__(self) -> str:
@@ -29,4 +31,11 @@ class Algorithm(metaclass=abc.ABCMeta):
         :param threshold:
         :param score
         :return binary_labels
+        """
+
+    @abc.abstractmethod
+    def threshold(self, score):
+        """
+        :param score
+        :return threshold:
         """

@@ -11,6 +11,12 @@ torch>=0.4.0
 torchvision
 h5py
 
+# Requirements for LSTM-Enc-Dec
+argparse
+pyparsing
+cycler
+
+
 # Remaining requirements that should be installed if not already done so
 numpy
 pandas

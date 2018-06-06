@@ -70,7 +70,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.extreme_1()
 
         offset = int(dataset.train_split * dataset.length)
-        factor = dataset.train_split / (1 - dataset.train_split)
+        factor = (1 - dataset.train_split) / dataset.train_split
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['extreme'][0]['timestamps']
@@ -79,7 +79,7 @@ class SyntheticDataGenerator:
         pollution_config['extreme'][0]['timestamps'] = pollutions
 
         dataset.pollution_config = pollution_config
-        dataset.name = dataset.name + f'Polluted {pollution_percentage}'
+        dataset.name = f"Syn Extreme Outliers (pol={pollution_percentage})"
         return dataset
 
     @staticmethod
@@ -87,7 +87,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.extreme_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = dataset.name + f'Missing {missing_percentage}'
+        dataset.name = f"Syn Extreme Outliers (mis={missing_percentage})"
         return dataset
 
     @staticmethod
@@ -119,7 +119,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.shift_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = dataset.name + f'Missing {missing_percentage}'
+        dataset.name = f"Syn Shift Outliers (mis={missing_percentage})"
         return dataset
 
     @staticmethod
@@ -127,7 +127,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.shift_1()
 
         offset = int(dataset.train_split * dataset.length)
-        factor = dataset.train_split / (1 - dataset.train_split)
+        factor = (1 - dataset.train_split) / dataset.train_split
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['shift'][0]['timestamps']
@@ -137,7 +137,7 @@ class SyntheticDataGenerator:
         pollution_config['extreme'][0]['timestamps'] = pollutions
 
         dataset.pollution_config = pollution_config
-        dataset.name = dataset.name + f'Polluted {pollution_percentage}'
+        dataset.name = f"Syn Shift Outliers (pol={pollution_percentage})"
         return dataset
 
     @staticmethod
@@ -167,7 +167,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.variance_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = dataset.name + f'Missing {missing_percentage}'
+        dataset.name = f"Syn Variance Outliers (mis={missing_percentage})"
         return dataset
 
     @staticmethod
@@ -175,7 +175,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.variance_1()
 
         offset = int(dataset.train_split * dataset.length)
-        factor = dataset.train_split / (1 - dataset.train_split)
+        factor = (1 - dataset.train_split) / dataset.train_split
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['variance'][0]['timestamps']
@@ -185,7 +185,7 @@ class SyntheticDataGenerator:
         pollution_config['extreme'][0]['timestamps'] = pollutions
 
         dataset.pollution_config = pollution_config
-        dataset.name = dataset.name + f'Polluted {pollution_percentage}'
+        dataset.name = f"Syn Variance Outliers (pol={pollution_percentage})"
         return dataset
 
     @staticmethod
@@ -215,7 +215,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.trend_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = dataset.name + f'Missing {missing_percentage}'
+        dataset.name = f"Syn Trend Outliers (mis={missing_percentage})"
         return dataset
 
     @staticmethod
@@ -223,7 +223,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.trend_1()
 
         offset = int(dataset.train_split * dataset.length)
-        factor = dataset.train_split / (1 - dataset.train_split)
+        factor = (1 - dataset.train_split) / dataset.train_split
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['trend'][0]['timestamps']
@@ -233,7 +233,7 @@ class SyntheticDataGenerator:
         pollution_config['extreme'][0]['timestamps'] = pollutions
 
         dataset.pollution_config = pollution_config
-        dataset.name = dataset.name + f'Polluted {pollution_percentage}'
+        dataset.name = f"Syn Trend Outliers (pol={pollution_percentage})"
         return dataset
 
     @staticmethod
@@ -279,7 +279,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.combined_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = dataset.name + f'Missing {missing_percentage}'
+        dataset.name = f"Syn Combined Outliers (mis={missing_percentage})"
         return dataset
 
     @staticmethod
@@ -326,6 +326,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.combined_4()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.name = f"Syn Combined Outliers 4D (mis={missing_percentage})"
         return dataset
 
     @staticmethod
