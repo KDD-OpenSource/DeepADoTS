@@ -73,7 +73,7 @@ class SyntheticDataGenerator:
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['extreme'][0]['timestamps']
-        pollution_count = min(1, pollution_percentage*len(anomalies))
+        pollution_count = max(1, pollution_percentage*len(anomalies))
         pollutions = [(int((pos - offset) * dataset.train_test_factor),) for (pos,) in anomalies[:pollution_count]]
         pollution_config['extreme'][0]['timestamps'] = pollutions
 
@@ -129,7 +129,7 @@ class SyntheticDataGenerator:
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['shift'][0]['timestamps']
-        pollution_count = min(1, pollution_percentage*len(anomalies))
+        pollution_count = max(1, pollution_percentage*len(anomalies))
         pollutions = [((pos1 - offset) * dataset.train_test_factor, (pos2 - offset) * dataset.train_test_factor)
                       for (pos1, pos2) in anomalies[:pollution_count]]
         pollution_config['extreme'][0]['timestamps'] = pollutions
@@ -176,7 +176,7 @@ class SyntheticDataGenerator:
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['variance'][0]['timestamps']
-        pollution_count = min(1, pollution_percentage*len(anomalies))
+        pollution_count = max(1, pollution_percentage*len(anomalies))
         pollutions = [((pos1 - offset) * dataset.train_test_factor, (pos2 - offset) * dataset.train_test_factor)
                       for (pos1, pos2) in anomalies[:pollution_count]]
         pollution_config['extreme'][0]['timestamps'] = pollutions
@@ -223,7 +223,7 @@ class SyntheticDataGenerator:
 
         pollution_config = deepcopy(dataset.outlier_config)
         anomalies = pollution_config['trend'][0]['timestamps']
-        pollution_count = min(1, pollution_percentage*len(anomalies))
+        pollution_count = max(1, pollution_percentage*len(anomalies))
         pollutions = [((pos1 - offset) * dataset.train_test_factor, (pos2 - offset) * dataset.train_test_factor)
                       for (pos1, pos2) in anomalies[:pollution_count]]
         pollution_config['extreme'][0]['timestamps'] = pollutions
