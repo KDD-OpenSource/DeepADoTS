@@ -37,14 +37,17 @@ class Evaluator:
         fpr, tpr, _ = roc_curve(y_test, y_pred)
         return auc(fpr, tpr)
 
-    def get_optimal_threshold(self, det, y_test, y_pred, steps=40):
-        maximum = np.nanmax(y_pred)
-        minimum = np.nanmin(y_pred)
+    def get_optimal_threshold(self, det, y_test, score, steps=40, return_metrics=False):
+        maximum = np.nanmax(score)
+        minimum = np.nanmin(score)
         th = np.linspace(minimum, maximum, steps)
-        metrics = list(self.get_metrics_by_thresholds(det, y_test, y_pred, th))
+        metrics = list(self.get_metrics_by_thresholds(det, y_test, score, th))
         metrics = np.array(metrics).T
         anomalies, acc, prec, rec, f_score, f01_score = metrics
-        return th[np.argmax(f_score)]
+        if return_metrics:
+            return anomalies, acc, prec, rec, f_score, f01_score, th
+        else:
+            return th[np.argmax(f_score)]
 
     def evaluate(self):
         for ds in progressbar.progressbar(self.datasets):
@@ -60,13 +63,13 @@ class Evaluator:
                     self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
-    def benchmarks(self, optimal_threshold=None) -> pd.DataFrame:
+    def benchmarks(self) -> pd.DataFrame:
         df = pd.DataFrame()
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
             for det in self.detectors:
                 score = self.results[(ds.name, det.name)]
-                y_pred = det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score), 40))
+                y_pred = det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))
                 acc, prec, rec, f1_score, f01_score = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
                 score = self.results[(ds.name, det.name)]
                 auroc = self.get_auroc(det, ds, score)
@@ -89,10 +92,10 @@ class Evaluator:
         self.logger.info(f"Stored plot at {path}")
 
     @staticmethod
-    def get_metrics_by_thresholds(det, y_true: list, y_pred: list, thresholds: list):
+    def get_metrics_by_thresholds(det, y_test: list, score: list, thresholds: list):
         for threshold in thresholds:
-            anomaly = det.binarize(y_pred, threshold=threshold)
-            metrics = Evaluator.get_accuracy_precision_recall_fscore(y_true, anomaly)
+            anomaly = det.binarize(score, threshold=threshold)
+            metrics = Evaluator.get_accuracy_precision_recall_fscore(y_test, anomaly)
             yield (anomaly.sum(), *metrics)
 
     def plot_scores(self, store=True):
@@ -148,14 +151,12 @@ class Evaluator:
             _, _, X_test, y_test = ds.data()
 
             for det, ax in zip(self.detectors, axes_row):
-                y_pred = np.array(self.results[(ds.name, det.name)])
+                score = np.array(self.results[(ds.name, det.name)])
 
-                maximum = np.nanmax(y_pred)
-                minimum = np.nanmin(y_pred)
-                th = np.linspace(minimum, maximum, steps)
-                metrics = list(self.get_metrics_by_thresholds(det, y_test, y_pred, th))
-                metrics = np.array(metrics).T
-                anomalies, acc, prec, rec, f_score, f01_score = metrics
+                anomalies, acc, prec, rec, f_score, f01_score, th = self.get_optimal_threshold(det,
+                                                                                               y_test,
+                                                                                               score,
+                                                                                               return_metrics=True)
 
                 ax.plot(th, anomalies / len(y_test),
                         label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
