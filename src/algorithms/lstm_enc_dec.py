@@ -25,7 +25,7 @@ class LSTM_Enc_Dec(Algorithm):
         self,
         data='lstm_enc_dec',
         filename='chfdb_chf13_45590.pkl',
-        model_type='LSTM',  # (RNN_TANH, RNN_RELU, LSTM, GRU, SRU)
+        model_type='LSTM',  # (RNN_TANH, RNN_RELU, LSTM, GRU)
         augment_train_data=True,
         emsize=32,  # size of rnn input features
         nhid=32,  # number of hidden units per layer
@@ -241,7 +241,7 @@ class LSTM_Enc_Dec(Algorithm):
         # For reproducibility a set of arguments is stored which will be reused during prediction
         stored_args = {
             'seed': self.seed,
-            'model': self.model_type,
+            'model_type': self.model_type,
             'emsize': self.emsize,
             'nhid': self.nhid,
             'nlayers': self.nlayers,

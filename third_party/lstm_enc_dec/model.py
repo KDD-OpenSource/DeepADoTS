@@ -8,9 +8,6 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
-# from cuda_functional import SRU, SRUCell
-
-
 class RNNPredictor(nn.Module):
     """Container module with an encoder, a recurrent module, and a decoder."""
 
@@ -23,15 +20,12 @@ class RNNPredictor(nn.Module):
         self.encoder = nn.Linear(enc_inp_size, rnn_inp_size)
         if rnn_type in ['LSTM', 'GRU']:
             self.rnn = getattr(nn, rnn_type)(rnn_inp_size, rnn_hid_size, nlayers, dropout=dropout)
-        elif rnn_type == 'SRU':
-            self.rnn = SRU(input_size=rnn_inp_size, hidden_size=rnn_hid_size, num_layers=nlayers, dropout=dropout,
-                           use_tanh=False, use_selu=True, layer_norm=True)
         else:
             try:
                 nonlinearity = {'RNN_TANH': 'tanh', 'RNN_RELU': 'relu'}[rnn_type]
             except KeyError:
                 raise ValueError("""An invalid option for `--model` was supplied,
-                                 options are ['LSTM', 'GRU', 'SRU', 'RNN_TANH' or 'RNN_RELU']""")
+                                 options are ['LSTM', 'GRU', 'RNN_TANH' or 'RNN_RELU']""")
             self.rnn = nn.RNN(rnn_inp_size, rnn_hid_size, nlayers, nonlinearity=nonlinearity, dropout=dropout)
         self.decoder = nn.Linear(rnn_hid_size, dec_out_size)
 
@@ -87,7 +81,7 @@ class RNNPredictor(nn.Module):
         else:
             return h.detach()
 
-    def save_checkpoint(self, state, is_best, data_type):
+    def save_checkpoint(self, state, is_best, data_type, filename):
         logging.debug("=> saving checkpoint ..")
         checkpoint_dir = Path('models', data_type, 'checkpoint')
         checkpoint_dir.mkdir(parents=True, exist_ok=True)

@@ -1,8 +1,7 @@
 import logging
-
 import time
 
-from .preprocess_data import *
+import torch
 
 REPORT_FIGURES_DIR = 'reports/figures'
 
@@ -69,10 +68,10 @@ def train(model, train_dataset, epoch, optimizer, criterion,
             if batch % log_interval == 0 and batch > 0:
                 cur_loss = total_loss / log_interval
                 elapsed = time.time() - start_time
-                logging.debug('| epoch {:3d} | {:5d}/{:5d} batches | ms/batch {:5.4f} | '
-                             'loss {:5.2f} '.format(
-                    epoch, batch, len(train_dataset) // seq_length,
-                                  elapsed * 1000 / log_interval, cur_loss))
+                logging.debug(f'| epoch {epoch:3d} | {batch:5d}/'
+                              f'{(len(train_dataset) // seq_length):5d} batches | '
+                              f'ms/batch {(elapsed * 1000 / log_interval):5.4f} | '
+                              f'loss {cur_loss:5.2f} ')
                 total_loss = 0
                 start_time = time.time()
 
