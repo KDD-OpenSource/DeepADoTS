@@ -73,7 +73,7 @@ class Evaluator:
         return df
 
     def store(self, fig, title, extension="pdf"):
-        timestamp = int(time.time())
+        timestamp = time.strftime("%Y-%m-%d-%H%M%S", time.gmtime())
         dir = "reports/figures/"
         path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
