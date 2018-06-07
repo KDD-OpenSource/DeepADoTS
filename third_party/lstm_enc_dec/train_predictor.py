@@ -61,7 +61,7 @@ parser.add_argument('--pretrained', '-p',
                     action="store_true")
 parser.add_argument('--prediction_window_size', type=int, default=10,
                     help='prediction_window_size')
-args = parser.parse_args()
+args = parser.parse_args([])
 # Set the random seed manually for reproducibility.
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed(args.seed)
@@ -74,7 +74,7 @@ def get_args():
 def set_args(**kwargs):
     global args
     parser.set_defaults(**kwargs)
-    args = parser.parse_args()
+    args = parser.parse_args([])
 
 
 ###############################################################################
