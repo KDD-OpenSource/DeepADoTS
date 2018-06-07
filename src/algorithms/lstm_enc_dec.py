@@ -19,10 +19,10 @@ from third_party.lstm_enc_dec.model import RNNPredictor
 from .algorithm import Algorithm
 
 
-class LSTM_Enc_Dec(Algorithm):
+class LSTMEncDec(Algorithm):
 
     def __init__(self, **kwargs):
-        self.name = "LSTM-Enc-Dec"
+        self.name = "LSTMEncDec"
         train_predictor.set_args(**kwargs)
         self.args = train_predictor.get_args()
         self.best_val_loss = None

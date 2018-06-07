@@ -2,8 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 
+from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMEncDec, LSTMAD, EnsembleLSTMEncDec
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
-from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
 from src.evaluation.evaluator import Evaluator
 
 
@@ -14,8 +14,8 @@ def main():
 def run_pipeline():
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [RecurrentEBM(num_epochs=2), Donut(max_epoch=5), DAGMM(),
-                     LSTM_Enc_Dec(epochs=2)]
+        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=10), Donut(max_epoch=5), DAGMM(),
+                     LSTMEncDec(epochs=3), EnsembleLSTMEncDec(epochs=3)]
     else:
         datasets = [
             SyntheticDataGenerator.extreme_1(),
@@ -33,7 +33,8 @@ def run_pipeline():
             SyntheticDataGenerator.extreme_1_polluted(0.5),
             SyntheticDataGenerator.extreme_1_polluted(1)
         ]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(epochs=200)]
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTMEncDec(epochs=150),
+                     EnsembleLSTMEncDec(epochs=150)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     evaluator.print_tables()
