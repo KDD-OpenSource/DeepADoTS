@@ -27,7 +27,6 @@ class SyntheticDataset(Dataset):
         self.outlier_config = outlier_config if outlier_config is not None else {}
         self.pollution_config = pollution_config if pollution_config is not None else {}
         self.train_split = train_split
-        self.train_test_factor = train_split / (1 - train_split)
         np.random.seed(random_state)
 
     def load(self):
