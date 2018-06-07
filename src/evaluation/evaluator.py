@@ -1,15 +1,16 @@
 import logging
 import os
-import time
+import traceback
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from tabulate import tabulate
 import progressbar
+import time
 from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
 from sklearn.metrics import roc_curve, auc
+from tabulate import tabulate
 
 from .config import init_logging
 
@@ -25,7 +26,7 @@ class Evaluator:
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
         accuracy = accuracy_score(y_true, y_pred)
-        precision, recall, f_score, support = prf(y_true, y_pred, average="binary")
+        precision, recall, f_score, _ = prf(y_true, y_pred, average="binary")
         f01_score = fbeta_score(y_true, y_pred, average='binary', beta=0.1)
         return accuracy, precision, recall, f_score, f01_score
 
@@ -47,6 +48,7 @@ class Evaluator:
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
                     self.logger.error(f"An exception occured while training {det.name} on {ds}: {e}")
+                    self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
     def benchmarks(self) -> pd.DataFrame:
@@ -171,7 +173,7 @@ class Evaluator:
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
             fig_scale = 3
-            fig = plt.figure(figsize=(fig_scale*len(self.detectors), fig_scale))
+            fig = plt.figure(figsize=(fig_scale * len(self.detectors), fig_scale))
             fig.canvas.set_window_title(ds.name + " ROC")
             fig.suptitle(f"ROC curve on {ds.name}", fontsize=14, y="1.1")
             subplot_count = 1

@@ -37,7 +37,6 @@ class RecurrentEBM(Algorithm):
         self.cost = None
 
         self.tf_session = None
-        self.tf_saver = None
 
     def fit(self, X, _):
         self._build_model(X.shape[1])
@@ -148,9 +147,6 @@ class RecurrentEBM(Algorithm):
 
         return W, Wuh, Wux, Wxu, Wuu, bu, u0, bh, bx, BH_t, BX_t
 
-    def delete(self):
-        self.tf_session.close()
-
     def binarize(self, score, threshold=None):
         if threshold is None:
             threshold = self.threshold(score)
@@ -158,4 +154,4 @@ class RecurrentEBM(Algorithm):
         return np.where(score >= threshold, 1, 0)
 
     def threshold(self, score):
-        return np.nanmean(score) + 2*np.nanstd(score)
+        return np.nanmean(score) + 2 * np.nanstd(score)

@@ -155,7 +155,7 @@ class Donut(Algorithm):
             features = X.loc[:, col].values
             labels = y
             timestamps, missing, (features, labels) = complete_timestamp(timestamps, (features, labels))
-            train_features, mean, std = standardize_kpi(features, excludes=np.logical_or(labels, missing))
+            _, mean, std = standardize_kpi(features, excludes=np.logical_or(labels, missing))
 
             with tf.variable_scope('model') as model_vs:
                 model = DonutModel(
