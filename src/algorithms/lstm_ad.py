@@ -114,9 +114,12 @@ class LSTMAD(Algorithm):
         return loss_train
 
     def binarize(self, score, threshold=None):
-        threshold = self.threshold(score)
+        if threshold:
+            threshold = threshold
+        else:
+            threshold = self.threshold(score)
         score = np.where(np.isnan(score), threshold - 1, score)
         return np.where(score >= threshold, 1, 0)
 
     def threshold(self, score):
-        return np.nanmean(score) + np.nanstd(score)
+        return np.nanmean(score) + 1.5 * np.nanstd(score)
