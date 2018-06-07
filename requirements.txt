@@ -27,3 +27,4 @@ flake8
 matplotlib
 progressbar2
 tabulate
+vulture
