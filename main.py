@@ -17,7 +17,8 @@ def main():
 def run_pipeline():
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [RecurrentEBM(num_epochs=2), Donut(max_epoch=5), DAGMM(num_epochs=500), LSTM_Enc_Dec(epochs=2)]
+        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(max_epoch=5), DAGMM(),
+                     LSTM_Enc_Dec(epochs=2)]
     else:
         datasets = [
             SyntheticDataGenerator.extreme_1(),

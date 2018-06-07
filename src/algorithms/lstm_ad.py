@@ -10,6 +10,7 @@ class LSTMSequence(torch.nn.Module):
     def __init__(self, d, len_in=1, len_out=10):
         super().__init__()
         self.d = d  # input and output feature dimensionality
+        self.len_in = len_in
         self.len_out = len_out
         self.hidden_size1 = 32
         self.hidden_size2 = 32
@@ -38,8 +39,9 @@ class LSTMAD(Algorithm):
     The interface of the class is sklearn-like.
     """
 
-    def __init__(self, len_out=10, num_epochs=100, lr=0.01, batch_size=128, optimizer=torch.optim.Rprop):
+    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=128, optimizer=torch.optim.Rprop):
         super().__init__(__name__, "LSTM-AD")
+        self.len_in = len_in
         self.len_out = len_out
 
         self.num_epochs = num_epochs
@@ -81,21 +83,17 @@ class LSTMAD(Algorithm):
         errors = np.stack(errors, axis=3)
         errors = target_data.data.numpy()[:, self.len_out-1:, :, 0][..., np.newaxis] - errors
 
-        SCALING_FACTOR = 1e10  # To compensate for lack of floating point precision
         # fit multivariate Gaussian on (validation set) error distribution (via maximum likelihood estimation)
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
-        norm /= np.std(norm, axis=0)
-        norm -= np.mean(norm, axis=0)
-        norm *= SCALING_FACTOR
         mean = np.mean(norm, axis=0)
         cov = np.cov(norm.T)
 
-        scores = -multivariate_normal.logpdf(norm, mean=mean, cov=cov) / np.log(SCALING_FACTOR)
-        scores = np.pad(scores, (2 * self.len_out - 1, 0), 'constant', constant_values=np.nan)
+        scores = -multivariate_normal.logpdf(norm, mean=mean, cov=cov)
+        scores = np.pad(scores, (self.len_in + self.len_out - 1, self.len_out - 1), 'constant', constant_values=np.nan)
         return scores
 
     def _build_model(self, d):
-        self.model = LSTMSequence(d)
+        self.model = LSTMSequence(d, len_in=self.len_in, len_out=self.len_out)
         self.model.double()
 
         self.loss = torch.nn.MSELoss()
@@ -116,9 +114,12 @@ class LSTMAD(Algorithm):
         return loss_train
 
     def binarize(self, score, threshold=None):
-        threshold = self.threshold(score)
+        if threshold:
+            threshold = threshold
+        else:
+            threshold = self.threshold(score)
         score = np.where(np.isnan(score), threshold - 1, score)
         return np.where(score >= threshold, 1, 0)
 
     def threshold(self, score):
-        return np.nanmean(score) + 2*np.nanstd(score)
+        return np.nanmean(score) + 1.5 * np.nanstd(score)
