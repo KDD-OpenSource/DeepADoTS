@@ -37,6 +37,15 @@ class Evaluator:
         fpr, tpr, _ = roc_curve(y_test, y_pred)
         return auc(fpr, tpr)
 
+    def get_optimal_threshold(self, det, y_test, y_pred, steps=40):
+        maximum = np.nanmax(y_pred)
+        minimum = np.nanmin(y_pred)
+        th = np.linspace(minimum, maximum, steps)
+        metrics = list(self.get_metrics_by_thresholds(det, y_test, y_pred, th))
+        metrics = np.array(metrics).T
+        anomalies, acc, prec, rec, f_score, f01_score = metrics
+        return th[np.argmax(f_score)]
+
     def evaluate(self):
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
@@ -51,13 +60,13 @@ class Evaluator:
                     self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
-    def benchmarks(self) -> pd.DataFrame:
+    def benchmarks(self, optimal_threshold=None) -> pd.DataFrame:
         df = pd.DataFrame()
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
             for det in self.detectors:
                 score = self.results[(ds.name, det.name)]
-                y_pred = det.binarize(score)
+                y_pred = det.binarize(score, self.get_optimal_threshold(self, det, y_test, np.array(score), 40))
                 acc, prec, rec, f1_score, f01_score = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
                 score = self.results[(ds.name, det.name)]
                 auroc = self.get_auroc(det, ds, score)
@@ -140,12 +149,10 @@ class Evaluator:
 
             for det, ax in zip(self.detectors, axes_row):
                 y_pred = np.array(self.results[(ds.name, det.name)])
-                if np.isnan(y_pred).any():
-                    self.logger.warning("Prediction contains NaN values. Replacing with 0 for plotting!")
-                    y_pred[np.isnan(y_pred)] = 0
 
-                maximum = y_pred.max()
-                th = np.linspace(0, maximum, steps)
+                maximum = np.nanmax(y_pred)
+                minimum = np.nanmin(y_pred)
+                th = np.linspace(minimum, maximum, steps)
                 metrics = list(self.get_metrics_by_thresholds(det, y_test, y_pred, th))
                 metrics = np.array(metrics).T
                 anomalies, acc, prec, rec, f_score, f01_score = metrics
