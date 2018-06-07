@@ -2,7 +2,8 @@ import numpy as np
 import torch
 
 
-def fit_norm_distribution_param(args, model, train_dataset, channel_idx=0):
+def fit_norm_distribution_param(
+        model, train_dataset, prediction_window_size, device_type, channel_idx=0):
     predictions = []
     organized = []
     errors = []
@@ -17,19 +18,19 @@ def fit_norm_distribution_param(args, model, train_dataset, channel_idx=0):
             errors.append([])
             predictions[t].append(out.data.cpu()[0][0][channel_idx])
             pasthidden = model.repackage_hidden(hidden)
-            for prediction_step in range(1, args.prediction_window_size):
+            for prediction_step in range(1, prediction_window_size):
                 out, hidden = model.forward(out, hidden)
                 predictions[t].append(out.data.cpu()[0][0][channel_idx])
 
-            if t >= args.prediction_window_size:
-                for step in range(args.prediction_window_size):
+            if t >= prediction_window_size:
+                for step in range(prediction_window_size):
                     organized[t].append(
-                        predictions[step + t - args.prediction_window_size][args.prediction_window_size - 1 - step])
-                organized[t] = torch.FloatTensor(organized[t]).to(args.device)
+                        predictions[step + t - prediction_window_size][prediction_window_size - 1 - step])
+                organized[t] = torch.FloatTensor(organized[t]).to(device_type)
                 errors[t] = organized[t] - train_dataset[t][0][channel_idx]
                 errors[t] = errors[t].unsqueeze(0)
 
-    errors_tensor = torch.cat(errors[args.prediction_window_size:], dim=0)
+    errors_tensor = torch.cat(errors[prediction_window_size:], dim=0)
     mean = errors_tensor.mean(dim=0)
     cov = errors_tensor.t().mm(errors_tensor) / errors_tensor.size(0) - mean.unsqueeze(1).mm(mean.unsqueeze(0))
     # cov: positive-semidefinite and symmetric.
@@ -37,7 +38,7 @@ def fit_norm_distribution_param(args, model, train_dataset, channel_idx=0):
     return mean, cov
 
 
-def anomalyScore(args, model, dataset, mean, cov, channel_idx=0, score_predictor=None):
+def anomalyScore(model, dataset, mean, cov, prediction_window_size, device_type, channel_idx=0, score_predictor=None):
     predictions = []
     rearranged = []
     errors = []
@@ -54,23 +55,25 @@ def anomalyScore(args, model, dataset, mean, cov, channel_idx=0, score_predictor
             errors.append([])
             hiddens.append(model.extract_hidden(hidden))
             if score_predictor is not None:
-                predicted_scores.append(score_predictor.predict(model.extract_hidden(hidden).numpy()))
+                predicted_scores.append(
+                    score_predictor.predict(model.extract_hidden(hidden).numpy()))
 
             predictions[t].append(out.data.cpu()[0][0][channel_idx])
             pasthidden = model.repackage_hidden(hidden)
-            for prediction_step in range(1, args.prediction_window_size):
+            for prediction_step in range(1, prediction_window_size):
                 out, hidden = model.forward(out, hidden)
                 predictions[t].append(out.data.cpu()[0][0][channel_idx])
 
-            if t >= args.prediction_window_size:
-                for step in range(args.prediction_window_size):
-                    rearranged[t].append(
-                        predictions[step + t - args.prediction_window_size][args.prediction_window_size - 1 - step])
-                rearranged[t] = torch.FloatTensor(rearranged[t]).to(args.device).unsqueeze(0)
+            if t >= prediction_window_size:
+                for step in range(prediction_window_size):
+                    start_idx = step + t - prediction_window_size
+                    end_idx = prediction_window_size - 1 - step
+                    rearranged[t].append(predictions[start_idx][end_idx])
+                rearranged[t] = torch.FloatTensor(rearranged[t]).to(device_type).unsqueeze(0)
                 errors[t] = rearranged[t] - dataset[t][0][channel_idx]
             else:
-                rearranged[t] = torch.zeros(1, args.prediction_window_size).to(args.device)
-                errors[t] = torch.zeros(1, args.prediction_window_size).to(args.device)
+                rearranged[t] = torch.zeros(1, prediction_window_size).to(device_type)
+                errors[t] = torch.zeros(1, prediction_window_size).to(device_type)
 
     predicted_scores = np.array(predicted_scores)
     scores = []

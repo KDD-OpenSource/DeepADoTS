@@ -108,10 +108,10 @@ class PickleDataLoad(object):
 
         return data, label
 
-    def batchify(self, args, data, bsz):
+    def batchify(self, device_type, data, bsz):
         nbatch = data.size(0) // bsz
         trimmed_data = data.narrow(0, 0, nbatch * bsz)
         batched_data = trimmed_data.contiguous().view(bsz, -1, trimmed_data.size(-1)).transpose(0, 1)
 
-        batched_data = batched_data.to(device(args.device))
+        batched_data = batched_data.to(device(device_type))
         return batched_data

@@ -10,22 +10,23 @@ REPORT_FIGURES_DIR = 'reports/figures'
 ###############################################################################
 # Training code
 ###############################################################################
-def get_batch(args, source, i):
-    seq_len = min(args.seq_length, len(source) - 1 - i)
+def get_batch(seq_length, source, i):
+    seq_len = min(seq_length, len(source) - 1 - i)
     data = source[i:i + seq_len]  # [ seq_len * batch_size * feature_size ]
     target = source[i + 1:i + 1 + seq_len]  # [ (seq_len x batch_size x feature_size) ]
     return data, target
 
 
-def train(args, model, train_dataset, epoch, optimizer, criterion):
+def train(model, train_dataset, epoch, optimizer, criterion,
+          batch_size, seq_length, log_interval, gradient_clip):
     with torch.enable_grad():
         # Turn on training mode which enables dropout.
         model.train()
         total_loss = 0
         start_time = time.time()
-        hidden = model.init_hidden(args.batch_size)
-        for batch, i in enumerate(range(0, train_dataset.size(0) - 1, args.seq_length)):
-            inputSeq, targetSeq = get_batch(args, train_dataset, i)
+        hidden = model.init_hidden(batch_size)
+        for batch, i in enumerate(range(0, train_dataset.size(0) - 1, seq_length)):
+            inputSeq, targetSeq = get_batch(seq_length, train_dataset, i)
             # inputSeq: [ seq_len * batch_size * feature_size ]
             # targetSeq: [ seq_len * batch_size * feature_size ]
 
@@ -60,31 +61,31 @@ def train(args, model, train_dataset, epoch, optimizer, criterion):
             loss.backward()
 
             # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
-            torch.nn.utils.clip_grad_norm_(model.parameters(), args.gradient_clip)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), gradient_clip)
             optimizer.step()
 
             total_loss += loss.item()
 
-            if batch % args.log_interval == 0 and batch > 0:
-                cur_loss = total_loss / args.log_interval
+            if batch % log_interval == 0 and batch > 0:
+                cur_loss = total_loss / log_interval
                 elapsed = time.time() - start_time
                 logging.debug('| epoch {:3d} | {:5d}/{:5d} batches | ms/batch {:5.4f} | '
                              'loss {:5.2f} '.format(
-                    epoch, batch, len(train_dataset) // args.seq_length,
-                                  elapsed * 1000 / args.log_interval, cur_loss))
+                    epoch, batch, len(train_dataset) // seq_length,
+                                  elapsed * 1000 / log_interval, cur_loss))
                 total_loss = 0
                 start_time = time.time()
 
 
-def evaluate(args, model, test_dataset, criterion):
+def evaluate(model, test_dataset, criterion, batch_size, eval_batch_size, seq_length):
     # Turn on evaluation mode which disables dropout.
     model.eval()
     with torch.no_grad():
         total_loss = 0
-        hidden = model.init_hidden(args.eval_batch_size)
+        hidden = model.init_hidden(eval_batch_size)
         nbatch = 1
-        for nbatch, i in enumerate(range(0, test_dataset.size(0) - 1, args.seq_length)):
-            inputSeq, targetSeq = get_batch(args, test_dataset, i)
+        for nbatch, i in enumerate(range(0, test_dataset.size(0) - 1, seq_length)):
+            inputSeq, targetSeq = get_batch(seq_length, test_dataset, i)
             # inputSeq: [ seq_len * batch_size * feature_size ]
             # targetSeq: [ seq_len * batch_size * feature_size ]
             hidden_ = model.repackage_hidden(hidden)
@@ -105,7 +106,7 @@ def evaluate(args, model, test_dataset, criterion):
             loss2 = criterion(outSeq2, targetSeq)
 
             '''Loss3: Simplified Professor forcing loss'''
-            loss3 = criterion(hids1.view(args.batch_size, -1), hids2.view(args.batch_size, -1).detach())
+            loss3 = criterion(hids1.view(batch_size, -1), hids2.view(batch_size, -1).detach())
             loss3 = criterion(hids1, hids2.detach())
 
             '''Total loss = Loss1+Loss2+Loss3'''
