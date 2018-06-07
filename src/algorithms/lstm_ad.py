@@ -86,9 +86,6 @@ class LSTMAD(Algorithm):
         SCALING_FACTOR = 1e10  # To compensate for lack of floating point precision
         # fit multivariate Gaussian on (validation set) error distribution (via maximum likelihood estimation)
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
-        norm /= np.std(norm, axis=0)
-        norm -= np.mean(norm, axis=0)
-        norm *= SCALING_FACTOR
         mean = np.mean(norm, axis=0)
         cov = np.cov(norm.T)
 
