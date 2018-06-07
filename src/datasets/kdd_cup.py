@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from .real_dataset import RealDataset
 
@@ -6,7 +7,7 @@ from .real_dataset import RealDataset
 class KDDCup(RealDataset):
     def __init__(self):
         super().__init__(
-            name="KDD Cup '99", raw_path="kddcup-data_10_percent_corrected.txt", processed_path="kdd_cup.npz"
+            name="KDD Cup '99", raw_path="kddcup-data_10_percent_corrected.txt", file_name="kdd_cup.npz"
         )
 
     def load(self):
@@ -23,8 +24,9 @@ class KDDCup(RealDataset):
         and only data samples from the normal class are used for training models.[...] - Zong et al., 2018"
         :return: (X_train, y_train), (X_test, y_test)
         """
-
         data = np.load(self.processed_path)
+        np.random.seed(seed=None)
+
         labels = data["kdd"][:, -1]
         features = data["kdd"][:, :-1]
 
@@ -34,18 +36,20 @@ class KDDCup(RealDataset):
         attack_data = features[labels == 0]
         attack_labels = labels[labels == 0]
 
-        N_attack = attack_data.shape[0]
+        n_attack = attack_data.shape[0]
 
-        randIdx = np.arange(N_attack)
-        np.random.shuffle(randIdx)
-        N_train = N_attack // 2
-        train = attack_data[randIdx[:N_train]]
-        train_labels = attack_labels[randIdx[:N_train]]
+        rand_idx = np.arange(n_attack)
+        np.random.shuffle(rand_idx)
+        n_train = n_attack // 2
 
-        test = attack_data[randIdx[N_train:]]
-        test_labels = attack_labels[randIdx[N_train:]]
+        train = attack_data[rand_idx[:n_train]]
+        train_labels = attack_labels[rand_idx[:n_train]]
+
+        test = attack_data[rand_idx[n_train:]]
+        test_labels = attack_labels[rand_idx[n_train:]]
 
         test = np.concatenate((test, normal_data), axis=0)
         test_labels = np.concatenate((test_labels, normal_labels), axis=0)
 
-        return (train, train_labels), (test, test_labels)
+        return (pd.DataFrame(data=train), pd.DataFrame(data=train_labels)), (
+            pd.DataFrame(data=test), pd.DataFrame(data=test_labels))

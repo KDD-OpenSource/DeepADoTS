@@ -10,8 +10,8 @@ class Dataset:
 
     def __init__(self, name: str, file_name: str):
         self.name = name
-        self.processed_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../data/processed/",
-                                           file_name)
+        self.processed_path = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                                           "../../data/processed/", file_name))
 
         self._data = None
         self.logger = logging.getLogger(__name__)

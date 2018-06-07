@@ -18,20 +18,20 @@ class LSTMSequence(torch.nn.Module):
         self.lstm2 = torch.nn.LSTMCell(self.hidden_size1, self.hidden_size2)
         self.linear = torch.nn.Linear(self.hidden_size2, d * len_out)
 
-    def forward(self, input_vars):
+    def forward(self, input):
         outputs = []
-        h_t = Variable(torch.zeros(input_vars.size(0), self.hidden_size1).double(), requires_grad=False)
-        c_t = Variable(torch.zeros(input_vars.size(0), self.hidden_size1).double(), requires_grad=False)
-        h_t2 = Variable(torch.zeros(input_vars.size(0), self.hidden_size2).double(), requires_grad=False)
-        c_t2 = Variable(torch.zeros(input_vars.size(0), self.hidden_size2).double(), requires_grad=False)
-        for i, input_t in enumerate(input_vars.chunk(input_vars.size(1), dim=1)):
+        h_t = Variable(torch.zeros(input.size(0), self.hidden_size1).double(), requires_grad=False)
+        c_t = Variable(torch.zeros(input.size(0), self.hidden_size1).double(), requires_grad=False)
+        h_t2 = Variable(torch.zeros(input.size(0), self.hidden_size2).double(), requires_grad=False)
+        c_t2 = Variable(torch.zeros(input.size(0), self.hidden_size2).double(), requires_grad=False)
+        for input_t in input.chunk(input.size(1), dim=1):
             h_t, c_t = self.lstm1(input_t.squeeze(dim=1), (h_t, c_t))
             h_t2, c_t2 = self.lstm2(h_t, (h_t2, c_t2))
             output = self.linear(h_t2)
             outputs += [output]
         outputs = torch.stack(outputs, 1).squeeze()  # stack (n, d * len_out) outputs in time dimensionality (dim=1)
 
-        return outputs.view(input_vars.size(0), input_vars.size(1), self.d, self.len_out)
+        return outputs.view(input.size(0), input.size(1), self.d, self.len_out)
 
 
 class LSTMAD(Algorithm):

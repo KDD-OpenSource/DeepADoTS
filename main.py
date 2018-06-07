@@ -1,9 +1,10 @@
 import os
+
 import numpy as np
 import pandas as pd
 
-from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
+from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
 
 
