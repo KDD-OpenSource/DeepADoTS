@@ -27,6 +27,7 @@ class SyntheticDataset(Dataset):
         self.outlier_config = outlier_config if outlier_config is not None else {}
         self.pollution_config = pollution_config if pollution_config is not None else {}
         self.train_split = train_split
+        self.train_test_factor = train_split / (1 - train_split)
         np.random.seed(random_state)
 
     def load(self):
@@ -49,8 +50,10 @@ class SyntheticDataset(Dataset):
         for _, outliers in config.items():
             for outlier in outliers:
                 for ts in outlier['timestamps']:
-                    timestamp = (int(*ts), int(*ts)+1) if len(ts) == 1 else ts
-                    timestamps.extend(list(range(*timestamp)))
+                    if len(ts) == 1:  # tuple length 1
+                        timestamps.append(int(*ts))
+                    else:
+                        timestamps.extend(list(ts))
 
         y = np.zeros(self.length)
         y[timestamps] = 1

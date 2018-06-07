@@ -1,6 +1,7 @@
 import abc
 import os
 import pickle
+import logging
 
 import pandas as pd
 
@@ -13,6 +14,7 @@ class Dataset:
                                            file_name)
 
         self._data = None
+        self.logger = logging.getLogger(__name__)
 
     def __str__(self) -> str:
         return self.name

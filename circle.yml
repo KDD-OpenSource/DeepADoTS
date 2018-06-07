@@ -33,7 +33,7 @@ jobs:
           command: |
             . venv/bin/activate
             echo "backend: Agg" > /home/circleci/repo/venv/lib/python3.6/site-packages/matplotlib/mpl-data/matplotlibrc
-            flake8 --exclude=third_party,venv
+            flake8
             python main.py
             vulture . --exclude=third_party,venv || true
       - store_artifacts:
