@@ -10,7 +10,6 @@ class LSTMSequence(torch.nn.Module):
     def __init__(self, d, len_in=1, len_out=10):
         super().__init__()
         self.d = d  # input and output feature dimensionality
-        self.len_in = len_in
         self.len_out = len_out
         self.hidden_size1 = 32
         self.hidden_size2 = 32
@@ -39,9 +38,8 @@ class LSTMAD(Algorithm):
     The interface of the class is sklearn-like.
     """
 
-    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=128, optimizer=torch.optim.Rprop):
+    def __init__(self, len_out=10, num_epochs=100, lr=0.01, batch_size=128, optimizer=torch.optim.Rprop):
         self.name = "LSTM-AD"
-        self.len_in = len_in
         self.len_out = len_out
 
         self.num_epochs = num_epochs

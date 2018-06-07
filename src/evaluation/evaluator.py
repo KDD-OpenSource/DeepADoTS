@@ -26,7 +26,7 @@ class Evaluator:
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
         accuracy = accuracy_score(y_true, y_pred)
-        precision, recall, f_score, support = prf(y_true, y_pred, average="binary")
+        precision, recall, f_score, _ = prf(y_true, y_pred, average="binary")
         f01_score = fbeta_score(y_true, y_pred, average='binary', beta=0.1)
         return accuracy, precision, recall, f_score, f01_score
 
