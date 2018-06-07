@@ -48,7 +48,7 @@ class Evaluator:
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
                     self.logger.error(f"An exception occured while training {det.name} on {ds}: {e}")
-                    traceback.print_exc()
+                    self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
     def benchmarks(self) -> pd.DataFrame:
