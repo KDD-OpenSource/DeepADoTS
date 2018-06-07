@@ -69,7 +69,8 @@ class QuietDonutTrainer(DonutTrainer):
             train_excludes, valid_excludes = excludes[:-n], excludes[-n:]
 
         # data augmentation object and the sliding window iterator
-        aug = MissingDataInjection(mean, std, self._missing_data_injection_rate)
+        # If std is zero choose a number close to zero
+        aug = MissingDataInjection(mean, std or 1e-10, self._missing_data_injection_rate)
         train_sliding_window = BatchSlidingWindow(
             array_size=len(train_values),
             window_size=self.model.x_dims,
@@ -91,6 +92,7 @@ class QuietDonutTrainer(DonutTrainer):
 
         # training loop
         lr = self._initial_lr
+        # Side effect. EarlyStopping stores variables temporarely in a Temp dir
         with TrainLoop(
                 param_vars=self._train_params,
                 early_stopping=True,
@@ -148,6 +150,8 @@ class Donut(Algorithm):
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
+        # Reset all results from last run to avoid reusing variables
+        self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
         for col_idx in trange(len(X.columns)):
             col = X.columns[col_idx]
             tf_session = tf.Session()

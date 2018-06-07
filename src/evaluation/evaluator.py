@@ -204,20 +204,19 @@ class Evaluator:
     def plot_auroc(self, store=True, title='AUROC'):
         benchmarks = self.benchmarks()
         dataset_names = [ds.name for ds in self.datasets]
-        figures = []
+        fig = plt.figure(figsize=(10, 10))
         for det in self.detectors:
-            fig = plt.figure(figsize=(7, 7))
             aurocs = benchmarks[benchmarks['algorithm'] == det.name]['auroc']
-            plt.plot(aurocs)
+            plt.plot(aurocs, label=det.name)
             plt.xticks(aurocs.index, dataset_names, rotation=90)
-            plt.xlabel('Dataset')
-            plt.ylabel('Area under Receiver Operating Characteristic')
-            plt.title(f'{title}: {det.name}')
             fig.tight_layout()
-            if store:
-                self.store(fig, f"auroc_{det.name}")
-            figures.append(fig)
-        return figures
+        plt.legend()
+        plt.xlabel('Dataset')
+        plt.ylabel('Area under Receiver Operating Characteristic')
+        plt.title(title)
+        if store:
+            self.store(fig, f"auroc")
+        return fig
 
     def print_tables(self):
         benchmarks = self.benchmarks()

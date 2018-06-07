@@ -82,7 +82,7 @@ class SyntheticDataGenerator:
         }
         dataset.pollution_config = pollution_config
 
-        dataset.name = f'Syn Extreme Outliers (pol={pollution_percentage})'
+        dataset.name = f'Syn Outliers (pol={pollution_percentage})'
         return dataset
 
     @staticmethod
@@ -90,7 +90,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.extreme_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage, use_zero=use_zero)
-        dataset.name = f'Syn Extreme Outliers (mis={missing_percentage})'
+        dataset.name = f'Syn Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
@@ -122,7 +122,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.shift_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = f'Syn Shift Outliers (mis={missing_percentage})'
+        dataset.name = f'Syn Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
@@ -143,7 +143,7 @@ class SyntheticDataGenerator:
         }
         dataset.pollution_config = pollution_config
 
-        dataset.name = f'Syn Shift Outliers (pol={pollution_percentage})'
+        dataset.name = f'Syn Outliers (pol={pollution_percentage})'
         return dataset
 
     @staticmethod
@@ -173,7 +173,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.variance_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = f'Syn Variance Outliers (mis={missing_percentage})'
+        dataset.name = f'Syn Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
@@ -194,7 +194,7 @@ class SyntheticDataGenerator:
         }
         dataset.pollution_config = pollution_config
 
-        dataset.name = f'Syn Variance Outliers (pol={pollution_percentage})'
+        dataset.name = f'Syn Outliers (pol={pollution_percentage})'
         return dataset
 
     @staticmethod
@@ -224,7 +224,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.trend_1()
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = f'Syn Trend Outliers (mis={missing_percentage})'
+        dataset.name = f'Syn Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
@@ -245,7 +245,7 @@ class SyntheticDataGenerator:
         }
         dataset.pollution_config = pollution_config
 
-        dataset.name = f'Syn Trend Outliers (pol={pollution_percentage})'
+        dataset.name = f'Syn Outliers (pol={pollution_percentage})'
         return dataset
 
     @staticmethod

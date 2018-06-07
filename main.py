@@ -10,6 +10,8 @@ from src.evaluation.evaluator import Evaluator
 
 def main():
     run_pipeline()
+    # test_missing()
+    # test_pollution()
 
 
 def run_pipeline():
@@ -58,13 +60,19 @@ def test_pollution():
 
 def test_missing():
     datasets = [
-        SyntheticDataGenerator.extreme_1(),
-        SyntheticDataGenerator.extreme_1_missing(0.1, use_zero=True),
-        SyntheticDataGenerator.extreme_1_missing(0.3, use_zero=True),
+        SyntheticDataGenerator.extreme_1_missing(0, use_zero=True),
+        # SyntheticDataGenerator.extreme_1_missing(0.1, use_zero=True),
+        # SyntheticDataGenerator.extreme_1_missing(0.2, use_zero=True),
+        # SyntheticDataGenerator.extreme_1_missing(0.3, use_zero=True),
+        # SyntheticDataGenerator.extreme_1_missing(0.4, use_zero=True),
         SyntheticDataGenerator.extreme_1_missing(0.5, use_zero=True),
-        SyntheticDataGenerator.extreme_1_missing(1, use_zero=True)
+        # SyntheticDataGenerator.extreme_1_missing(0.6, use_zero=True),
+        # SyntheticDataGenerator.extreme_1_missing(0.7, use_zero=True),
+        # SyntheticDataGenerator.extreme_1_missing(0.8, use_zero=True),
+        # SyntheticDataGenerator.extreme_1_missing(0.9, use_zero=True),
+        SyntheticDataGenerator.extreme_1_missing(1.0, use_zero=True),
     ]
-    detectors = [RecurrentEBM(num_epochs=30), Donut(), DAGMM()]  # , LSTM_Enc_Dec(epochs=200)
+    detectors = [Donut(), RecurrentEBM()]  # , LSTM_Enc_Dec(epochs=200), LSTMAD()
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     evaluator.print_tables()
