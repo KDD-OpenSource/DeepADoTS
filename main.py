@@ -67,6 +67,8 @@ def test_missing():
     detectors = [RecurrentEBM(num_epochs=30), Donut(), DAGMM()]  # , LSTM_Enc_Dec(epochs=200)
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
+    evaluator.print_tables()
+    evaluator.plot_scores()
     evaluator.plot_auroc(title='Area under the curve for missing values')
 
 
