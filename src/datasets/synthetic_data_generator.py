@@ -86,10 +86,10 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def extreme_1_missing(missing_percentage=0.1):
+    def extreme_1_missing(missing_percentage=0.1, use_zero=False):
         dataset = SyntheticDataGenerator.extreme_1()
         dataset.load()
-        dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.add_missing_values(missing_percentage=missing_percentage, use_zero=use_zero)
         dataset.name = f'Syn Extreme Outliers (mis={missing_percentage})'
         return dataset
 

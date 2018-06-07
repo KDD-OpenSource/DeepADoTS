@@ -59,10 +59,10 @@ def test_pollution():
 def test_missing():
     datasets = [
         SyntheticDataGenerator.extreme_1(),
-        SyntheticDataGenerator.extreme_1_missing(0.1),
-        SyntheticDataGenerator.extreme_1_missing(0.3),
-        SyntheticDataGenerator.extreme_1_missing(0.5),
-        SyntheticDataGenerator.extreme_1_missing(1)
+        SyntheticDataGenerator.extreme_1_missing(0.1, use_zero=True),
+        SyntheticDataGenerator.extreme_1_missing(0.3, use_zero=True),
+        SyntheticDataGenerator.extreme_1_missing(0.5, use_zero=True),
+        SyntheticDataGenerator.extreme_1_missing(1, use_zero=True)
     ]
     detectors = [RecurrentEBM(num_epochs=30), Donut(), DAGMM()]  # , LSTM_Enc_Dec(epochs=200)
     evaluator = Evaluator(datasets, detectors)

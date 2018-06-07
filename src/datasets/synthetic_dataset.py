@@ -35,7 +35,7 @@ class SyntheticDataset(Dataset):
         generator.generate_baseline(**self.baseline_config)
 
         train_split_point = int(self.train_split * self.length)
-
+        print(self.pollution_config)
         X_train = generator.add_outliers(self.pollution_config)[:train_split_point]
         y_train = self._label_outliers(self.pollution_config)[:train_split_point]
 
@@ -58,7 +58,7 @@ class SyntheticDataset(Dataset):
         y[timestamps] = 1
         return pd.Series(y)
 
-    def add_missing_values(self, missing_percentage: float, per_column: bool=True):
+    def add_missing_values(self, missing_percentage: float, per_column: bool=True, use_zero: bool=False):
         X_train, y_train, X_test, y_test = self._data
         if per_column:
             for col in X_train.columns:
@@ -67,3 +67,5 @@ class SyntheticDataset(Dataset):
         else:
             missing_idxs = np.random.choice(len(X_train), int(missing_percentage*len(X_train)), replace=False)
             X_train.iloc[missing_idxs] = [np.nan] * X_train.shape[-1]
+        if use_zero:
+            X_train.fillna(0, inplace=True)
