@@ -9,8 +9,8 @@ from src.evaluation.evaluator import Evaluator
 
 
 def main():
-    run_pipeline()
-    # test_missing()
+    # run_pipeline()
+    test_missing()
     # test_pollution()
 
 
@@ -71,14 +71,14 @@ def test_missing():
         # SyntheticDataGenerator.extreme_1_missing(0.7, use_zero=True),
         # SyntheticDataGenerator.extreme_1_missing(0.8, use_zero=True),
         # SyntheticDataGenerator.extreme_1_missing(0.9, use_zero=True),
-        SyntheticDataGenerator.extreme_1_missing(1.0, use_zero=True),
+        SyntheticDataGenerator.extreme_1_missing(0.99, use_zero=True),
     ]
-    detectors = [Donut(), RecurrentEBM(), LSTM_Enc_Dec(epochs=200), DAGMM()]  # , LSTM_Enc_Dec(epochs=200), LSTMAD()
+    detectors = [Donut(), RecurrentEBM(), DAGMM()]  # , LSTM_Enc_Dec(epochs=200), LSTMAD()
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
+    evaluator.plot_auroc(title='Area under the curve for missing values')
     evaluator.print_tables()
     evaluator.plot_scores()
-    evaluator.plot_auroc(title='Area under the curve for missing values')
 
 
 def evaluate_on_real_world_data_sets():

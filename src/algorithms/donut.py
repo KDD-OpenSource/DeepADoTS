@@ -70,7 +70,7 @@ class QuietDonutTrainer(DonutTrainer):
 
         # data augmentation object and the sliding window iterator
         # If std is zero choose a number close to zero
-        aug = MissingDataInjection(mean, std or 1e-10, self._missing_data_injection_rate)
+        aug = MissingDataInjection(mean, std, self._missing_data_injection_rate)
         train_sliding_window = BatchSlidingWindow(
             array_size=len(train_values),
             window_size=self.model.x_dims,
