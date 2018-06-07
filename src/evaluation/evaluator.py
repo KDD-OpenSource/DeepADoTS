@@ -66,7 +66,7 @@ class Evaluator:
             _, _, _, y_test = ds.data()
             for det in self.detectors:
                 score = self.results[(ds.name, det.name)]
-                y_pred = det.binarize(score, self.get_optimal_threshold(self, det, y_test, np.array(score), 40))
+                y_pred = det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score), 40))
                 acc, prec, rec, f1_score, f01_score = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
                 score = self.results[(ds.name, det.name)]
                 auroc = self.get_auroc(det, ds, score)
