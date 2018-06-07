@@ -70,13 +70,6 @@ class Evaluator:
                                ignore_index=True)
         return df
 
-    def store(self, fig, title, extension="pdf"):
-        timestamp = int(time.time())
-        dir = "reports/figures/"
-        path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
-        fig.savefig(path)
-        self.logger.info(f"Stored plot at {path}")
-
     @staticmethod
     def get_metrics_by_thresholds(det, y_true: list, y_pred: list, thresholds: list):
         for threshold in thresholds:
@@ -225,14 +218,28 @@ class Evaluator:
             self.logger.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
                                       headers='keys', tablefmt='psql'))
 
+    def store(self, fig, title, extension="pdf"):
+        timestamp = int(time.time())
+        _dir = "reports/figures/"
+        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        fig.savefig(path)
+        self.logger.info(f"Stored plot at {path}")
+
+    def store_text(self, content, title, extension="txt"):
+        timestamp = int(time.time())
+        _dir = "reports/figures/"
+        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        with open(path, 'w')  as f:
+            f.write(content)
+        self.logger.info(f"Stored plot at {path}")
+
     def generate_latex(self):
         benchmarks = self.benchmarks()
-        timestamp = str(time.time())
-        dir = "reports/figures/"
+        result = ""
         for ds in self.datasets:
             print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            print(ds.name + ": ", file=open(dir + "table_results" + timestamp + ".tex", "a"))
-            print(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
-                           headers='keys', tablefmt='latex'), file=open(dir + "table_results" + timestamp +
-                                                                        ".tex", "a"))
-            print("\n", file=open(dir + "table_results" + timestamp + ".tex", "a"))
+            content = f'''{ds.name}:
+            \n{tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+                           headers='keys', tablefmt='latex')}\n\n'''
+            result += content
+        self.store_text(content=result, title="latex_table_results", extension="tex")
