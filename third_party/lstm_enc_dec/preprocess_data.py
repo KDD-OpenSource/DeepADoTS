@@ -6,16 +6,8 @@ import torch
 from torch import device
 
 
-def normalization(seqData, max, min):
-    return (seqData - min) / (max - min)
-
-
 def standardization(seqData, mean, std):
     return (seqData - mean) / std
-
-
-def reconstruct(seqData, mean, std):
-    return seqData * std + mean
 
 
 class PickleDataLoad(object):

@@ -18,7 +18,7 @@ def fit_norm_distribution_param(
             errors.append([])
             predictions[t].append(out.data.cpu()[0][0][channel_idx])
             pasthidden = model.repackage_hidden(hidden)
-            for prediction_step in range(1, prediction_window_size):
+            for _ in range(1, prediction_window_size):
                 out, hidden = model.forward(out, hidden)
                 predictions[t].append(out.data.cpu()[0][0][channel_idx])
 
@@ -60,7 +60,7 @@ def anomalyScore(model, dataset, mean, cov, prediction_window_size, device_type,
 
             predictions[t].append(out.data.cpu()[0][0][channel_idx])
             pasthidden = model.repackage_hidden(hidden)
-            for prediction_step in range(1, prediction_window_size):
+            for _ in range(1, prediction_window_size):
                 out, hidden = model.forward(out, hidden)
                 predictions[t].append(out.data.cpu()[0][0][channel_idx])
 

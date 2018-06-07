@@ -113,17 +113,3 @@ class RNNPredictor(nn.Module):
                       tie_weights=args.tied,
                       res_connection=args.res_connection)
         self.to(args.device)
-
-    def load_checkpoint(self, args, checkpoint, feature_dim):
-        start_epoch = checkpoint['epoch'] + 1
-        best_val_loss = checkpoint['best_loss']
-        args_ = checkpoint['args']
-        args_.resume = args.resume
-        args_.pretrained = args.pretrained
-        args_.epochs = args.epochs
-        args_.save_interval = args.save_interval
-        args_.prediction_window_size = args.prediction_window_size
-        self.initialize(args_, feature_dim=feature_dim)
-        self.load_state_dict(checkpoint['state_dict'])
-
-        return args_, start_epoch, best_val_loss

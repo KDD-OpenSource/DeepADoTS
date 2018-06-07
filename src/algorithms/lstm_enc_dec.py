@@ -117,31 +117,6 @@ class LSTM_Enc_Dec(Algorithm):
     def threshold(self, score):
         return np.nanmean(score) + 2*np.nanstd(score)
 
-    """
-        Because the algorithm returns only an anomaly score we need to find and
-        apply our own threshold for the evaluation. This is done by looking at
-        each channel seperately and testing different thresholds (from zero to
-        max).
-        The resulting amounts of anomalies by threshold are distributed in a
-        logarithmic way. We decided to select the threshold by considering
-        the mean of all found anomaly amounts.
-    """
-    def _create_validation_set(self, channels_scores):
-        for score in channels_scores:
-            maximum = score.max()
-            steps = 40
-            th = torch.tensor(np.linspace(0, maximum, steps))
-            anomalies_by_threshold = np.zeros(len(th))
-            for i in range(len(th)):
-                anomaly = (score > th[i]).float()
-                amount_anomalies = anomaly.sum()
-                anomalies_by_threshold[i] = amount_anomalies
-            # Find threshold which amount is the closest to the mean of all anomaly amounts
-            idx = (np.abs(anomalies_by_threshold - anomalies_by_threshold.mean())).argmin()
-            threshold = th[idx]
-            logging.info(f'Selecting threshold #{idx}: {threshold}')
-            yield np.array(score > threshold, dtype=int)
-
     def _transform_fit_data(self, X_orig_train, y_orig_train):
         X_train, X_test, y_train, y_test = train_test_split(
             X_orig_train, y_orig_train, test_size=0.25, shuffle=False,

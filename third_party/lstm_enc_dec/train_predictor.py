@@ -3,8 +3,6 @@ import time
 
 import torch
 
-REPORT_FIGURES_DIR = 'reports/figures'
-
 
 ###############################################################################
 # Training code

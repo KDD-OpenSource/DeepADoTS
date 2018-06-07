@@ -12,7 +12,6 @@ from .anomalyDetector import fit_norm_distribution_param
 from .model import RNNPredictor
 
 REPORT_PICKLES_DIR = 'reports/data'
-REPORT_FIGURES_DIR = 'reports/figures'
 
 
 def calc_anomalies(TimeseriesData, train_dataset, test_dataset, device_type, data,
