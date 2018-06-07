@@ -241,10 +241,11 @@ class LSTM_Enc_Dec(Algorithm):
         # For reproducibility a set of arguments is stored which will be reused during prediction
         stored_args = {
             'seed': self.seed,
-            'model_type': self.model_type,
+            'model': self.model_type,
             'emsize': self.emsize,
             'nhid': self.nhid,
             'nlayers': self.nlayers,
+            'dropout': self.dropout,
             'res_connection': self.res_connection,
             'prediction_window_size': self.prediction_window_size,
             'device': self.device,
@@ -258,4 +259,4 @@ class LSTM_Enc_Dec(Algorithm):
             'means': means,
             'covs': covs,
         }
-        self.model.save_checkpoint(model_dictionary, save_model)
+        self.model.save_checkpoint(model_dictionary, save_model, self.data, self.filename)

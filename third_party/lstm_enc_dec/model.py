@@ -87,19 +87,18 @@ class RNNPredictor(nn.Module):
         else:
             return h.detach()
 
-    def save_checkpoint(self, state, is_best):
+    def save_checkpoint(self, state, is_best, data_type):
         logging.debug("=> saving checkpoint ..")
-        args = state['args']
-        checkpoint_dir = Path('models', args.data, 'checkpoint')
+        checkpoint_dir = Path('models', data_type, 'checkpoint')
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
-        checkpoint = checkpoint_dir.joinpath(args.filename).with_suffix('.pth')
+        checkpoint = checkpoint_dir.joinpath(filename).with_suffix('.pth')
 
         torch.save(state, checkpoint)
         if is_best:
-            model_best_dir = Path('models', args.data, 'model_best')
+            model_best_dir = Path('models', data_type, 'model_best')
             model_best_dir.mkdir(parents=True, exist_ok=True)
 
-            shutil.copyfile(checkpoint, model_best_dir.joinpath(args.filename).with_suffix('.pth'))
+            shutil.copyfile(checkpoint, model_best_dir.joinpath(filename).with_suffix('.pth'))
 
         logging.info('=> checkpoint saved.')
 
@@ -109,7 +108,7 @@ class RNNPredictor(nn.Module):
         else:
             return hidden[-1].data.cpu()  # last layer
 
-    def initialize(self, args, feature_dim):
+    def initialize(self, args, feature_dim,):
         self.__init__(rnn_type=args.model,
                       enc_inp_size=feature_dim,
                       rnn_inp_size=args.emsize,
