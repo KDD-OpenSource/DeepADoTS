@@ -238,8 +238,7 @@ class Evaluator:
         result = ""
         for ds in self.datasets:
             print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            content = f'''{ds.name}:
-            \n{tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+            content = f'''{ds.name}:\n\n{tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
                            headers='keys', tablefmt='latex')}\n\n'''
             result += content
         self.store_text(content=result, title="latex_table_results", extension="tex")
