@@ -12,7 +12,7 @@ def main():
 
 
 def run_pipeline():
-    if os.environ.get("CIRCLECI", False):
+    if os.environ.get("CIRCLECI", True):
         datasets = [SyntheticDataGenerator.extreme_1()]
         detectors = [LSTM_Enc_Dec(epochs=1)]
     else:

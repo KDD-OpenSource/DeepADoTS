@@ -10,7 +10,6 @@ from .anomalyDetector import anomalyScore
 from .anomalyDetector import fit_norm_distribution_param
 from .model import RNNPredictor
 from .preprocess_data import *
-from .train_predictor import get_args as get_train_args
 
 REPORT_PICKLES_DIR = 'reports/data'
 REPORT_FIGURES_DIR = 'reports/figures'
@@ -72,7 +71,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset, device_type, dat
             if compensate:
                 logging.debug('=> training an SVR as anomaly score predictor')
                 train_score, _, _, hiddens, _ = anomalyScore(
-                    model, train_dataset, mean, cov, args.prediction_window_size, args.device
+                    model, train_dataset, mean, cov, args.prediction_window_size, args.device,
                     channel_idx=channel_idx)
                 score_predictor = GridSearchCV(SVR(), cv=5,
                                                param_grid={"C": [1e0, 1e1, 1e2], "gamma": np.logspace(-1, 1, 3)})
@@ -86,8 +85,8 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset, device_type, dat
             logging.debug('=> calculating anomaly scores')
             score, _, _, _, predicted_score = anomalyScore(
                 model, test_dataset, mean, cov,
-                args.prediction_window_size, args.device
-                score_predictor=score_predictor, channel_idx=channel_idx
+                args.prediction_window_size, args.device,
+                score_predictor=score_predictor, channel_idx=channel_idx,
             )
             score = score.cpu()
             scores.append(score)
