@@ -6,6 +6,7 @@ import logging
 
 # Use: logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL
 LOG_LEVEL = logging.DEBUG
+CONSOLE_LOG_LEVEL = logging.INFO
 
 
 def init_logging():
@@ -29,6 +30,7 @@ def init_logging():
     # Also print logs in the standard output
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(log_formatter)
+    console_handler.setLevel(CONSOLE_LOG_LEVEL)
     console_handler.addFilter(DebugModuleFilter(['^src\.', '^root$']))
     root_logger.addHandler(console_handler)
 

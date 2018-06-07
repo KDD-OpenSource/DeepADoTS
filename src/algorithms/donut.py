@@ -143,8 +143,7 @@ class Donut(Algorithm):
     in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
 
     def __init__(self, max_epoch=256):
-        super(Donut).__init__()
-        self.name = "Donut"
+        super().__init__(__name__, "Donut")
         self.max_epoch = max_epoch
         self.x_dims = 120
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []

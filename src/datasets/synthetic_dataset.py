@@ -35,7 +35,6 @@ class SyntheticDataset(Dataset):
         generator.generate_baseline(**self.baseline_config)
 
         train_split_point = int(self.train_split * self.length)
-        print(self.pollution_config)
         X_train = generator.add_outliers(self.pollution_config)[:train_split_point]
         y_train = self._label_outliers(self.pollution_config)[:train_split_point]
 

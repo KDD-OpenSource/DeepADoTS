@@ -72,7 +72,7 @@ def test_missing():
         # SyntheticDataGenerator.extreme_1_missing(0.9, use_zero=True),
         SyntheticDataGenerator.extreme_1_missing(1.0, use_zero=True),
     ]
-    detectors = [Donut(), RecurrentEBM()]  # , LSTM_Enc_Dec(epochs=200), LSTMAD()
+    detectors = [Donut(), RecurrentEBM(), LSTM_Enc_Dec(epochs=200), DAGMM()]  # , LSTM_Enc_Dec(epochs=200), LSTMAD()
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     evaluator.print_tables()

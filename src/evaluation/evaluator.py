@@ -208,12 +208,13 @@ class Evaluator:
         for det in self.detectors:
             aurocs = benchmarks[benchmarks['algorithm'] == det.name]['auroc']
             plt.plot(aurocs, label=det.name)
-            plt.xticks(aurocs.index, dataset_names, rotation=90)
-            fig.tight_layout()
+        indizes = benchmarks[benchmarks['algorithm'] == self.detectors[0].name]['auroc'].index
+        plt.xticks(indizes, dataset_names, rotation=90)
         plt.legend()
         plt.xlabel('Dataset')
         plt.ylabel('Area under Receiver Operating Characteristic')
         plt.title(title)
+        fig.tight_layout()
         if store:
             self.store(fig, f"auroc")
         return fig

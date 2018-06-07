@@ -3,8 +3,8 @@ import logging
 
 
 class Algorithm(metaclass=abc.ABCMeta):
-    def __init__(self, name):
-        self.logger = logging.getLogger(__name__)
+    def __init__(self, module_name, name):
+        self.logger = logging.getLogger(module_name)
         self.name = name
 
     def __str__(self) -> str:
