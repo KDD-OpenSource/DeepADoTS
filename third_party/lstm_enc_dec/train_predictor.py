@@ -138,7 +138,7 @@ def train(args, model, train_dataset, epoch, optimizer, criterion):
             if batch % args.log_interval == 0 and batch > 0:
                 cur_loss = total_loss / args.log_interval
                 elapsed = time.time() - start_time
-                logging.info('| epoch {:3d} | {:5d}/{:5d} batches | ms/batch {:5.4f} | '
+                logging.debug('| epoch {:3d} | {:5d}/{:5d} batches | ms/batch {:5.4f} | '
                              'loss {:5.2f} '.format(
                     epoch, batch, len(train_dataset) // args.bptt,
                                   elapsed * 1000 / args.log_interval, cur_loss))
