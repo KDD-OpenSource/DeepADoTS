@@ -69,7 +69,9 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.extreme_1()
 
         train_length = int(dataset.train_split * dataset.length)
+        np.random.seed(123)
         indices = np.random.choice(train_length, int(pollution_percentage * train_length), replace=False)
+        np.random.seed(None)
         pollution_config = {
             'extreme': [
                 {
@@ -128,7 +130,9 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.shift_1()
 
         train_length = int(dataset.train_split * dataset.length)
+        np.random.seed(123)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
+        np.random.seed(None)
         pollution_config = {
             'shift': [
                 {
@@ -177,7 +181,9 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.variance_1()
 
         train_length = int(dataset.train_split * dataset.length)
+        np.random.seed(123)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
+        np.random.seed(None)
         pollution_config = {
             'variance': [
                 {
@@ -226,7 +232,9 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.trend_1()
 
         train_length = int(dataset.train_split * dataset.length)
+        np.random.seed(123)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
+        np.random.seed(None)
         pollution_config = {
             'trend': [
                 {
