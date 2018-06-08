@@ -40,14 +40,14 @@ class Evaluator:
     def get_optimal_threshold(self, det, y_test, score, steps=40, return_metrics=False):
         maximum = np.nanmax(score)
         minimum = np.nanmin(score)
-        th = np.linspace(minimum, maximum, steps)
-        metrics = list(self.get_metrics_by_thresholds(det, y_test, score, th))
+        threshold = np.linspace(minimum, maximum, steps)
+        metrics = list(self.get_metrics_by_thresholds(det, y_test, score, threshold))
         metrics = np.array(metrics).T
         anomalies, acc, prec, rec, f_score, f01_score = metrics
         if return_metrics:
-            return anomalies, acc, prec, rec, f_score, f01_score, th
+            return anomalies, acc, prec, rec, f_score, f01_score, threshold
         else:
-            return th[np.argmax(f_score)]
+            return threshold[np.argmax(f_score)]
 
     def evaluate(self):
         for ds in progressbar.progressbar(self.datasets):
@@ -153,18 +153,18 @@ class Evaluator:
             for det, ax in zip(self.detectors, axes_row):
                 score = np.array(self.results[(ds.name, det.name)])
 
-                anomalies, acc, prec, rec, f_score, f01_score, th = self.get_optimal_threshold(det,
+                anomalies, acc, prec, rec, f_score, f01_score, threshold = self.get_optimal_threshold(det,
                                                                                                y_test,
                                                                                                score,
                                                                                                return_metrics=True)
 
-                ax.plot(th, anomalies / len(y_test),
+                ax.plot(threshold, anomalies / len(y_test),
                         label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
-                ax.plot(th, acc, label="accuracy")
-                ax.plot(th, prec, label="precision")
-                ax.plot(th, rec, label="recall")
-                ax.plot(th, f_score, label="f_score")
-                ax.plot(th, f01_score, label="f01_score")
+                ax.plot(threshold, acc, label="accuracy")
+                ax.plot(threshold, prec, label="precision")
+                ax.plot(threshold, rec, label="recall")
+                ax.plot(threshold, f_score, label="f_score")
+                ax.plot(threshold, f01_score, label="f01_score")
                 ax.set_title(f"{det.name} on {ds.name}")
                 ax.set_xlabel("Threshold")
                 ax.legend()
