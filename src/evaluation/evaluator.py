@@ -148,11 +148,10 @@ class Evaluator:
                 th = np.linspace(0, maximum, steps)
                 metrics = list(self.get_metrics_by_thresholds(det, y_test, y_pred, th))
                 metrics = np.array(metrics).T
-                anomalies, acc, prec, rec, f_score, f01_score = metrics
+                anomalies, _, prec, rec, f_score, f01_score = metrics
 
                 ax.plot(th, anomalies / len(y_test),
                         label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
-                ax.plot(th, acc, label="accuracy")
                 ax.plot(th, prec, label="precision")
                 ax.plot(th, rec, label="recall")
                 ax.plot(th, f_score, label="f_score")
@@ -204,7 +203,7 @@ class Evaluator:
     def plot_auroc(self, store=True, title='AUROC'):
         benchmarks = self.benchmarks()
         dataset_names = [ds.name for ds in self.datasets]
-        fig = plt.figure(figsize=(10, 10))
+        fig = plt.figure(figsize=(7, 7))
         for det in self.detectors:
             aurocs = benchmarks[benchmarks['algorithm'] == det.name]['auroc']
             plt.plot(aurocs.values, label=det.name)
