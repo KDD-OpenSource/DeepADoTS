@@ -39,21 +39,16 @@ class SyntheticDataset(Dataset):
 
         X_train = generator.add_outliers(self.pollution_config)[:train_split_point]
         y_train = self._label_outliers(self.pollution_config)[:train_split_point]
-        print(1, self.outlier_config)
+        # Generator vanishes the config dict
         X_test = generator.add_outliers(copy.deepcopy(self.outlier_config))[train_split_point:]
-        print(2, self.outlier_config)
         y_test = self._label_outliers(self.outlier_config)[train_split_point:]
-        print(3, self.outlier_config)
 
         self._data = X_train, y_train, X_test, y_test
 
     def _label_outliers(self, config: dict) -> pd.Series:
-        print("HALLO!")
-        print(config)
         timestamps = []
         for _, outliers in config.items():
             for outlier in outliers:
-                print(outlier)
                 for ts in outlier['timestamps']:
                     if len(ts) == 1:  # tuple length 1
                         timestamps.append(int(*ts))
