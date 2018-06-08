@@ -10,7 +10,7 @@ LOG_LEVEL = logging.DEBUG
 
 def init_logging():
     # Prepare directory and file path for storing the logs
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    timestamp = time.strftime("%Y-%m-%d-%H%M%S")
     log_files_dir = os.path.join('reports', 'logs')
     log_file_path = os.path.join(log_files_dir, '{}.log'.format(timestamp))
     os.makedirs(log_files_dir, exist_ok=True)
