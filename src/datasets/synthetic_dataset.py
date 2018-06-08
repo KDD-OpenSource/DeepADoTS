@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import copy
 from agots.multivariate_generators.multivariate_data_generator import MultivariateDataGenerator
 
 from . import Dataset
@@ -39,9 +40,10 @@ class SyntheticDataset(Dataset):
         X_train = generator.add_outliers(self.pollution_config)[:train_split_point]
         y_train = self._label_outliers(self.pollution_config)[:train_split_point]
         print(1, self.outlier_config)
-        X_test = generator.add_outliers(self.outlier_config)[train_split_point:]
+        X_test = generator.add_outliers(copy.deepcopy(self.outlier_config))[train_split_point:]
         print(2, self.outlier_config)
         y_test = self._label_outliers(self.outlier_config)[train_split_point:]
+        print(3, self.outlier_config)
 
         self._data = X_train, y_train, X_test, y_test
 
