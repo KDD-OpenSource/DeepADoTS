@@ -153,18 +153,18 @@ class Evaluator:
             for det, ax in zip(self.detectors, axes_row):
                 score = np.array(self.results[(ds.name, det.name)])
 
-                anomalies, acc, prec, rec, f_score, f01_score, threshold = self.get_optimal_threshold(det,
-                                                                                                      y_test,
-                                                                                                      score,
-                                                                                                      return_metrics=True)
+                anomalies, acc, prec, rec, f_score, f01_score, thresh = self.get_optimal_threshold(det,
+                                                                                                   y_test,
+                                                                                                   score,
+                                                                                                   return_metrics=True)
 
-                ax.plot(threshold, anomalies / len(y_test),
+                ax.plot(thresh, anomalies / len(y_test),
                         label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
-                ax.plot(threshold, acc, label="accuracy")
-                ax.plot(threshold, prec, label="precision")
-                ax.plot(threshold, rec, label="recall")
-                ax.plot(threshold, f_score, label="f_score")
-                ax.plot(threshold, f01_score, label="f01_score")
+                ax.plot(thresh, acc, label="accuracy")
+                ax.plot(thresh, prec, label="precision")
+                ax.plot(thresh, rec, label="recall")
+                ax.plot(thresh, f_score, label="f_score")
+                ax.plot(thresh, f01_score, label="f01_score")
                 ax.set_title(f"{det.name} on {ds.name}")
                 ax.set_xlabel("Threshold")
                 ax.legend()
