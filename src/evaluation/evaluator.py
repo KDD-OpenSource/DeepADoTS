@@ -154,9 +154,9 @@ class Evaluator:
                 score = np.array(self.results[(ds.name, det.name)])
 
                 anomalies, acc, prec, rec, f_score, f01_score, threshold = self.get_optimal_threshold(det,
-                                                                                               y_test,
-                                                                                               score,
-                                                                                               return_metrics=True)
+                                                                                                      y_test,
+                                                                                                      score,
+                                                                                                      return_metrics=True)
 
                 ax.plot(threshold, anomalies / len(y_test),
                         label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
