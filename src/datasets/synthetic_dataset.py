@@ -38,8 +38,9 @@ class SyntheticDataset(Dataset):
 
         X_train = generator.add_outliers(self.pollution_config)[:train_split_point]
         y_train = self._label_outliers(self.pollution_config)[:train_split_point]
-
+        print(1, self.outlier_config)
         X_test = generator.add_outliers(self.outlier_config)[train_split_point:]
+        print(2, self.outlier_config)
         y_test = self._label_outliers(self.outlier_config)[train_split_point:]
 
         self._data = X_train, y_train, X_test, y_test

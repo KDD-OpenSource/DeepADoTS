@@ -54,6 +54,7 @@ class SyntheticDataGenerator:
                 }
             ]
         }
+        print(outlier_config)
         pollution_config = {}
         random_state = 42
 
