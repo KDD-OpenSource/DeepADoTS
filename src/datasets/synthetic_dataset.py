@@ -45,6 +45,8 @@ class SyntheticDataset(Dataset):
         self._data = X_train, y_train, X_test, y_test
 
     def _label_outliers(self, config: dict) -> pd.Series:
+        print("HALLO!")
+        print(config)
         timestamps = []
         for _, outliers in config.items():
             for outlier in outliers:
