@@ -48,8 +48,7 @@ class SyntheticDataset(Dataset):
         timestamps = []
         for _, outliers in config.items():
             for outlier in outliers:
-                if 'timestamps' not in outlier:
-                    print(outlier)
+                print(outlier)
                 for ts in outlier['timestamps']:
                     if len(ts) == 1:  # tuple length 1
                         timestamps.append(int(*ts))
