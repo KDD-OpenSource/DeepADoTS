@@ -101,15 +101,3 @@ class RNNPredictor(nn.Module):
             return hidden[0][-1].data.cpu()  # hidden state last layer (hidden[1] is cell state)
         else:
             return hidden[-1].data.cpu()  # last layer
-
-    def initialize(self, args, feature_dim,):
-        self.__init__(rnn_type=args.model,
-                      enc_inp_size=feature_dim,
-                      rnn_inp_size=args.emsize,
-                      rnn_hid_size=args.nhid,
-                      dec_out_size=feature_dim,
-                      nlayers=args.nlayers,
-                      dropout=args.dropout,
-                      tie_weights=args.tied,
-                      res_connection=args.res_connection)
-        self.to(args.device)
