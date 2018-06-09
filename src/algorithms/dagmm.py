@@ -1,4 +1,5 @@
 """Adapted from Daniel Stanley Tan (https://github.com/danieltan07/dagmm)"""
+import abc
 
 import numpy as np
 import pandas as pd
@@ -30,12 +31,16 @@ class CustomDataLoader(object):
         return np.float32(self.X[index])
 
 
-class DAGMM_Module(nn.Module):
-    """Residual Block."""
+class AutoEncoder():
 
-    def __init__(self, n_features=118, n_gmm=2, latent_dim=3):
-        super(DAGMM_Module, self).__init__()
+    @abc.abstractmethod
+    def __call__(self, x):
+        """Run autoencoder, return (decoded, encoded)"""
 
+
+class NNAutoEncoder(AutoEncoder):
+
+    def __init__(self, n_features=118, hidden_size=1):
         layers = []
         layers += [nn.Linear(n_features, 60)]
         layers += [nn.Tanh()]
@@ -43,12 +48,12 @@ class DAGMM_Module(nn.Module):
         layers += [nn.Tanh()]
         layers += [nn.Linear(30, 10)]
         layers += [nn.Tanh()]
-        layers += [nn.Linear(10, 1)]
+        layers += [nn.Linear(10, hidden_size)]
 
-        self.encoder = nn.Sequential(*layers)
+        self._encoder = nn.Sequential(*layers)
 
         layers = []
-        layers += [nn.Linear(1, 10)]
+        layers += [nn.Linear(hidden_size, 10)]
         layers += [nn.Tanh()]
         layers += [nn.Linear(10, 30)]
         layers += [nn.Tanh()]
@@ -56,7 +61,58 @@ class DAGMM_Module(nn.Module):
         layers += [nn.Tanh()]
         layers += [nn.Linear(60, n_features)]
 
-        self.decoder = nn.Sequential(*layers)
+        self._decoder = nn.Sequential(*layers)
+
+    def __call__(self, x):
+        enc = self._encoder(x)
+        dec = self._decoder(x)
+
+        return dec, enc
+
+
+class LSTMAutoEncoder(AutoEncoder):
+    """Autoencoder with Recurrent module. Inspired by LSTM-EncDec"""
+
+    def __init__(self, n_features=118, hidden_size=1, dropout=0.5, layers=2):
+
+        layers = [
+            nn.Linear(n_features, 60),
+            nn.Tanh(),
+            nn.Linear(60, 30),
+            nn.Tanh(),
+            nn.Linear(30, hidden_size),
+            nn.Dropout(dropout),
+            nn.LSTM(hidden_size, 1, layers=2, dropout=dropout)
+        ]
+        self._encoder = nn.Sequential(*layers)
+
+        layers = [
+            nn.LSTM(hidden_size, 1, layers=2, dropout=dropout),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_size, 30),
+            nn.Tanh(),
+            nn.Linear(30, 60),
+            nn.Tanh(),
+            nn.Linear(60, n_features)
+        ]
+        self._decoder = nn.Sequential(*layers)
+
+    def __call__(self, x):
+        output, hidden = self._encoder(x)
+
+        output = nn.Dropout(output)
+        decoded = self._decoder(output)
+
+        return decoded, hidden
+
+
+class DAGMM_Module(nn.Module):
+    """Residual Block."""
+
+    def __init__(self, autoencoder, n_gmm=2, latent_dim=3):
+        super(DAGMM_Module, self).__init__()
+
+        self.autoencoder = autoencoder
 
         layers = []
         layers += [nn.Linear(latent_dim, 10)]
@@ -75,9 +131,7 @@ class DAGMM_Module(nn.Module):
         return (a - b).norm(2, dim=1) / torch.clamp(a.norm(2, dim=1), min=1e-10)
 
     def forward(self, x):
-
-        enc = self.encoder(x)
-        dec = self.decoder(enc)
+        dec, enc = self.autoencoder(x)
 
         rec_cosine = F.cosine_similarity(x, dec, dim=1)
         rec_euclidean = self.relative_euclidean_distance(x, dec)
@@ -202,7 +256,7 @@ class DAGMM(Algorithm):
         Store the computed energy based on the training data and the aforementioned parameters."""
         X = X.dropna()
         data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
-        self.dagmm = DAGMM_Module(n_features=X.shape[1], n_gmm=self.gmm_k)
+        self.dagmm = DAGMM_Module(autoencoder=NNAutoEncoder(n_features=X.shape[1]), n_gmm=self.gmm_k)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
         self.dagmm.eval()
 
