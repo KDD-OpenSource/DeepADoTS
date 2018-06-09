@@ -87,7 +87,6 @@ class LSTMAutoEncoder(AutoEncoder):
         self._encoder = nn.Sequential(*layers)
 
         layers = [
-            nn.LSTM(hidden_size, 1, layers=2, dropout=dropout),
             nn.Dropout(dropout),
             nn.Linear(hidden_size, 30),
             nn.Tanh(),
@@ -99,8 +98,6 @@ class LSTMAutoEncoder(AutoEncoder):
 
     def __call__(self, x):
         output, hidden = self._encoder(x)
-
-        output = nn.Dropout(output)
         decoded = self._decoder(output)
 
         return decoded, hidden
