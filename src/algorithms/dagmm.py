@@ -65,7 +65,7 @@ class NNAutoEncoder(AutoEncoder):
 
     def __call__(self, x):
         enc = self._encoder(x)
-        dec = self._decoder(x)
+        dec = self._decoder(enc)
 
         return dec, enc
 
@@ -80,11 +80,12 @@ class LSTMAutoEncoder(AutoEncoder):
             nn.Tanh(),
             nn.Linear(60, 30),
             nn.Tanh(),
-            nn.Linear(30, hidden_size),
-            nn.Dropout(dropout),
-            nn.LSTM(hidden_size, 1, layers=2, dropout=dropout)
+            nn.Linear(30, 10),
+            nn.Dropout(dropout)
         ]
         self._encoder = nn.Sequential(*layers)
+
+        self._rnn = nn.LSTM(10, hidden_size=hidden_size, num_layers=1, dropout=dropout)
 
         layers = [
             nn.Dropout(dropout),
@@ -97,10 +98,11 @@ class LSTMAutoEncoder(AutoEncoder):
         self._decoder = nn.Sequential(*layers)
 
     def __call__(self, x):
-        output, hidden = self._encoder(x)
-        decoded = self._decoder(output)
+        embedding = self._encoder(x)
+        output, (hidden, _) = self._rnn(embedding.unsqueeze(0))
+        decoded = self._decoder(output.squeeze(0))
 
-        return decoded, hidden
+        return decoded, hidden.squeeze(0)
 
 
 class DAGMM_Module(nn.Module):
@@ -222,8 +224,8 @@ class DAGMM_Module(nn.Module):
 
 class DAGMM(Algorithm):
     def __init__(self, num_epochs=5, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=700, gmm_k=3,
-                 normal_percentile=80):
-        self.name = "DAGMM"
+                 normal_percentile=80, autoencoder=NNAutoEncoder):
+        self.name = f'DAGMM_{autoencoder.__name__}'
         self.num_epochs = num_epochs
         self.lambda_energy = lambda_energy
         self.lambda_cov_diag = lambda_cov_diag
@@ -231,6 +233,8 @@ class DAGMM(Algorithm):
         self.batch_size = batch_size
         self.gmm_k = gmm_k  # Number of Gaussian mixtures
         self.normal_percentile = normal_percentile  # Up to which percentile data should be considered normal
+        self.autoencoder = autoencoder
+
         self.dagmm, self.optimizer, self.train_energy, self._threshold = None, None, None, None
 
     def reset_grad(self):
@@ -253,7 +257,7 @@ class DAGMM(Algorithm):
         Store the computed energy based on the training data and the aforementioned parameters."""
         X = X.dropna()
         data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
-        self.dagmm = DAGMM_Module(autoencoder=NNAutoEncoder(n_features=X.shape[1]), n_gmm=self.gmm_k)
+        self.dagmm = DAGMM_Module(autoencoder=self.autoencoder(n_features=X.shape[1]), n_gmm=self.gmm_k)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
         self.dagmm.eval()
 
