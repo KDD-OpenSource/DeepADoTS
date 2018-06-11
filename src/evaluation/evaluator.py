@@ -35,6 +35,7 @@ class Evaluator:
     def get_auroc(det, ds, score):
         _, _, _, y_test = ds.data()
         score_nonan = score.copy()
+        # Rank NaN below every other value in terms of anomaly score
         score_nonan[np.isnan(score_nonan)] = np.nanmin(score_nonan) - sys.float_info.epsilon
         fpr, tpr, _ = roc_curve(y_test, score_nonan)
         return auc(fpr, tpr)
@@ -182,6 +183,7 @@ class Evaluator:
             for det in self.detectors:
                 self.logger.info(f"Plotting ROC curve for {det.name} on {ds.name}")
                 score = self.results[(ds.name, det.name)]
+                # Rank NaN below every other value in terms of anomaly score
                 score[np.isnan(score)] = np.nanmin(score) - sys.float_info.epsilon
                 fpr, tpr, _ = roc_curve(y_test, score)
                 roc_auc = auc(fpr, tpr)
