@@ -34,7 +34,7 @@ class Evaluator:
     @staticmethod
     def get_auroc(det, ds, score):
         _, _, _, y_test = ds.data()
-        score_nonan = score[:]
+        score_nonan = score.copy()
         score_nonan[np.isnan(score_nonan)] = np.nanmin(score_nonan) - sys.float_info.epsilon
         fpr, tpr, _ = roc_curve(y_test, score_nonan)
         return auc(fpr, tpr)
@@ -182,9 +182,8 @@ class Evaluator:
             for det in self.detectors:
                 self.logger.info(f"Plotting ROC curve for {det.name} on {ds.name}")
                 score = self.results[(ds.name, det.name)]
-                score_nonan = score[:]
-                score_nonan[np.isnan(score_nonan)] = np.nanmin(score_nonan) - sys.float_info.epsilon
-                fpr, tpr, _ = roc_curve(y_test, score_nonan)
+                score[np.isnan(score)] = np.nanmin(score) - sys.float_info.epsilon
+                fpr, tpr, _ = roc_curve(y_test, score)
                 roc_auc = auc(fpr, tpr)
                 plt.subplot(1, len(self.detectors), subplot_count)
                 plt.plot(fpr, tpr, color="darkorange",
