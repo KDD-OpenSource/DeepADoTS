@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import traceback
 
 import matplotlib.pyplot as plt
@@ -33,7 +34,9 @@ class Evaluator:
     @staticmethod
     def get_auroc(det, ds, score):
         _, _, _, y_test = ds.data()
-        fpr, tpr, _ = roc_curve(y_test, score)
+        score_nonan = score[:]
+        score_nonan[np.isnan(score_nonan)] = np.nanmin(score_nonan) - sys.float_info.epsilon
+        fpr, tpr, _ = roc_curve(y_test, score_nonan)
         return auc(fpr, tpr)
 
     def evaluate(self):
@@ -179,7 +182,9 @@ class Evaluator:
             for det in self.detectors:
                 self.logger.info(f"Plotting ROC curve for {det.name} on {ds.name}")
                 score = self.results[(ds.name, det.name)]
-                fpr, tpr, _ = roc_curve(y_test, score)
+                score_nonan = score[:]
+                score_nonan[np.isnan(score_nonan)] = np.nanmin(score_nonan) - sys.float_info.epsilon
+                fpr, tpr, _ = roc_curve(y_test, score_nonan)
                 roc_auc = auc(fpr, tpr)
                 plt.subplot(1, len(self.detectors), subplot_count)
                 plt.plot(fpr, tpr, color="darkorange",
