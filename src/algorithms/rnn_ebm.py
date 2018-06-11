@@ -56,6 +56,8 @@ class RecurrentEBM(Algorithm):
             scores.append(reconstruction_err[0])
             if self.min_energy is not None:
                 labels.append(reconstruction_err[0] >= self.min_energy)
+        scores = np.array(scores)
+        labels = np.array(labels)
 
         return (labels, scores) if self.min_energy is not None else scores
 
