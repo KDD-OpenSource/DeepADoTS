@@ -19,7 +19,7 @@ def to_var(x, volatile=False):
 
 
 class LSTMEDGMM(Algorithm):
-    def __init__(self, hidden_size: int=1, sequence_length: int=30, batch_size: int=70, epochs: int=10,
+    def __init__(self, hidden_size: int=1, sequence_length: int=15, batch_size: int=50, epochs: int=10,
                  n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
                  lr: float=0.1, weight_decay: float=1e-4,
                  lambda_energy: float=0.1, lambda_cov_diag: float=5e-3, gmm_k: int=4, normal_percentile: int=80):
@@ -54,7 +54,7 @@ class LSTMEDGMM(Algorithm):
 
         self.lstmedgmm.train()
         for epoch in range(self.epochs):
-            logging.debug(f'Epoch {epoch}/{self.epochs}.')
+            logging.debug(f'Epoch {epoch+1}/{self.epochs}.')
             for ts_batch in data_loader:
                 output, enc_hidden, z, gamma = self.lstmedgmm(to_var(ts_batch))
 
@@ -87,14 +87,17 @@ class LSTMEDGMM(Algorithm):
         train_mu = mu_sum / gamma_sum.unsqueeze(-1)
         train_cov = cov_sum / gamma_sum.unsqueeze(-1).unsqueeze(-1)
 
-        train_energy = []
-        for ts_batch in data_loader:
+        train_length = len(data_loader)*self.batch_size + self.sequence_length - 1
+        train_energy = np.full((self.sequence_length, train_length), np.nan)
+        for i1, ts_batch in enumerate(data_loader):
             _, _, z, _ = self.lstmedgmm(to_var(ts_batch))
-            sample_energy, _ = self.lstmedgmm.compute_energy(z, phi=train_phi, mu=train_mu, cov=train_cov,
-                                                             size_average=False)
-            train_energy.append(sample_energy.data.cpu().numpy())
-
-        self.train_energy = np.concatenate(train_energy, axis=0)
+            sample_energies, _ = self.lstmedgmm.compute_energy(z, phi=train_phi, mu=train_mu, cov=train_cov,
+                                                               size_average=False)
+            for i2, sample_energy in enumerate(sample_energies):
+                index = i1 * self.batch_size + i2
+                window_elements = list(range(index, index + self.sequence_length, 1))
+                train_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
+        self.train_energy = np.nanmean(train_energy, axis=0)
 
     def predict(self, X: pd.DataFrame):
         prediction_batch_size = 1
@@ -102,22 +105,24 @@ class LSTMEDGMM(Algorithm):
         X = X.dropna()
         data = X.values
         sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
-        data_loader = DataLoader(dataset=sequences, batch_size=prediction_batch_size, shuffle=False, drop_last=True)
+        data_loader = DataLoader(dataset=sequences, batch_size=prediction_batch_size, shuffle=False, drop_last=False)
 
         self.lstmedgmm.batch_size = prediction_batch_size  # (!)
         self.lstmedgmm.eval()
-        test_energy = [[np.nan]]*(self.sequence_length - 1)
-        for ts in data_loader:
+        test_energy = np.full((self.sequence_length, len(data)), np.nan)
+        # test_energy = [[np.nan]]*(self.sequence_length - 1)
+        for index, ts in enumerate(data_loader):
             _, _, z, _ = self.lstmedgmm(to_var(ts))
             sample_energy, _ = self.lstmedgmm.compute_energy(z, size_average=False)
-            test_energy.append(sample_energy.data.cpu().numpy())
+            window_elements = list(range(index, index + self.sequence_length, 1))
+            test_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
 
-        test_energy = np.concatenate(test_energy, axis=0)
+        test_energy = np.nanmean(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
         self._threshold = np.nanpercentile(combined_energy, self.normal_percentile)
-        if np.isnan(self._threshold):
-            raise Exception("Threshold is NaN!")
+        # if np.isnan(self._threshold):
+        #     raise Exception("Threshold is NaN!")
 
         return test_energy
 
