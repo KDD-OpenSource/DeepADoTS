@@ -227,11 +227,11 @@ class Evaluator:
 
     def store_text(self, content, title, extension="txt"):
         timestamp = int(time.time())
-        _dir = "reports/figures/"
+        _dir = "reports/tables/"
         path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         with open(path, 'w') as f:
             f.write(content)
-        self.logger.info(f"Stored plot at {path}")
+        self.logger.info(f"Stored {extension} file at {path}")
 
     def generate_latex(self):
         benchmarks = self.benchmarks()
