@@ -266,7 +266,6 @@ class DAGMM(Algorithm):
         return self._threshold
 
     def binarize(self, y, threshold=None):
-        # print(y)
         if threshold is None:
             threshold = self._threshold
         return np.where(y > threshold, 1, 0)
