@@ -1,11 +1,13 @@
 import logging
 import os
-import time
+import sys
+import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import progressbar
+import time
 from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
 from sklearn.metrics import roc_curve, auc
@@ -32,8 +34,10 @@ class Evaluator:
     @staticmethod
     def get_auroc(det, ds, score):
         _, _, _, y_test = ds.data()
-        y_pred = det.binarize(score)
-        fpr, tpr, _ = roc_curve(y_test, y_pred)
+        score_nonan = score.copy()
+        # Rank NaN below every other value in terms of anomaly score
+        score_nonan[np.isnan(score_nonan)] = np.nanmin(score_nonan) - sys.float_info.epsilon
+        fpr, tpr, _ = roc_curve(y_test, score_nonan)
         return auc(fpr, tpr)
 
     def evaluate(self):
@@ -47,6 +51,7 @@ class Evaluator:
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
                     self.logger.error(f"An exception occured while training {det.name} on {ds}: {e}")
+                    self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
     def benchmarks(self) -> pd.DataFrame:
@@ -171,8 +176,9 @@ class Evaluator:
             for det in self.detectors:
                 self.logger.info(f"Plotting ROC curve for {det.name} on {ds.name}")
                 score = self.results[(ds.name, det.name)]
-                y_pred = det.binarize(score)
-                fpr, tpr, _ = roc_curve(y_test, y_pred)
+                # Rank NaN below every other value in terms of anomaly score
+                score[np.isnan(score)] = np.nanmin(score) - sys.float_info.epsilon
+                fpr, tpr, _ = roc_curve(y_test, score)
                 roc_auc = auc(fpr, tpr)
                 plt.subplot(1, len(self.detectors), subplot_count)
                 plt.plot(fpr, tpr, color="darkorange",
@@ -219,9 +225,9 @@ class Evaluator:
                                       headers='keys', tablefmt='psql'))
 
     def store(self, fig, title, extension="pdf"):
-        timestamp = int(time.time())
-        _dir = "reports/figures/"
-        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+        dir = "reports/figures/"
+        path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
         self.logger.info(f"Stored plot at {path}")
 
