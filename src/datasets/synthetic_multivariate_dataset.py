@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 from .dataset import Dataset
 
@@ -49,7 +50,7 @@ class SyntheticMultivariateDataset(Dataset):
             values[pos:pos+pause_length] = self.noised(values[pos:pos+pause_length], noise)
             pos += pause_length
         values[pos:] = self.noised(values[pos:], noise)
-        return values, labels
+        return pd.DataFrame(data=values), pd.DataFrame(data=labels)
 
     def load(self):
         np.random.seed(42)
