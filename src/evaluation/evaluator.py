@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import traceback
 
 import matplotlib.pyplot as plt
@@ -33,8 +34,10 @@ class Evaluator:
     @staticmethod
     def get_auroc(det, ds, score):
         _, _, _, y_test = ds.data()
-        y_pred = det.binarize(score)
-        fpr, tpr, _ = roc_curve(y_test, y_pred)
+        score_nonan = score.copy()
+        # Rank NaN below every other value in terms of anomaly score
+        score_nonan[np.isnan(score_nonan)] = np.nanmin(score_nonan) - sys.float_info.epsilon
+        fpr, tpr, _ = roc_curve(y_test, score_nonan)
         return auc(fpr, tpr)
 
     def get_optimal_threshold(self, det, y_test, score, steps=40, return_metrics=False):
@@ -85,7 +88,7 @@ class Evaluator:
         return df
 
     def store(self, fig, title, extension="pdf"):
-        timestamp = int(time.time())
+        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
         dir = "reports/figures/"
         path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
@@ -188,8 +191,9 @@ class Evaluator:
             for det in self.detectors:
                 self.logger.info(f"Plotting ROC curve for {det.name} on {ds.name}")
                 score = self.results[(ds.name, det.name)]
-                y_pred = det.binarize(score)
-                fpr, tpr, _ = roc_curve(y_test, y_pred)
+                # Rank NaN below every other value in terms of anomaly score
+                score[np.isnan(score)] = np.nanmin(score) - sys.float_info.epsilon
+                fpr, tpr, _ = roc_curve(y_test, score)
                 roc_auc = auc(fpr, tpr)
                 plt.subplot(1, len(self.detectors), subplot_count)
                 plt.plot(fpr, tpr, color="darkorange",
