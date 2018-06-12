@@ -73,7 +73,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5, use_zero
 
     announce_experiment('Outlier height')
     run_extremes_experiment(outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
-                           steps=steps)
+                            steps=steps)
 
 
 def announce_experiment(title: str, dashes: int = 70):
