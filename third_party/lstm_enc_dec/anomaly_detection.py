@@ -15,7 +15,7 @@ REPORT_PICKLES_DIR = 'reports/data'
 
 
 def calc_anomalies(TimeseriesData, train_dataset, test_dataset, device_type, data,
-                   filename, compensate):
+                   filename, compensate=False):
     logging.debug('-' * 89)
     logging.debug("=> loading checkpoint ")
     checkpoint = torch.load(str(Path('models', data, 'checkpoint', filename).with_suffix('.pth')))
@@ -24,8 +24,8 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset, device_type, dat
     logging.info("=> loaded checkpoint")
 
     # Set the random seed manually for reproducibility.
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed(args.seed)
+    torch.manual_seed(args['seed'])
+    torch.cuda.manual_seed(args['seed'])
 
     ###############################################################################
     # Load data
@@ -38,13 +38,13 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset, device_type, dat
     # Build the model
     ###############################################################################
     nfeatures = TimeseriesData.trainData.size(-1)
-    model = RNNPredictor(rnn_type=args.model_type,
+    model = RNNPredictor(rnn_type=args['model_type'],
                          enc_inp_size=nfeatures,
-                         rnn_inp_size=args.emsize,
-                         rnn_hid_size=args.nhid,
+                         rnn_inp_size=args['emsize'],
+                         rnn_hid_size=args['nhid'],
                          dec_out_size=nfeatures,
-                         nlayers=args.nlayers,
-                         res_connection=args.res_connection).to(args.device)
+                         nlayers=args['nlayers'],
+                         res_connection=args['res_connection']).to(args['device'])
     model.load_state_dict(checkpoint['state_dict'])
     # del checkpoint
 
@@ -60,7 +60,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset, device_type, dat
             else:
                 logging.debug('=> calculating mean and covariance')
                 mean, cov = fit_norm_distribution_param(
-                    model, train_dataset, args.prediction_window_size, args.device,
+                    model, train_dataset, args['prediction_window_size'], args['device'],
                     channel_idx=channel_idx)
 
             ''' 2. Train anomaly score predictor using support vector regression (SVR). (Optional) '''
@@ -70,7 +70,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset, device_type, dat
             if compensate:
                 logging.debug('=> training an SVR as anomaly score predictor')
                 train_score, _, _, hiddens, _ = anomalyScore(
-                    model, train_dataset, mean, cov, args.prediction_window_size, args.device,
+                    model, train_dataset, mean, cov, args['prediction_window_size'], args['device'],
                     channel_idx=channel_idx)
                 score_predictor = GridSearchCV(SVR(), cv=5,
                                                param_grid={"C": [1e0, 1e1, 1e2], "gamma": np.logspace(-1, 1, 3)})
@@ -84,7 +84,7 @@ def calc_anomalies(TimeseriesData, train_dataset, test_dataset, device_type, dat
             logging.debug('=> calculating anomaly scores')
             score, _, _, _, predicted_score = anomalyScore(
                 model, test_dataset, mean, cov,
-                args.prediction_window_size, args.device,
+                args['prediction_window_size'], args['device'],
                 score_predictor=score_predictor, channel_idx=channel_idx,
             )
             score = score.cpu()

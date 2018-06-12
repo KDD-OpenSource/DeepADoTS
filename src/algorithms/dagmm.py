@@ -172,7 +172,7 @@ class DAGMM_Module(nn.Module):
 class DAGMM(Algorithm):
     def __init__(self, num_epochs=5, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=700, gmm_k=3,
                  normal_percentile=80):
-        self.name = "DAGMM"
+        super().__init__(__name__, "DAGMM")
         self.num_epochs = num_epochs
         self.lambda_energy = lambda_energy
         self.lambda_cov_diag = lambda_cov_diag

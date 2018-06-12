@@ -1,6 +1,5 @@
 '''Adapted from https://github.com/chickenbestlover/RNN-Time-series-Anomaly-Detection'''
 
-import logging
 import time
 from typing import List
 
@@ -48,7 +47,7 @@ class LSTM_Enc_Dec(Algorithm):
         pretrained=False,  # use checkpoint model parameters and do not train anymore
         prediction_window_size=10
     ):
-        self.name = "LSTM-Enc-Dec"
+        super().__init__(__name__, "LSTM-Enc-Dec")
         self.data = data
         self.filename = filename
         self.model = None
@@ -68,6 +67,7 @@ class LSTM_Enc_Dec(Algorithm):
         self.dropout = dropout
         self.tied = tied
         self.device = device
+        self.seed = seed
         self.log_interval = log_interval
         self.save_interval = save_interval
         self.resume = resume
@@ -78,8 +78,8 @@ class LSTM_Enc_Dec(Algorithm):
         self.test_timeseries_dataset: preprocess_data.PickleDataLoad = None
 
         # Set the random seed manually for reproducibility.
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
+        torch.manual_seed(self.seed)
+        torch.cuda.manual_seed(self.seed)
 
     def _build_model(self, feature_dim):
         self.model = RNNPredictor(rnn_type=self.model_type,
@@ -126,26 +126,26 @@ class LSTM_Enc_Dec(Algorithm):
             input_data=(X_train, y_train, X_test, y_test),
             augment_train_data=self.augment_train_data,
         )
-        logging.debug('-'*89)
-        logging.debug('Splitting and transforming input data:')
-        logging.debug(f'X_orig_train: {X_orig_train.shape}')
-        logging.debug(f'y_orig_train: {y_orig_train.shape}')
-        logging.debug(f'X_train: {self.train_timeseries_dataset.trainData.shape}')
-        logging.debug(f'y_train: {self.train_timeseries_dataset.trainLabel.shape}')
-        logging.debug(f'X_val: {self.train_timeseries_dataset.testData.shape}')
-        logging.debug(f'y_val: {self.train_timeseries_dataset.testLabel.shape}')
-        logging.debug('-'*89)
+        self.logger.debug('-'*89)
+        self.logger.debug('Splitting and transforming input data:')
+        self.logger.debug(f'X_orig_train: {X_orig_train.shape}')
+        self.logger.debug(f'y_orig_train: {y_orig_train.shape}')
+        self.logger.debug(f'X_train: {self.train_timeseries_dataset.trainData.shape}')
+        self.logger.debug(f'y_train: {self.train_timeseries_dataset.trainLabel.shape}')
+        self.logger.debug(f'X_val: {self.train_timeseries_dataset.testData.shape}')
+        self.logger.debug(f'y_val: {self.train_timeseries_dataset.testLabel.shape}')
+        self.logger.debug('-'*89)
         return self.train_timeseries_dataset
 
     def _transform_predict_data(self, X_orig_test):
         self.test_timeseries_dataset = preprocess_data.PickleDataLoad(
             input_data=X_orig_test,
         )
-        logging.debug('-'*89)
-        logging.debug('Input data:')
-        logging.debug(f'X_orig_test: {X_orig_test.shape}')
-        logging.debug(f'X_test: {self.test_timeseries_dataset.testData.shape}')
-        logging.debug('-'*89)
+        self.logger.debug('-'*89)
+        self.logger.debug('Input data:')
+        self.logger.debug(f'X_orig_test: {X_orig_test.shape}')
+        self.logger.debug(f'X_test: {self.test_timeseries_dataset.testData.shape}')
+        self.logger.debug('-'*89)
 
         return self.test_timeseries_dataset
 
@@ -165,10 +165,10 @@ class LSTM_Enc_Dec(Algorithm):
                 val_loss = train_predictor.evaluate(self.model, test_dataset, self.criterion,
                                                     self.batch_size, self.eval_batch_size,
                                                     self.seq_length)
-                logging.debug('-' * 89)
+                self.logger.debug('-' * 89)
                 run_time = time.time() - epoch_start_time
-                logging.debug(f'| end of epoch {epoch:3d} | time: {run_time:5.2f}s | valid loss {val_loss:5.4f} | ')
-                logging.debug('-' * 89)
+                self.logger.debug(f'| end of epoch {epoch:3d} | time: {run_time:5.2f}s | valid loss {val_loss:5.4f} | ')
+                self.logger.debug('-' * 89)
 
                 if epoch % self.save_interval == 0:
                     # Save the model if the validation loss is the best we've seen so far.
@@ -176,11 +176,11 @@ class LSTM_Enc_Dec(Algorithm):
                     self.best_val_loss = max(val_loss, best_val_loss)
                     self._save_checkpoint(epoch, best_val_loss, is_best)
         except KeyboardInterrupt:
-            logging.warning('-' * 89)
-            logging.warning('Exiting from training early')
+            self.logger.warning('-' * 89)
+            self.logger.warning('Exiting from training early')
 
         # Calculate mean and covariance for each channel's prediction errors, and save them with the trained model
-        logging.info('=> calculating mean and covariance')
+        self.logger.info('=> calculating mean and covariance')
         means, covs = list(), list()
         train_dataset = train_timeseries_dataset.batchify(
             self.device, train_timeseries_dataset.trainData, bsz=1)
@@ -191,7 +191,7 @@ class LSTM_Enc_Dec(Algorithm):
             )
             means.append(mean), covs.append(cov)
         self._save_checkpoint(epoch, self.best_val_loss, means=means, covs=covs)
-        logging.info('-' * 89)
+        self.logger.info('-' * 89)
 
     # For prediction the data is not augmented and not batchified in 64-chunks
     def _predict(self, test_timeseries_dataset):
@@ -210,7 +210,9 @@ class LSTM_Enc_Dec(Algorithm):
             # Even in prediction mode the test data is required for calculating
             # the anomaly threshold
             train_dataset = test_dataset
-        return anomaly_detection.calc_anomalies(test_timeseries_dataset, train_dataset, test_dataset)
+        return anomaly_detection.calc_anomalies(
+            test_timeseries_dataset, train_dataset, test_dataset, self.device,
+            self.data, self.filename)
 
     def _save_checkpoint(self, epoch, best_loss, save_model=True, means=None, covs=None):
         # For reproducibility a set of arguments is stored which will be reused during prediction

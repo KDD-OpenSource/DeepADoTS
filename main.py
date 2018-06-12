@@ -6,10 +6,12 @@ import pandas as pd
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
+# from src.evaluation.experiments import run_experiments
 
 
 def main():
     run_pipeline()
+    # run_experiments()
 
 
 def run_pipeline():
@@ -41,48 +43,6 @@ def run_pipeline():
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
-
-
-def test_pollution():
-    datasets = [
-        SyntheticDataGenerator.extreme_1(),
-        SyntheticDataGenerator.extreme_1_polluted(0.1),
-        SyntheticDataGenerator.extreme_1_polluted(0.3),
-        SyntheticDataGenerator.extreme_1_polluted(0.5),
-        SyntheticDataGenerator.extreme_1_polluted(1)
-    ]
-    detectors = [RecurrentEBM(num_epochs=30), Donut(), DAGMM()]  # , LSTM_Enc_Dec(epochs=200)
-    evaluator = Evaluator(datasets, detectors)
-    evaluator.evaluate()
-    evaluator.plot_auroc(title='Area under the curve for polluted data')
-
-
-def test_missing():
-    datasets = [
-        SyntheticDataGenerator.extreme_1(),
-        SyntheticDataGenerator.extreme_1_missing(0.1),
-        SyntheticDataGenerator.extreme_1_missing(0.3),
-        SyntheticDataGenerator.extreme_1_missing(0.5),
-        SyntheticDataGenerator.extreme_1_missing(1)
-    ]
-    detectors = [RecurrentEBM(num_epochs=30), Donut(), DAGMM()]  # , LSTM_Enc_Dec(epochs=200)
-    evaluator = Evaluator(datasets, detectors)
-    evaluator.evaluate()
-    evaluator.plot_auroc(title='Area under the curve for missing values')
-
-
-def test_extreme_values():
-    datasets = [
-        SyntheticDataGenerator.extreme_1(),
-        SyntheticDataGenerator.extreme_1_extremeness(8),
-        SyntheticDataGenerator.extreme_1_extremeness(4),
-        SyntheticDataGenerator.extreme_1_extremeness(2),
-        SyntheticDataGenerator.extreme_1_extremeness(1)
-    ]
-    detectors = [RecurrentEBM(num_epochs=30), Donut(), DAGMM()]  # , LSTM_Enc_Dec(epochs=200)
-    evaluator = Evaluator(datasets, detectors)
-    evaluator.evaluate()
-    evaluator.plot_auroc(title='Area under the curve for different extreme outliers')
 
 
 def evaluate_on_real_world_data_sets():
