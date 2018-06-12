@@ -67,6 +67,7 @@ class LSTM_Enc_Dec(Algorithm):
         self.dropout = dropout
         self.tied = tied
         self.device = device
+        self.seed = seed
         self.log_interval = log_interval
         self.save_interval = save_interval
         self.resume = resume
@@ -77,8 +78,8 @@ class LSTM_Enc_Dec(Algorithm):
         self.test_timeseries_dataset: preprocess_data.PickleDataLoad = None
 
         # Set the random seed manually for reproducibility.
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
+        torch.manual_seed(self.seed)
+        torch.cuda.manual_seed(self.seed)
 
     def _build_model(self, feature_dim):
         self.model = RNNPredictor(rnn_type=self.model_type,
@@ -209,7 +210,9 @@ class LSTM_Enc_Dec(Algorithm):
             # Even in prediction mode the test data is required for calculating
             # the anomaly threshold
             train_dataset = test_dataset
-        return anomaly_detection.calc_anomalies(test_timeseries_dataset, train_dataset, test_dataset)
+        return anomaly_detection.calc_anomalies(
+            test_timeseries_dataset, train_dataset, test_dataset, self.device,
+            self.data, self.filename)
 
     def _save_checkpoint(self, epoch, best_loss, save_model=True, means=None, covs=None):
         # For reproducibility a set of arguments is stored which will be reused during prediction

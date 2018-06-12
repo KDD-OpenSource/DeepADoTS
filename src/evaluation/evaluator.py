@@ -16,18 +16,24 @@ from .config import init_logging
 
 
 class Evaluator:
-    def __init__(self, datasets: list, detectors: list):
+    def __init__(self, datasets: list, detectors: list, output_dir: {str} = None):
         self.datasets = datasets
         self.detectors = detectors
+        self.output_dir = output_dir or 'reports/figures/'
+        os.makedirs(self.output_dir, exist_ok=True)
         self.results = dict()
-        init_logging()
+        init_logging(output_dir or 'reports/logs/')
         self.logger = logging.getLogger(__name__)
 
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
         accuracy = accuracy_score(y_true, y_pred)
-        precision, recall, f_score, _ = prf(y_true, y_pred, average="binary")
-        f01_score = fbeta_score(y_true, y_pred, average='binary', beta=0.1)
+        # warn_for=() avoids log warnings for any result being zero
+        precision, recall, f_score, _ = prf(y_true, y_pred, average="binary", warn_for=())
+        if precision == 0 and recall == 0:
+            f01_score = 0
+        else:
+            f01_score = fbeta_score(y_true, y_pred, average='binary', beta=0.1)
         return accuracy, precision, recall, f_score, f01_score
 
     @staticmethod
@@ -74,7 +80,7 @@ class Evaluator:
 
     def store(self, fig, title, extension="pdf"):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        dir = "reports/figures/"
+        dir = self.output_dir if self.output_dir is not None else "reports/figures/"
         path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
         self.logger.info(f"Stored plot at {path}")
@@ -87,6 +93,7 @@ class Evaluator:
             yield (anomaly.sum(), *metrics)
 
     def plot_scores(self, store=True):
+        plt.close('all')
         figures = []
         for ds in self.datasets:
             X_train, y_train, X_test, y_test = ds.data()
@@ -98,7 +105,6 @@ class Evaluator:
             sp.set_title("original training data", loc=subtitle_loc)
             for col in X_train.columns:
                 plt.plot(X_train[col])
-
             sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, 2)
             sp.set_title("original test set", loc=subtitle_loc)
             for col in X_test.columns:
@@ -130,8 +136,9 @@ class Evaluator:
         return figures
 
     def plot_threshold_comparison(self, steps=40, store=True):
+        plt.close('all')
         plots_shape = len(self.detectors), len(self.datasets)
-        fig, axes = plt.subplots(*plots_shape, figsize=(15, 15))
+        fig, axes = plt.subplots(*plots_shape, figsize=(len(self.detectors) * 5, len(self.datasets) * 5))
         # Ensure two dimensions for iteration
         axes = np.array(axes).reshape(*plots_shape).T
         plt.suptitle("Compare thresholds", fontsize=16)
@@ -154,8 +161,8 @@ class Evaluator:
                         label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
                 ax.plot(th, prec, label="precision")
                 ax.plot(th, rec, label="recall")
-                ax.plot(th, f_score, label="f_score")
-                ax.plot(th, f01_score, label="f01_score")
+                ax.plot(th, f_score, label="f_score", linestyle='dashed')
+                ax.plot(th, f01_score, label="f01_score", linestyle='dashed')
                 ax.set_title(f"{det.name} on {ds.name}")
                 ax.set_xlabel("Threshold")
                 ax.legend()
@@ -168,6 +175,7 @@ class Evaluator:
         return fig
 
     def plot_roc_curves(self, store=True):
+        plt.close('all')
         figures = []
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
@@ -201,6 +209,7 @@ class Evaluator:
         return figures
 
     def plot_auroc(self, store=True, title='AUROC'):
+        plt.close('all')
         benchmarks = self.benchmarks()
         dataset_names = [ds.name for ds in self.datasets]
         fig = plt.figure(figsize=(7, 7))
@@ -220,7 +229,7 @@ class Evaluator:
     def print_tables(self):
         benchmarks = self.benchmarks()
         for ds in self.datasets:
-            self.logger.info(f"Dataset: {ds.name}")
             print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            self.logger.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
-                                      headers='keys', tablefmt='psql'))
+            table = tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+                             headers='keys', tablefmt='psql')
+            self.logger.info(f"Dataset: {ds.name}\n{table}")

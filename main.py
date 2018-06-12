@@ -6,12 +6,13 @@ import pandas as pd
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
+from src.evaluation.experiments import run_experiments
+
 
 
 def main():
     # run_pipeline()
-    # test_missing()
-    test_pollution()
+    run_experiments()
 
 
 def run_pipeline():
@@ -39,38 +40,6 @@ def run_pipeline():
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(epochs=200)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
-    evaluator.print_tables()
-    evaluator.plot_threshold_comparison()
-    evaluator.plot_scores()
-    evaluator.plot_roc_curves()
-
-
-def test_pollution():
-    datasets = [
-        SyntheticDataGenerator.extreme_1(),
-        SyntheticDataGenerator.extreme_1_polluted(0.1),
-        SyntheticDataGenerator.extreme_1_polluted(0.3),
-        SyntheticDataGenerator.extreme_1_polluted(0.5),
-        SyntheticDataGenerator.extreme_1_polluted(1)
-    ]
-    detectors = [RecurrentEBM(num_epochs=30), Donut(), DAGMM()]  # , LSTM_Enc_Dec(epochs=200)
-    evaluator = Evaluator(datasets, detectors)
-    evaluator.evaluate()
-    evaluator.plot_auroc(title='Area under the curve for polluted data')
-
-
-def test_missing():
-    datasets = [
-        SyntheticDataGenerator.extreme_1_missing(0, use_zero=True),
-        SyntheticDataGenerator.extreme_1_missing(0.25, use_zero=True),
-        SyntheticDataGenerator.extreme_1_missing(0.5, use_zero=True),
-        SyntheticDataGenerator.extreme_1_missing(0.75, use_zero=True),
-        SyntheticDataGenerator.extreme_1_missing(0.99, use_zero=True),
-    ]
-    detectors = [Donut(), RecurrentEBM(), DAGMM(), LSTM_Enc_Dec(epochs=200)]  # , LSTMAD()
-    evaluator = Evaluator(datasets, detectors)
-    evaluator.evaluate()
-    evaluator.plot_auroc(title='Area under the curve for missing values')
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
