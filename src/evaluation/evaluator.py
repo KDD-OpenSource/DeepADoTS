@@ -46,6 +46,18 @@ class Evaluator:
         fpr, tpr, _ = roc_curve(y_test, score_nonan)
         return auc(fpr, tpr)
 
+    def get_optimal_threshold(self, det, y_test, score, steps=40, return_metrics=False):
+        maximum = np.nanmax(score)
+        minimum = np.nanmin(score)
+        threshold = np.linspace(minimum, maximum, steps)
+        metrics = list(self.get_metrics_by_thresholds(det, y_test, score, threshold))
+        metrics = np.array(metrics).T
+        anomalies, acc, prec, rec, f_score, f01_score = metrics
+        if return_metrics:
+            return anomalies, acc, prec, rec, f_score, f01_score, threshold
+        else:
+            return threshold[np.argmax(f_score)]
+
     def evaluate(self):
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
@@ -66,7 +78,7 @@ class Evaluator:
             _, _, _, y_test = ds.data()
             for det in self.detectors:
                 score = self.results[(ds.name, det.name)]
-                y_pred = det.binarize(score)
+                y_pred = det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))
                 acc, prec, rec, f1_score, f01_score = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
                 score = self.results[(ds.name, det.name)]
                 auroc = self.get_auroc(det, ds, score)
@@ -89,10 +101,10 @@ class Evaluator:
         self.logger.info(f"Stored plot at {path}")
 
     @staticmethod
-    def get_metrics_by_thresholds(det, y_true: list, y_pred: list, thresholds: list):
+    def get_metrics_by_thresholds(det, y_test: list, score: list, thresholds: list):
         for threshold in thresholds:
-            anomaly = det.binarize(y_pred, threshold=threshold)
-            metrics = Evaluator.get_accuracy_precision_recall_fscore(y_true, anomaly)
+            anomaly = det.binarize(score, threshold=threshold)
+            metrics = Evaluator.get_accuracy_precision_recall_fscore(y_test, anomaly)
             yield (anomaly.sum(), *metrics)
 
     def plot_scores(self, store=True):
@@ -149,23 +161,19 @@ class Evaluator:
             _, _, X_test, y_test = ds.data()
 
             for det, ax in zip(self.detectors, axes_row):
-                y_pred = np.array(self.results[(ds.name, det.name)])
-                if np.isnan(y_pred).any():
-                    self.logger.warning("Prediction contains NaN values. Replacing with 0 for plotting!")
-                    y_pred[np.isnan(y_pred)] = 0
+                score = np.array(self.results[(ds.name, det.name)])
 
-                maximum = y_pred.max()
-                th = np.linspace(0, maximum, steps)
-                metrics = list(self.get_metrics_by_thresholds(det, y_test, y_pred, th))
-                metrics = np.array(metrics).T
-                anomalies, _, prec, rec, f_score, f01_score = metrics
+                anomalies, _, prec, rec, f_score, f01_score, thresh = self.get_optimal_threshold(det,
+                                                                                                 y_test,
+                                                                                                 score,
+                                                                                                 return_metrics=True)
 
-                ax.plot(th, anomalies / len(y_test),
+                ax.plot(thresh, anomalies / len(y_test),
                         label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
-                ax.plot(th, prec, label="precision")
-                ax.plot(th, rec, label="recall")
-                ax.plot(th, f_score, label="f_score", linestyle='dashed')
-                ax.plot(th, f01_score, label="f01_score", linestyle='dashed')
+                ax.plot(thresh, prec, label="precision")
+                ax.plot(thresh, rec, label="recall")
+                ax.plot(thresh, f_score, label="f_score", linestyle='dashed')
+                ax.plot(thresh, f01_score, label="f01_score", linestyle='dashed')
                 ax.set_title(f"{det.name} on {ds.name}")
                 ax.set_xlabel("Threshold")
                 ax.legend()
