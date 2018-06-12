@@ -13,9 +13,7 @@ def run_pollution_experiment(outlier_type='extreme_1', output_dir=None, steps=5)
     datasets = [
         SyntheticDataGenerator.get(f'{outlier_type}_polluted', pollution) for pollution in np.linspace(0, 1, steps)
     ]
-    # detectors = [ LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD() ]
-    # detectors = [ LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), ] # LSTMAD(),
-    detectors = [ DAGMM() ]
+    detectors = [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for polluted data')
@@ -34,9 +32,7 @@ def run_missing_experiment(outlier_type='extreme_1', output_dir=None, steps=5, u
     datasets = [
         SyntheticDataGenerator.get(f'{outlier_type}_missing', missing, use_zero) for missing in np.linspace(0, 1, steps)
     ]
-    # detectors = [ LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD() ]
-    # detectors = [ LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), ] # LSTMAD(),
-    detectors = [ DAGMM() ]
+    detectors = [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for missing values')
@@ -49,7 +45,7 @@ def run_missing_experiment(outlier_type='extreme_1', output_dir=None, steps=5, u
 
 def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5, use_zero=True):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
-    
+
     announce_experiment('Missing Values')
     run_pollution_experiment(outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
                              steps=steps)
@@ -57,6 +53,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5, use_zero
     announce_experiment('Pollution')
     run_missing_experiment(outlier_type, output_dir=os.path.join(output_dir, 'missing'),
                            steps=steps, use_zero=use_zero)
+
 
 def announce_experiment(title: str, dashes: int = 70):
     print(f'\n###{"-"*dashes}###')
