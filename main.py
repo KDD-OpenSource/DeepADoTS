@@ -11,8 +11,8 @@ from src.evaluation.experiments import run_experiments
 
 
 def main():
-    # run_pipeline()
-    run_experiments()
+    run_pipeline()
+    # run_experiments()
 
 
 def run_pipeline():
