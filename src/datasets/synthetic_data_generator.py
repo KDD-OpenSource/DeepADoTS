@@ -30,6 +30,13 @@ class SyntheticDataGenerator:
     * see outlier_config
     """
 
+    # Get a dataset by passing the method name as string. All following parameters
+    # are passed through. Throws AttributeError if attribute was not found.
+    @staticmethod
+    def get(method, *args, **kwargs):
+        func = getattr(SyntheticDataGenerator, method)
+        return func(*args, **kwargs)
+
     @staticmethod
     def extreme_1():
         # train begins at 2100
@@ -86,10 +93,10 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def extreme_1_missing(missing_percentage=0.1):
+    def extreme_1_missing(missing_percentage=0.1, use_zero=False):
         dataset = SyntheticDataGenerator.extreme_1()
         dataset.load()
-        dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.add_missing_values(missing_percentage=missing_percentage, use_zero=use_zero)
         dataset.name = f'Syn Extreme Outliers (mis={missing_percentage})'
         return dataset
 
@@ -118,10 +125,10 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def shift_1_missing(missing_percentage=0.1):
+    def shift_1_missing(missing_percentage=0.1, use_zero=False):
         dataset = SyntheticDataGenerator.shift_1()
         dataset.load()
-        dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.add_missing_values(missing_percentage=missing_percentage, use_zero=use_zero)
         dataset.name = f'Syn Shift Outliers (mis={missing_percentage})'
         return dataset
 
@@ -169,10 +176,10 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def variance_1_missing(missing_percentage=0.1):
+    def variance_1_missing(missing_percentage=0.1, use_zero=True):
         dataset = SyntheticDataGenerator.variance_1()
         dataset.load()
-        dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.add_missing_values(missing_percentage=missing_percentage, use_zero=use_zero)
         dataset.name = f'Syn Variance Outliers (mis={missing_percentage})'
         return dataset
 
@@ -220,10 +227,10 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def trend_1_missing(missing_percentage=0.1):
+    def trend_1_missing(missing_percentage=0.1, use_zero=True):
         dataset = SyntheticDataGenerator.trend_1()
         dataset.load()
-        dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.add_missing_values(missing_percentage=missing_percentage, use_zero=use_zero)
         dataset.name = f'Syn Trend Outliers (mis={missing_percentage})'
         return dataset
 
