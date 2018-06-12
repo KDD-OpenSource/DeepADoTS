@@ -86,6 +86,16 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
+    def extreme_1_extremeness(extreme_value=20):
+        """Full pollution -> All anomalies from test set are in train set"""
+        dataset = SyntheticDataGenerator.extreme_1()
+
+        dataset.outlier_config['extreme'][0]['value'] = extreme_value
+
+        dataset.name = f'Syn Extreme Outliers (extremeness={extreme_value})'
+        return dataset
+
+    @staticmethod
     def extreme_1_missing(missing_percentage=0.1):
         dataset = SyntheticDataGenerator.extreme_1()
         dataset.load()

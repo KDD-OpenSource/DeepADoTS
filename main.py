@@ -71,6 +71,20 @@ def test_missing():
     evaluator.plot_auroc(title='Area under the curve for missing values')
 
 
+def test_extreme_values():
+    datasets = [
+        SyntheticDataGenerator.extreme_1(),
+        SyntheticDataGenerator.extreme_1_extremeness(8),
+        SyntheticDataGenerator.extreme_1_extremeness(4),
+        SyntheticDataGenerator.extreme_1_extremeness(2),
+        SyntheticDataGenerator.extreme_1_extremeness(1)
+    ]
+    detectors = [RecurrentEBM(num_epochs=30), Donut(), DAGMM()]  # , LSTM_Enc_Dec(epochs=200)
+    evaluator = Evaluator(datasets, detectors)
+    evaluator.evaluate()
+    evaluator.plot_auroc(title='Area under the curve for different extreme outliers')
+
+
 def evaluate_on_real_world_data_sets():
     dagmm = DAGMM()
     kdd_cup = KDDCup()
