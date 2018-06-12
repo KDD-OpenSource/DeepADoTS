@@ -43,6 +43,23 @@ def run_missing_experiment(outlier_type='extreme_1', output_dir=None, steps=5, u
     return evaluator
 
 
+# Validates all algorithms regarding different heights of extreme outliers
+# The extreme values are added to the outlier timestamps everywhere in the dataset distribution.
+def run_extremes_experiment(outlier_type='extreme_1', output_dir=None, steps=10):
+    datasets = [
+        SyntheticDataGenerator.get(f'{outlier_type}_extremeness', extreme) for extreme in np.linspace(1, 10, steps)
+    ]
+    detectors = [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
+    evaluator = Evaluator(datasets, detectors, output_dir)
+    evaluator.evaluate()
+    evaluator.plot_auroc(title='Area under the curve for differing outlier heights')
+    evaluator.print_tables()
+    evaluator.plot_threshold_comparison()
+    evaluator.plot_scores()
+    evaluator.plot_roc_curves()
+    return evaluator
+
+
 def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5, use_zero=True):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
 
@@ -53,6 +70,10 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5, use_zero
     announce_experiment('Pollution')
     run_missing_experiment(outlier_type, output_dir=os.path.join(output_dir, 'missing'),
                            steps=steps, use_zero=use_zero)
+
+    announce_experiment('Outlier height')
+    run_extremes_experiment(outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+                           steps=steps)
 
 
 def announce_experiment(title: str, dashes: int = 70):
