@@ -17,7 +17,7 @@ def main():
 def run_pipeline():
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [DAGMM(sequence_length=15, autoencoder=LSTMAutoEncoder), Donut(max_epoch=5),
+        detectors = [DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder), Donut(max_epoch=5),
                      LSTM_Enc_Dec(epochs=2), LSTMAD(num_epochs=5), LSTMED(epochs=2), RecurrentEBM(num_epochs=2)]
     else:
         datasets = [
@@ -37,7 +37,7 @@ def run_pipeline():
             SyntheticDataGenerator.extreme_1_polluted(1)
         ]
         detectors = [RecurrentEBM(num_epochs=15), LSTMED(hidden_size=4, epochs=40),
-                     Donut(), DAGMM(sequence_length=5), DAGMM(sequence_length=15, autoencoder=LSTMAutoEncoder)]
+                     Donut(), DAGMM(sequence_length=5), DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     evaluator.print_tables()
