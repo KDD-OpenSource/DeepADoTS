@@ -17,19 +17,6 @@ def to_var(x, volatile=False):
     return Variable(x, volatile=volatile)
 
 
-class CustomDataLoader(object):
-    """Wrap the given features so they can be put into a torch DataLoader"""
-
-    def __init__(self, X):
-        self.X = X
-
-    def __len__(self):
-        return self.X.shape[0]
-
-    def __getitem__(self, index):
-        return np.float32(self.X[index])
-
-
 class DAGMM_Module(nn.Module):
     """Residual Block."""
 
