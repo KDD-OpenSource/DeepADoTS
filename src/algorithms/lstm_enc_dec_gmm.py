@@ -97,7 +97,7 @@ class LSTMEDGMM(Algorithm):
                 index = i1 * self.batch_size + i2
                 window_elements = list(range(index, index + self.sequence_length, 1))
                 train_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
-        self.train_energy = np.nanmean(train_energy, axis=0)
+        self.train_energy = np.nanmedian(train_energy, axis=0)
 
     def predict(self, X: pd.DataFrame):
         prediction_batch_size = 1
@@ -117,7 +117,7 @@ class LSTMEDGMM(Algorithm):
             window_elements = list(range(index, index + self.sequence_length, 1))
             test_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
 
-        test_energy = np.nanmean(test_energy, axis=0)
+        test_energy = np.nanmedian(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
         self._threshold = np.nanpercentile(combined_energy, self.normal_percentile)

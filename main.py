@@ -3,7 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 
-from src.algorithms import DAGMM, Donut, LSTM_Enc_Dec, LSTMAD, LSTMED, LSTMEDGMM, RecurrentEBM
+from src.algorithms import DAGMM, Donut, LSTM_Enc_Dec, LSTMAD, LSTMAutoEncoder, \
+    LSTMED, LSTMEDGMM, NNAutoEncoder, RecurrentEBM
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
 # from src.evaluation.experiments import run_experiments
@@ -17,8 +18,8 @@ def main():
 def run_pipeline():
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [DAGMM(), Donut(max_epoch=5), LSTM_Enc_Dec(epochs=2), LSTMAD(num_epochs=5), LSTMED(epochs=2),
-                     LSTMEDGMM(epochs=2), RecurrentEBM(num_epochs=2)]
+        detectors = [DAGMM(sequence_length=15, autoencoder=LSTMAutoEncoder), Donut(max_epoch=5),
+                     LSTM_Enc_Dec(epochs=2), LSTMAD(num_epochs=5), LSTMED(epochs=2), RecurrentEBM(num_epochs=2)]
     else:
         datasets = [
             SyntheticDataGenerator.extreme_1(),
@@ -37,7 +38,8 @@ def run_pipeline():
             SyntheticDataGenerator.extreme_1_polluted(1)
         ]
         detectors = [RecurrentEBM(num_epochs=15), LSTMED(hidden_size=4, epochs=40),
-                     LSTMEDGMM(hidden_size=4, epochs=40), Donut(), DAGMM()]
+                     LSTMEDGMM(hidden_size=4, epochs=40), Donut(), DAGMM(sequence_length=5),
+                     DAGMM(sequence_length=15, autoencoder=LSTMAutoEncoder)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
     evaluator.print_tables()

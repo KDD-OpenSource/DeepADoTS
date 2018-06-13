@@ -9,6 +9,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 from .algorithm import Algorithm
+from .autoencoder import NNAutoEncoder
 
 
 def to_var(x, volatile=False):
@@ -20,30 +21,10 @@ def to_var(x, volatile=False):
 class DAGMM_Module(nn.Module):
     """Residual Block."""
 
-    def __init__(self, n_features=118, n_gmm=2, latent_dim=3):
+    def __init__(self, autoencoder, n_gmm=2, latent_dim=3):
         super(DAGMM_Module, self).__init__()
 
-        layers = []
-        layers += [nn.Linear(n_features, 60)]
-        layers += [nn.Tanh()]
-        layers += [nn.Linear(60, 30)]
-        layers += [nn.Tanh()]
-        layers += [nn.Linear(30, 10)]
-        layers += [nn.Tanh()]
-        layers += [nn.Linear(10, 1)]
-
-        self.encoder = nn.Sequential(*layers)
-
-        layers = []
-        layers += [nn.Linear(1, 10)]
-        layers += [nn.Tanh()]
-        layers += [nn.Linear(10, 30)]
-        layers += [nn.Tanh()]
-        layers += [nn.Linear(30, 60)]
-        layers += [nn.Tanh()]
-        layers += [nn.Linear(60, n_features)]
-
-        self.decoder = nn.Sequential(*layers)
+        self.autoencoder = autoencoder
 
         layers = []
         layers += [nn.Linear(latent_dim, 10)]
@@ -62,9 +43,7 @@ class DAGMM_Module(nn.Module):
         return (a - b).norm(2, dim=1) / torch.clamp(a.norm(2, dim=1), min=1e-10)
 
     def forward(self, x):
-
-        enc = self.encoder(x)
-        dec = self.decoder(enc)
+        dec, enc = self.autoencoder(x)
 
         rec_cosine = F.cosine_similarity(x, dec, dim=1)
         rec_euclidean = self.relative_euclidean_distance(x, dec)
@@ -158,8 +137,9 @@ class DAGMM_Module(nn.Module):
 
 class DAGMM(Algorithm):
     def __init__(self, num_epochs=5, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=700, gmm_k=3,
-                 normal_percentile=80, sequence_length=5):
-        super().__init__(__name__, "DAGMM")
+                 normal_percentile=80, sequence_length=5, autoencoder_type=NNAutoEncoder, autoencoder_args=None):
+        window_name = 'withWindow' if sequence_length > 1 else 'withoutWindow'
+        super().__init__(__name__, f'DAGMM_{autoencoder_type.__name__}_{window_name}')
         self.num_epochs = num_epochs
         self.lambda_energy = lambda_energy
         self.lambda_cov_diag = lambda_cov_diag
@@ -168,6 +148,9 @@ class DAGMM(Algorithm):
         self.sequence_length = sequence_length
         self.gmm_k = gmm_k  # Number of Gaussian mixtures
         self.normal_percentile = normal_percentile  # Up to which percentile data should be considered normal
+        self.autoencoder_type = autoencoder_type
+        self.autoencoder_args = autoencoder_args or {}
+
         self.dagmm, self.optimizer, self.train_energy, self._threshold = None, None, None, None
 
     def reset_grad(self):
@@ -193,7 +176,8 @@ class DAGMM(Algorithm):
         # Each point is a flattened window and thus has as many features as sequence_length * features
         multi_points = [data[i:i + self.sequence_length].flatten() for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=multi_points, batch_size=self.batch_size, shuffle=True, drop_last=True)
-        self.dagmm = DAGMM_Module(n_features=self.sequence_length * X.shape[1], n_gmm=self.gmm_k)
+        autoencoder = self.autoencoder_type(n_features=self.sequence_length * X.shape[1], **self.autoencoder_args)
+        self.dagmm = DAGMM_Module(autoencoder, n_gmm=self.gmm_k)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
         self.dagmm.eval()
 
