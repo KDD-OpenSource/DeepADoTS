@@ -21,7 +21,7 @@ class LSTMED(Algorithm):
     def __init__(self, hidden_size: int=5, sequence_length: int= 30, batch_size: int=20, epochs: int=10,
                  n_layers: tuple = (1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
                  lr: float=0.1, weight_decay: float=1e-4, criterion=nn.MSELoss()):
-        super().__init__('LSTMED')
+        super().__init__(__name__, 'LSTMED')
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length
         self.batch_size = batch_size
