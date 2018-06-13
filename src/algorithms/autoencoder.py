@@ -61,6 +61,10 @@ class LSTMAutoEncoder(AutoEncoder):
                                num_layers=self.n_layers[1], bias=self.use_bias[1], dropout=self.dropout[1])
         self.hidden2output = nn.Linear(self.hidden_size, self.n_features)
 
+    def init_hidden(self):
+        return (torch.zeros(1, self.batch_size, self.hidden_size),  # first is no of layer.
+                torch.zeros(1, self.batch_size, self.hidden_size))
+
     def __call__(self, ts_batch):
         # 1. Encode the timeseries to make use of the last hidden state.
         enc_hidden = self.init_hidden()  # initialization with zero
