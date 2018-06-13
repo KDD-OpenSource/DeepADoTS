@@ -46,11 +46,10 @@ class NNAutoEncoder(AutoEncoder):
 class LSTMAutoEncoder(AutoEncoder):
     """Autoencoder with Recurrent module. Inspired by LSTM-EncDec"""
 
-    def __init__(self, n_features: int, hidden_size: int, batch_size: int,
-                 n_layers: tuple, use_bias: tuple, dropout: tuple):
+    def __init__(self, n_features: int, hidden_size: int = 1, n_layers: tuple = (1, 1),
+                 use_bias: tuple = (True, True), dropout: tuple = (0.5, 0.5)):
         self.n_features = n_features
         self.hidden_size = hidden_size
-        self.batch_size = batch_size
 
         self.n_layers = n_layers
         self.use_bias = use_bias
@@ -68,7 +67,7 @@ class LSTMAutoEncoder(AutoEncoder):
         _, enc_hidden = self.encoder(ts_batch.float(), enc_hidden)  # .float() here or .double() for the model
 
         # 2. Use hidden state as initialization for our Decoder-LSTM
-        dec_hidden = (enc_hidden[0], torch.zeros(1, self.batch_size, self.hidden_size))
+        dec_hidden = (enc_hidden[0], torch.zeros(1, None, self.hidden_size))
 
         # 3. Also, use this hidden state to get the first output aka the last point of the reconstructed timeseries
         # 4. Reconstruct timeseries backwards
