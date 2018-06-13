@@ -36,7 +36,7 @@ def run_pipeline():
             SyntheticDataGenerator.extreme_1_polluted(0.5),
             SyntheticDataGenerator.extreme_1_polluted(1)
         ]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMED(hidden_size=4, epochs=40),
+        detectors = [RecurrentEBM(num_epochs=15), LSTMED(hidden_size=4, epochs=40), LSTMAD(num_epochs=5),
                      Donut(), DAGMM(sequence_length=5), DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()

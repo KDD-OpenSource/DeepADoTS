@@ -43,7 +43,7 @@ class DAGMM_Module(nn.Module):
         return (a - b).norm(2, dim=1) / torch.clamp(a.norm(2, dim=1), min=1e-10)
 
     def forward(self, x):
-        dec, enc = self.autoencoder(x)
+        dec, enc = self.autoencoder(x, self.training)
 
         rec_cosine = F.cosine_similarity(x, dec, dim=1)
         rec_euclidean = self.relative_euclidean_distance(x, dec)
@@ -136,7 +136,7 @@ class DAGMM_Module(nn.Module):
 
 
 class DAGMM(Algorithm):
-    def __init__(self, num_epochs=5, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=700, gmm_k=3,
+    def __init__(self, num_epochs=5, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=50, gmm_k=3,
                  normal_percentile=80, sequence_length=5, autoencoder_type=NNAutoEncoder, autoencoder_args=None):
         window_name = 'withWindow' if sequence_length > 1 else 'withoutWindow'
         super().__init__(__name__, f'DAGMM_{autoencoder_type.__name__}_{window_name}')
