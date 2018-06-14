@@ -7,13 +7,16 @@ from src.datasets import SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
 
 
+def get_all_algorithms():
+    return [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
+
 # Validates all algorithms regarding polluted data based on a given outlier type.
 # The pollution of the training data is tested from 0 to 100% (with default steps=5).
 def run_pollution_experiment(outlier_type='extreme_1', output_dir=None, steps=5):
     datasets = [
         SyntheticDataGenerator.get(f'{outlier_type}_polluted', pollution) for pollution in np.linspace(0, 1, steps)
     ]
-    detectors = [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
+    detectors = get_all_algorithms()
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for polluted data')
@@ -32,7 +35,7 @@ def run_missing_experiment(outlier_type='extreme_1', output_dir=None, steps=5, u
     datasets = [
         SyntheticDataGenerator.get(f'{outlier_type}_missing', missing, use_zero) for missing in np.linspace(0, 1, steps)
     ]
-    detectors = [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
+    detectors = get_all_algorithms()
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for missing values')
