@@ -10,6 +10,10 @@ class AutoEncoder():
     def __call__(self, x, training=False):
         """Run autoencoder, return (decoded, encoded)"""
 
+    @abc.abstractmethod
+    def reset(self):
+        """Reset autoencoder, e.g. when test set is used and hidden state of LSTM needs to be flushed"""
+
 
 class NNAutoEncoder(AutoEncoder):
 
@@ -38,6 +42,9 @@ class NNAutoEncoder(AutoEncoder):
 
         self._decoder = nn.Sequential(*layers)
 
+    def reset(self):
+        pass
+
     def __call__(self, x, training=False):
         enc = self._encoder(x)
         dec = self._decoder(enc)
@@ -63,18 +70,24 @@ class LSTMAutoEncoder(AutoEncoder):
         self.decoder = nn.LSTM(self.n_features, self.hidden_size, batch_first=True,
                                num_layers=self.n_layers[1], bias=self.use_bias[1], dropout=self.dropout[1])
         self.hidden2output = nn.Linear(self.hidden_size, self.n_features)
+        self.enc_hidden = None
 
     def init_hidden(self, batch_size):
-        return (torch.zeros(1, batch_size, self.hidden_size),  # first is no of layer.
-                torch.zeros(1, batch_size, self.hidden_size))
+        self.enc_hidden = (torch.zeros(self.n_layers[0], batch_size, self.hidden_size),
+                           torch.zeros(self.n_layers[0], batch_size, self.hidden_size))
+
+    def reset(self):
+        self.enc_hidden = None
 
     def __call__(self, ts_batch, training=False):
         batch_size = ts_batch.shape[0]
         ts_batch = ts_batch.view(batch_size, self.sequence_length, self.n_features)  # Ensure input is 3-dimensional
 
         # 1. Encode the timeseries to make use of the last hidden state.
-        enc_hidden = self.init_hidden(ts_batch.shape[0])  # initialization with zero
-        _, enc_hidden = self.encoder(ts_batch.float(), enc_hidden)  # .float() here or .double() for the model
+        if self.sequence_length > 1 or self.enc_hidden is None:  # If no window, keep state
+            self.init_hidden(ts_batch.shape[0])  # initialization with zero
+        _, enc_hidden = self.encoder(ts_batch.float(), self.enc_hidden)  # .float() here or .double() for the model
+        self.enc_hidden = enc_hidden
 
         # 2. Use hidden state as initialization for our Decoder-LSTM
         dec_hidden = (enc_hidden[0], torch.zeros(1, batch_size, self.hidden_size))

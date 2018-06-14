@@ -222,6 +222,7 @@ class DAGMM(Algorithm):
                 window_elements = list(range(index, index + self.sequence_length, 1))
                 train_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
         self.train_energy = np.nanmean(train_energy, axis=0)
+        self.autoencoder.reset()
 
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
