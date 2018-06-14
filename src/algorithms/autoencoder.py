@@ -11,7 +11,7 @@ class AutoEncoder():
         """Run autoencoder, return (decoded, encoded)"""
 
     @abc.abstractmethod
-    def reset(self):
+    def reset_state(self):
         """Reset autoencoder, e.g. when test set is used and hidden state of LSTM needs to be flushed"""
 
 
@@ -42,7 +42,7 @@ class NNAutoEncoder(AutoEncoder):
 
         self._decoder = nn.Sequential(*layers)
 
-    def reset(self):
+    def reset_state(self):
         pass
 
     def __call__(self, x, training=False):
@@ -76,7 +76,7 @@ class LSTMAutoEncoder(AutoEncoder):
         self.enc_hidden = (torch.zeros(self.n_layers[0], batch_size, self.hidden_size),
                            torch.zeros(self.n_layers[0], batch_size, self.hidden_size))
 
-    def reset(self):
+    def reset_state(self):
         self.enc_hidden = None
 
     def __call__(self, ts_batch, training=False):

@@ -134,6 +134,9 @@ class DAGMM_Module(nn.Module):
         loss = recon_error + lambda_energy * sample_energy + lambda_cov_diag * cov_diag
         return loss, sample_energy, recon_error, cov_diag
 
+    def reset_state(self):
+        self.autoencoder.reset_state()
+
 
 class DAGMM(Algorithm):
     def __init__(self, num_epochs=5, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=50, gmm_k=3,
@@ -222,7 +225,7 @@ class DAGMM(Algorithm):
                 window_elements = list(range(index, index + self.sequence_length, 1))
                 train_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
         self.train_energy = np.nanmean(train_energy, axis=0)
-        self.autoencoder.reset()
+        self.dagmm.reset_state()
 
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
