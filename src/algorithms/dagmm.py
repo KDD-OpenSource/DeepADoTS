@@ -45,8 +45,8 @@ class DAGMM_Module(nn.Module):
     def forward(self, x):
         dec, enc = self.autoencoder(x, self.training)
 
-        rec_cosine = F.cosine_similarity(x, dec, dim=1)
-        rec_euclidean = self.relative_euclidean_distance(x, dec)
+        rec_cosine = F.cosine_similarity(x.view(*dec.shape), dec, dim=1)
+        rec_euclidean = self.relative_euclidean_distance(x.view(*dec.shape), dec)
 
         # Concatenate latent representation, cosine similarity and relative Euclidean distance between x and dec(enc(x))
         z = torch.cat([enc, rec_euclidean.unsqueeze(-1), rec_cosine.unsqueeze(-1)], dim=1)
@@ -128,7 +128,7 @@ class DAGMM_Module(nn.Module):
         return sample_energy, cov_diag
 
     def loss_function(self, x, x_hat, z, gamma, lambda_energy, lambda_cov_diag):
-        recon_error = torch.mean((x - x_hat) ** 2)
+        recon_error = torch.mean((x.view(*x_hat.shape) - x_hat) ** 2)
         phi, mu, cov = self.compute_gmm_params(z, gamma)
         sample_energy, cov_diag = self.compute_energy(z, phi, mu, cov)
         loss = recon_error + lambda_energy * sample_energy + lambda_cov_diag * cov_diag
@@ -140,7 +140,7 @@ class DAGMM_Module(nn.Module):
 
 class DAGMM(Algorithm):
     def __init__(self, num_epochs=5, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=50, gmm_k=3,
-                 normal_percentile=80, sequence_length=5, autoencoder_type=NNAutoEncoder, autoencoder_args=None):
+                 normal_percentile=80, sequence_length=15, autoencoder_type=NNAutoEncoder, autoencoder_args=None):
         window_name = 'withWindow' if sequence_length > 1 else 'withoutWindow'
         super().__init__(__name__, f'DAGMM_{autoencoder_type.__name__}_{window_name}')
         self.num_epochs = num_epochs
@@ -177,7 +177,7 @@ class DAGMM(Algorithm):
         X = X.dropna()
         data = X.values
         # Each point is a flattened window and thus has as many features as sequence_length * features
-        multi_points = [data[i:i + self.sequence_length].flatten() for i in range(len(data) - self.sequence_length + 1)]
+        multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=multi_points, batch_size=self.batch_size, shuffle=True, drop_last=True)
         autoencoder = self.autoencoder_type(n_features=X.shape[1], sequence_length=self.sequence_length,
                                             **self.autoencoder_args)
@@ -233,7 +233,7 @@ class DAGMM(Algorithm):
         self.dagmm.eval()
         X = X.dropna()
         data = X.values
-        multi_points = [data[i:i + self.sequence_length].flatten() for i in range(len(data) - self.sequence_length + 1)]
+        multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=multi_points, batch_size=1, shuffle=False)
         test_energy = np.full((self.sequence_length, len(data)), np.nan)
 
@@ -247,8 +247,6 @@ class DAGMM(Algorithm):
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
         self._threshold = np.percentile(combined_energy, self.normal_percentile)
-        if np.isnan(self._threshold):
-            raise Exception("Threshold is NaN")
         return test_energy
 
     def threshold(self, score):
@@ -256,5 +254,8 @@ class DAGMM(Algorithm):
 
     def binarize(self, y, threshold=None):
         if threshold is None:
-            threshold = self._threshold
+            if self._threshold is not None:
+                threshold = self._threshold
+            else:
+                return np.zeros_like(y)
         return np.where(y > threshold, 1, 0)

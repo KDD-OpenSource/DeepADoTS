@@ -12,6 +12,7 @@ from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
 from sklearn.metrics import roc_curve, auc
 from tabulate import tabulate
+from textwrap import wrap
 
 from .config import init_logging
 
@@ -212,7 +213,7 @@ class Evaluator:
                 plt.xlabel("False Positive Rate")
                 plt.ylabel("True Positive Rate")
                 plt.gca().set_aspect("equal", adjustable="box")
-                plt.title(det.name)
+                plt.title('\n'.join(wrap(det.name, 20)))
                 plt.legend(loc="lower right")
             plt.tight_layout()
             if store:
