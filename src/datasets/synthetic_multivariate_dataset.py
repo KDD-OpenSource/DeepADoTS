@@ -18,9 +18,10 @@ class SyntheticMultivariateDataset(Dataset):
         to_ = 3.5 * np.pi
         return np.array([curve(t) for t in np.linspace(from_, to_, length)])
 
-    def get_random_curve(self, length, amplitude, length_randomness=10, amplitude_randomness=1):
+    def get_random_curve(self, length, amplitude, length_randomness=10, amplitude_randomness=1, negative=False):
+        neg = -1 if negative else 1
         new_length = int(self.add_noise(length, length_randomness))
-        new_amplitude = self.add_noise(amplitude, amplitude_randomness)
+        new_amplitude = self.add_noise(neg * amplitude, amplitude_randomness)
         return self.get_curve(new_length, new_amplitude)
 
     def generate_clean_data(self, T=1000, margin_factor = 6, anomalous=False, pollution=0.5):
@@ -41,8 +42,8 @@ class SyntheticMultivariateDataset(Dataset):
 
         while pos < T - mean_curve_length - 20:
             # general outline for the repeating curves, only changes heights
-            curve = self.get_random_curve(mean_curve_length, mean_curve_amplitude)
-            # outlier generation
+            curve = self.get_random_curve(mean_curve_length, mean_curve_amplitude, negative=np.random.choice([True, False]))
+            # outlier generation in second dimension
             create_anomaly = anomalous and np.random.choice([0, 1], p=[1-pollution, pollution])
             values[pos:pos+len(curve), 0] = self.add_noise(curve, noise)
             values[pos:pos+len(curve), 1] = self.add_noise(anomalous_dim2(curve) if create_anomaly else dim2(curve), noise)
@@ -51,6 +52,7 @@ class SyntheticMultivariateDataset(Dataset):
                 margin = len(curve) // margin_factor
                 labels[pos+margin:pos+len(curve)-margin] += 1
             pos += len(curve)
+            # add pause without curve, only noise
             pause_length = pause()
             values[pos:pos+pause_length] = self.add_noise(values[pos:pos+pause_length], noise)
             pos += pause_length
