@@ -176,7 +176,8 @@ class DAGMM(Algorithm):
         # Each point is a flattened window and thus has as many features as sequence_length * features
         multi_points = [data[i:i + self.sequence_length].flatten() for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=multi_points, batch_size=self.batch_size, shuffle=True, drop_last=True)
-        autoencoder = self.autoencoder_type(n_features=self.sequence_length * X.shape[1], **self.autoencoder_args)
+        autoencoder = self.autoencoder_type(n_features=X.shape[1], sequence_length=self.sequence_length,
+                                            **self.autoencoder_args)
         self.dagmm = DAGMM_Module(autoencoder, n_gmm=self.gmm_k)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
         self.dagmm.eval()

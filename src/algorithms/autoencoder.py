@@ -13,7 +13,9 @@ class AutoEncoder():
 
 class NNAutoEncoder(AutoEncoder):
 
-    def __init__(self, n_features=118, hidden_size=1):
+    def __init__(self, n_features=118, sequence_length=1, hidden_size=1):
+        n_features = n_features * sequence_length
+
         layers = []
         layers += [nn.Linear(n_features, 60)]
         layers += [nn.Tanh()]
@@ -46,9 +48,10 @@ class NNAutoEncoder(AutoEncoder):
 class LSTMAutoEncoder(AutoEncoder):
     """Autoencoder with Recurrent module. Inspired by LSTM-EncDec"""
 
-    def __init__(self, n_features: int, hidden_size: int = 1, n_layers: tuple = (1, 1),
+    def __init__(self, n_features: int, sequence_length: int, hidden_size: int = 1, n_layers: tuple = (1, 1),
                  use_bias: tuple = (True, True), dropout: tuple = (0.5, 0.5)):
         self.n_features = n_features
+        self.sequence_length = sequence_length
         self.hidden_size = hidden_size
 
         self.n_layers = n_layers
@@ -66,14 +69,15 @@ class LSTMAutoEncoder(AutoEncoder):
                 torch.zeros(1, batch_size, self.hidden_size))
 
     def __call__(self, ts_batch, training=False):
-        ts_batch = ts_batch.view(ts_batch.shape[0], -1, ts_batch.shape[1])  # Ensure input is 3-dimensional
+        batch_size = ts_batch.shape[0]
+        ts_batch = ts_batch.view(batch_size, self.sequence_length, self.n_features)  # Ensure input is 3-dimensional
 
         # 1. Encode the timeseries to make use of the last hidden state.
         enc_hidden = self.init_hidden(ts_batch.shape[0])  # initialization with zero
         _, enc_hidden = self.encoder(ts_batch.float(), enc_hidden)  # .float() here or .double() for the model
 
         # 2. Use hidden state as initialization for our Decoder-LSTM
-        dec_hidden = (enc_hidden[0], torch.zeros(1, ts_batch.shape[0], self.hidden_size))
+        dec_hidden = (enc_hidden[0], torch.zeros(1, batch_size, self.hidden_size))
 
         # 3. Also, use this hidden state to get the first output aka the last point of the reconstructed timeseries
         # 4. Reconstruct timeseries backwards
@@ -88,4 +92,4 @@ class LSTMAutoEncoder(AutoEncoder):
             else:
                 _, dec_hidden = self.decoder(output[:, i].unsqueeze(1), dec_hidden)
 
-        return output.squeeze(1), enc_hidden[0].view(ts_batch.shape[0], self.hidden_size)
+        return output.squeeze(2), enc_hidden[0].view(batch_size, self.hidden_size)
