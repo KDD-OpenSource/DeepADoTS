@@ -208,15 +208,19 @@ class DAGMM(Algorithm):
         train_mu = mu_sum / gamma_sum.unsqueeze(-1)
         train_cov = cov_sum / gamma_sum.unsqueeze(-1).unsqueeze(-1)
 
-        train_energy = []
-        for input_data in data_loader:
-            input_data = to_var(input_data)
+        train_length = len(data_loader) * self.batch_size + self.sequence_length - 1
+        train_energy = np.full((self.sequence_length, train_length), np.nan)
+        for i1, ts_batch in enumerate(data_loader):
+            ts_batch = to_var(ts_batch)
             _, _, z, _ = self.dagmm(input_data.float())
-            sample_energy, _ = self.dagmm.compute_energy(z, phi=train_phi, mu=train_mu, cov=train_cov,
-                                                         size_average=False)
-            train_energy.append(sample_energy.data.cpu().numpy())
+            sample_energies, _ = self.dagmm.compute_energy(z, phi=train_phi, mu=train_mu, cov=train_cov,
+                                                           size_average=False)
 
-        self.train_energy = np.concatenate(train_energy, axis=0)
+            for i2, sample_energy in enumerate(sample_energies):
+                index = i1 * self.batch_size + i2
+                window_elements = list(range(index, index + self.sequence_length, 1))
+                train_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
+        self.train_energy = np.nanmean(train_energy, axis=0)
 
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
