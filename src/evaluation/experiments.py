@@ -13,7 +13,7 @@ def run_pollution_experiment(outlier_type='extreme_1', output_dir=None, steps=5)
     datasets = [
         SyntheticDataGenerator.get(f'{outlier_type}_polluted', pollution) for pollution in np.linspace(0, 1, steps)
     ]
-    detectors = [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
+    detectors = [LSTM_Enc_Dec(num_epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for polluted data')
@@ -32,7 +32,7 @@ def run_missing_experiment(outlier_type='extreme_1', output_dir=None, steps=5, u
     datasets = [
         SyntheticDataGenerator.get(f'{outlier_type}_missing', missing, use_zero) for missing in np.linspace(0, 1, steps)
     ]
-    detectors = [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
+    detectors = [LSTM_Enc_Dec(num_epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for missing values')
@@ -49,7 +49,7 @@ def run_extremes_experiment(outlier_type='extreme_1', output_dir=None, steps=10)
     datasets = [
         SyntheticDataGenerator.get(f'{outlier_type}_extremeness', extreme) for extreme in np.linspace(1, 10, steps)
     ]
-    detectors = [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
+    detectors = [LSTM_Enc_Dec(num_epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for differing outlier heights')

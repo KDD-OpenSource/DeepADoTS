@@ -142,9 +142,9 @@ class Donut(Algorithm):
     is smaller than mean - std of the reconstruction probabilities for that feature. For each point
     in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
 
-    def __init__(self, max_epoch=256):
+    def __init__(self, num_epochs=256):
         super().__init__(__name__, "Donut")
-        self.max_epoch = max_epoch
+        self.max_epoch = num_epochs
         self.x_dims = 120
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
