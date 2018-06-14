@@ -56,7 +56,7 @@ class SyntheticMultivariateDataset(Dataset):
             pos += pause_length
         # rest of values is noise
         values[pos:] = self.add_noise(values[pos:], noise)
-        return pd.DataFrame(data=values), pd.Series(labels)
+        return pd.DataFrame(values), pd.Series(labels)
 
     def load(self):
         # T: amount of timestamps
