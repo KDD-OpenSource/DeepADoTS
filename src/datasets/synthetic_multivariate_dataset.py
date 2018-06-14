@@ -38,7 +38,7 @@ class SyntheticMultivariateDataset(Dataset):
 
         # first pos data points are noise
         values[:pos] = self.add_noise(values[:pos], noise)
-        
+
         while pos < T - mean_curve_length - 20:
             # general outline for the repeating curves, only changes heights
             curve = self.get_random_curve(mean_curve_length, mean_curve_amplitude)
@@ -56,7 +56,7 @@ class SyntheticMultivariateDataset(Dataset):
             pos += pause_length
         # rest of values is noise
         values[pos:] = self.add_noise(values[pos:], noise)
-        return pd.DataFrame(data=values), pd.DataFrame(data=labels)
+        return pd.DataFrame(data=values), pd.Series(labels)
 
     def load(self):
         # T: amount of timestamps

@@ -10,8 +10,14 @@ from src.evaluation.evaluator import Evaluator
 
 
 def main():
+<<<<<<< Updated upstream
     run_pipeline()
     # run_experiments()
+=======
+    # run_pipeline()
+    test_missing()
+    # test_pollution()
+>>>>>>> Stashed changes
 
 
 def run_pipeline():
@@ -45,6 +51,39 @@ def run_pipeline():
     evaluator.plot_roc_curves()
 
 
+<<<<<<< Updated upstream
+=======
+def test_pollution():
+    datasets = [
+        SyntheticDataGenerator.extreme_1(),
+        SyntheticDataGenerator.extreme_1_polluted(0.1),
+        SyntheticDataGenerator.extreme_1_polluted(0.3),
+        SyntheticDataGenerator.extreme_1_polluted(0.5),
+        SyntheticDataGenerator.extreme_1_polluted(1)
+    ]
+    detectors = [RecurrentEBM(num_epochs=30), Donut(), DAGMM()]  # , LSTM_Enc_Dec(epochs=200)
+    evaluator = Evaluator(datasets, detectors)
+    evaluator.evaluate()
+    evaluator.plot_auroc(title='Area under the curve for polluted data')
+
+
+def test_missing():
+    datasets = [
+        SyntheticDataGenerator.extreme_1_missing(0, use_zero=True),
+        SyntheticDataGenerator.extreme_1_missing(0.25, use_zero=True),
+        SyntheticDataGenerator.extreme_1_missing(0.5, use_zero=True),
+        SyntheticDataGenerator.extreme_1_missing(0.75, use_zero=True),
+        SyntheticDataGenerator.extreme_1_missing(0.99, use_zero=True),
+    ]
+    detectors = [Donut(), RecurrentEBM(), DAGMM(), LSTM_Enc_Dec(epochs=200)]  # , LSTMAD()
+    evaluator = Evaluator(datasets, detectors)
+    evaluator.evaluate()
+    evaluator.plot_auroc(title='Area under the curve for missing values')
+    evaluator.print_tables()
+    evaluator.plot_scores()
+
+
+>>>>>>> Stashed changes
 def evaluate_on_real_world_data_sets():
     dagmm = DAGMM()
     kdd_cup = KDDCup()
