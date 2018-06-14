@@ -157,7 +157,8 @@ class Donut(Algorithm):
             timestamps = X.index
             features = X.loc[:, col].values
             labels = y
-            timestamps, missing, (features, labels) = complete_timestamp(timestamps, (features, labels))
+            timestamps, _, (features, labels) = complete_timestamp(timestamps, (features, labels))
+            missing = np.isnan(features)
             _, mean, std = standardize_kpi(features, excludes=np.logical_or(labels, missing))
 
             with tf.variable_scope('model') as model_vs:
@@ -180,7 +181,7 @@ class Donut(Algorithm):
 
             trainer = QuietDonutTrainer(model=model, model_vs=model_vs, max_epoch=self.max_epoch)
             with tf_session.as_default():
-                trainer.fit(features, labels, missing, mean, std)
+                trainer.fit(features, labels, missing, mean, std, excludes=np.logical_or(labels, missing))
             self.means.append(mean)
             self.stds.append(std)
             self.tf_sessions.append(tf_session)
