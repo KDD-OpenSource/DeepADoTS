@@ -2,12 +2,6 @@ import os
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import time
-from pandas import ExcelWriter
-import xlrd
-import glob
-import re
 
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
@@ -15,6 +9,7 @@ from src.evaluation.evaluator import Evaluator
 # from src.evaluation.experiments import run_experiments
 
 RUNS = 2
+
 
 def main():
     run_pipeline()
