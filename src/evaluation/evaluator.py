@@ -25,6 +25,7 @@ class Evaluator:
         self.results = dict()
         init_logging(output_dir or 'reports/logs/')
         self.logger = logging.getLogger(__name__)
+        self.benchmark_results = None
 
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
@@ -222,11 +223,10 @@ class Evaluator:
 
     def plot_auroc(self, store=True, title='AUROC'):
         plt.close('all')
-        benchmarks = self.benchmarks()
         dataset_names = [ds.name for ds in self.datasets]
         fig = plt.figure(figsize=(7, 7))
         for det in self.detectors:
-            aurocs = benchmarks[benchmarks['algorithm'] == det.name]['auroc']
+            aurocs = self.benchmark_results[self.benchmark_results['algorithm'] == det.name]['auroc']
             plt.plot(aurocs.values, label=det.name)
         plt.xticks(range(len(self.datasets)), dataset_names, rotation=90)
         plt.legend()
@@ -239,9 +239,42 @@ class Evaluator:
         return fig
 
     def print_tables(self):
-        benchmarks = self.benchmarks()
         for ds in self.datasets:
             print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            table = tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+            table = tabulate(self.benchmark_results[self.benchmark_results['dataset'] == ds.name][print_order],
                              headers='keys', tablefmt='psql')
             self.logger.info(f"Dataset: {ds.name}\n{table}")
+
+    # create boxplot diagrams for auc values for each dataset per algorithm
+    def create_boxplots_per_algorithm(self, runs, data):
+        data[['algorithm', 'auroc', 'dataset']].groupby('algorithm').boxplot(by='dataset', rot=90, figsize=(10, 10))
+        plt.suptitle("AUC grouped by dataset, per algorithm", y=0.999)
+        plt.subplots_adjust(top=0.9, hspace=0.4)
+        plt.tight_layout()
+        self.store(plt.gcf(), f"boxplots_auc_per_algorithm_{runs}_runs")
+
+    # create boxplot diagrams for auc values for each algorithm per dataset
+    def create_boxplots_per_dataset(self, runs, data):
+        data[['algorithm', 'auroc', 'dataset']].groupby('dataset').boxplot(by='algorithm', rot=90, figsize=(10, 10))
+        plt.suptitle("AUC grouped by algorithm, per dataset", y=0.999)
+        plt.subplots_adjust(top=0.9, hspace=0.4)
+        plt.tight_layout()
+        self.store(plt.gcf(), f"boxplots_auc_per_dataset_{runs}_runs")
+
+    # create bar charts for averaged pipeline results per dataset
+    def create_bar_charts_per_dataset(self, runs):
+        relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
+        for ds in self.datasets:
+            relevant_results[relevant_results["dataset"] == ds.name].plot(x="algorithm", kind="bar", figsize=(7, 7))
+            plt.title(f"AUC on {ds.name} performing {runs} runs")
+            plt.tight_layout()
+            self.store(plt.gcf(), f"auc_for_{ds.name}_{runs}_runs")
+
+    # create bar charts for averaged pipeline results per algorithm
+    def create_bar_charts_per_detector(self, runs):
+        relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
+        for det in self.detectors:
+            relevant_results[relevant_results["algorithm"] == det.name].plot(x="dataset", kind="bar", figsize=(7, 7))
+            plt.title(f"AUC for {det.name} performing {runs} runs")
+            plt.tight_layout()
+            self.store(plt.gcf(), f"auc_for_{det.name}_{runs}_runs")

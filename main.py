@@ -2,12 +2,19 @@ import os
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import time
+from pandas import ExcelWriter
+import xlrd
+import glob
+import re
 
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
 # from src.evaluation.experiments import run_experiments
 
+RUNS = 2
 
 def main():
     run_pipeline()
@@ -34,15 +41,31 @@ def run_pipeline():
             SyntheticDataGenerator.extreme_1_polluted(0.1),
             SyntheticDataGenerator.extreme_1_polluted(0.3),
             SyntheticDataGenerator.extreme_1_polluted(0.5),
-            SyntheticDataGenerator.extreme_1_polluted(1)
+            SyntheticDataGenerator.extreme_1_polluted(0.9)
         ]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(epochs=200)]
+
+    # perform multiple pipeline runs for more significant end results
     evaluator = Evaluator(datasets, detectors)
-    evaluator.evaluate()
+    results = pd.DataFrame()
+    for _ in range(RUNS):
+        evaluator.evaluate()
+        result = evaluator.benchmarks()
+        results = results.append(result, ignore_index=True)
+
+    evaluator.create_boxplots_per_algorithm(runs=RUNS, data=results)
+    evaluator.create_boxplots_per_dataset(runs=RUNS, data=results)
+
+    # average results from multiple pipeline runs
+    averaged_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
+    evaluator.benchmark_results = averaged_results
+
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
+    evaluator.create_bar_charts_per_dataset(runs=RUNS)
+    evaluator.create_bar_charts_per_detector(runs=RUNS)
 
 
 def evaluate_on_real_world_data_sets():
