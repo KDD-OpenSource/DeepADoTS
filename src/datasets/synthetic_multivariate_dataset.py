@@ -9,10 +9,13 @@ TODO:
 - Type=[Inverse, Factorized, Outlier in both dimension with specific delay]
 """
 
-def add_noise(self, x, strength = 1):
+
+def add_noise(self, x, strength=1):
     return x + np.random.random(np.shape(x)) * strength - strength / 2
 
+
 # ----- Functions generating the second dimension --------- #
+
 
 def doubled_dim2(self, curve_values, anomalous):
     factor = 4 if anomalous else 2
@@ -42,15 +45,16 @@ def delayed_dim2(self, curve_values, anomalous):
         # TODO: generate method should support different arrays of various length
         return nonce + curve_values
 
+
 class SyntheticMultivariateDataset(Dataset):
 
-    def __init__(self, name: string = 'Synthetic Multivariate Curve Outliers',
+    def __init__(self, name: str = 'Synthetic Multivariate Curve Outliers',
                  length: int = 5000,
                  mean_curve_length: int = 40,  # varies between -5 and +5
-                 mean_curve_amplitude: int = 1  # By default varies between -0.5 and 1.5
+                 mean_curve_amplitude: int = 1,  # By default varies between -0.5 and 1.5
                  dim2=doubled_dim2,  # dim2: Lambda for curve values of 2nd dimension
                  random_seed: int = 42,
-                 file_name: string = 'synthetic_mv1.pkl'):
+                 file_name: str = 'synthetic_mv1.pkl'):
         super().__init__(name, file_name)
         self.length = length
         self.mean_curve_length = mean_curve_length
@@ -63,7 +67,8 @@ class SyntheticMultivariateDataset(Dataset):
     # Using `length` and `amplitude` you can adjust it in both dimensions.
     def get_curve(self, length, amplitude):
         # Transformed sinus curve: [-1, 1] -> [0, amplitude]
-        curve = lambda t: amplitude * (np.sin(t)/2 + 0.5)
+        def curve(t: int):
+            return amplitude * (np.sin(t)/2 + 0.5)
         # Start and end of one curve section in sinus
         from_ = 1.5 * np.pi
         to_ = 3.5 * np.pi
