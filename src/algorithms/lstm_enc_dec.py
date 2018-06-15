@@ -33,7 +33,7 @@ class LSTM_Enc_Dec(Algorithm):
         learning_rate=0.0002,  # initial learning rate for Adam
         weight_decay=1e-4,
         gradient_clip=10,  # to avoid exploding gradients
-        epochs=20,
+        num_epochs=20,
         batch_size=64,
         eval_batch_size=64,
         seq_length=50,
@@ -60,7 +60,7 @@ class LSTM_Enc_Dec(Algorithm):
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.gradient_clip = gradient_clip
-        self.epochs = epochs
+        self.epochs = num_epochs
         self.batch_size = batch_size
         self.eval_batch_size = eval_batch_size
         self.seq_length = seq_length
@@ -95,6 +95,7 @@ class LSTM_Enc_Dec(Algorithm):
         self.criterion = nn.MSELoss()
 
     def fit(self, X_train: pd.DataFrame, y_train: pd.Series):
+        X_train.fillna(0, inplace=True)
         self._build_model(X_train.shape[1])
         train_timeseries_dataset = self._transform_fit_data(X_train, y_train)
         self._fit(train_timeseries_dataset)
@@ -106,6 +107,7 @@ class LSTM_Enc_Dec(Algorithm):
         return [x.numpy() for x in channels_scores]
 
     def predict(self, X_test: pd.DataFrame) -> np.ndarray:
+        X_test.fillna(0, inplace=True)
         channels_scores = self.predict_channel_scores(X_test)
         return np.max(channels_scores, axis=0)
 
