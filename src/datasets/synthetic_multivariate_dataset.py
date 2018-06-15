@@ -1,3 +1,5 @@
+from typing import Tuple, Callable
+
 import numpy as np
 import pandas as pd
 
@@ -10,40 +12,43 @@ TODO:
 """
 
 
-def add_noise(self, x, strength=1):
+def add_noise(x, strength=1):
     return x + np.random.random(np.shape(x)) * strength - strength / 2
 
 
 # ----- Functions generating the second dimension --------- #
 
 
-def doubled_dim2(self, curve_values, anomalous):
+def doubled_dim2(curve_values, anomalous):
     factor = 4 if anomalous else 2
     return curve_values * factor
 
 
-def inversed_dim2(self, curve_values, anomalous):
+def inversed_dim2(curve_values, anomalous):
     factor = -2 if anomalous else 2
     return curve_values * factor
 
 
-def shrinked_dim2(self, curve_values, anomalous):
+def shrinked_dim2(curve_values, anomalous):
     if not anomalous:
         return curve_values * 2
     else:
         new_curve = curve_values[::2]
         nonce = np.zeros(len(curve_values) - len(new_curve))
-        return nonce + new_curve
+        return np.concatenate([nonce, new_curve])
 
 
-def delayed_dim2(self, curve_values, anomalous):
+def delayed_dim2(curve_values, anomalous):
     if not anomalous:
         return curve_values * 2
     else:
         # The curve in the second dimension occures a few timestamps later
         nonce = np.zeros(len(curve_values) // 10)
-        # TODO: generate method should support different arrays of various length
-        return nonce + curve_values
+        # OLD TODO: generate method should support different arrays of various length
+        return np.concatenate([nonce, curve_values])
+
+# TODO: Add more complex outliers like delayed and XOR by defining a child class
+# overwriting the generate function
 
 
 class SyntheticMultivariateDataset(Dataset):
@@ -52,7 +57,9 @@ class SyntheticMultivariateDataset(Dataset):
                  length: int = 5000,
                  mean_curve_length: int = 40,  # varies between -5 and +5
                  mean_curve_amplitude: int = 1,  # By default varies between -0.5 and 1.5
-                 dim2=doubled_dim2,  # dim2: Lambda for curve values of 2nd dimension
+                 # dim2: Lambda for curve values of 2nd dimension
+                 dim2: Callable[[np.ndarray, bool], np.ndarray] = shrinked_dim2,
+                 pause_length: Tuple[int, int] = (5, 75),  # min and max value for this a pause
                  random_seed: int = 42,
                  file_name: str = 'synthetic_mv1.pkl'):
         super().__init__(name, file_name)
@@ -61,6 +68,7 @@ class SyntheticMultivariateDataset(Dataset):
         self.mean_curve_amplitude = mean_curve_amplitude
         self.global_noise = 0.1  # Noise added to all dimensions over the whole timeseries
         self.dim2 = dim2
+        self.pause_length = pause_length
         self.random_seed = random_seed
 
     # Use part of sinus to create a curve starting and ending with zero gradients.
@@ -82,7 +90,8 @@ class SyntheticMultivariateDataset(Dataset):
         return self.get_curve(new_length, new_amplitude)
 
     # The interval between two curves must be random so a detector doesn't recognize a pattern
-    def create_pause(xmin=5, xmax=75):
+    def create_pause(self):
+        xmin, xmax = self.pause_length
         diff = xmax - xmin
         return xmin + np.random.randint(diff)
 
