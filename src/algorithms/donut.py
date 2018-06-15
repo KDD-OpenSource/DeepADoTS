@@ -69,6 +69,7 @@ class QuietDonutTrainer(DonutTrainer):
             train_excludes, valid_excludes = excludes[:-n], excludes[-n:]
 
         # data augmentation object and the sliding window iterator
+        # If std is zero choose a number close to zero
         aug = MissingDataInjection(mean, std, self._missing_data_injection_rate)
         train_sliding_window = BatchSlidingWindow(
             array_size=len(train_values),
@@ -91,6 +92,7 @@ class QuietDonutTrainer(DonutTrainer):
 
         # training loop
         lr = self._initial_lr
+        # Side effect. EarlyStopping stores variables temporarely in a Temp dir
         with TrainLoop(
                 param_vars=self._train_params,
                 early_stopping=True,
@@ -140,21 +142,23 @@ class Donut(Algorithm):
     is smaller than mean - std of the reconstruction probabilities for that feature. For each point
     in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
 
-    def __init__(self, max_epoch=256):
-        super(Donut).__init__()
-        self.name = "Donut"
-        self.max_epoch = max_epoch
+    def __init__(self, num_epochs=256):
+        super().__init__(__name__, "Donut")
+        self.max_epoch = num_epochs
         self.x_dims = 120
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
+        # Reset all results from last run to avoid reusing variables
+        self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
         for col_idx in trange(len(X.columns)):
             col = X.columns[col_idx]
             tf_session = tf.Session()
             timestamps = X.index
             features = X.loc[:, col].values
             labels = y
-            timestamps, missing, (features, labels) = complete_timestamp(timestamps, (features, labels))
+            timestamps, _, (features, labels) = complete_timestamp(timestamps, (features, labels))
+            missing = np.isnan(features)
             _, mean, std = standardize_kpi(features, excludes=np.logical_or(labels, missing))
 
             with tf.variable_scope('model') as model_vs:
@@ -177,7 +181,7 @@ class Donut(Algorithm):
 
             trainer = QuietDonutTrainer(model=model, model_vs=model_vs, max_epoch=self.max_epoch)
             with tf_session.as_default():
-                trainer.fit(features, labels, missing, mean, std)
+                trainer.fit(features, labels, missing, mean, std, excludes=np.logical_or(labels, missing))
             self.means.append(mean)
             self.stds.append(std)
             self.tf_sessions.append(tf_session)

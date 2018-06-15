@@ -17,18 +17,24 @@ from .config import init_logging
 
 
 class Evaluator:
-    def __init__(self, datasets: list, detectors: list):
+    def __init__(self, datasets: list, detectors: list, output_dir: {str} = None):
         self.datasets = datasets
         self.detectors = detectors
+        self.output_dir = output_dir or 'reports/figures/'
+        os.makedirs(self.output_dir, exist_ok=True)
         self.results = dict()
-        init_logging()
+        init_logging(output_dir or 'reports/logs/')
         self.logger = logging.getLogger(__name__)
 
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
         accuracy = accuracy_score(y_true, y_pred)
-        precision, recall, f_score, _ = prf(y_true, y_pred, average="binary")
-        f01_score = fbeta_score(y_true, y_pred, average='binary', beta=0.1)
+        # warn_for=() avoids log warnings for any result being zero
+        precision, recall, f_score, _ = prf(y_true, y_pred, average="binary", warn_for=())
+        if precision == 0 and recall == 0:
+            f01_score = 0
+        else:
+            f01_score = fbeta_score(y_true, y_pred, average='binary', beta=0.1)
         return accuracy, precision, recall, f_score, f01_score
 
     @staticmethod
@@ -39,6 +45,18 @@ class Evaluator:
         score_nonan[np.isnan(score_nonan)] = np.nanmin(score_nonan) - sys.float_info.epsilon
         fpr, tpr, _ = roc_curve(y_test, score_nonan)
         return auc(fpr, tpr)
+
+    def get_optimal_threshold(self, det, y_test, score, steps=40, return_metrics=False):
+        maximum = np.nanmax(score)
+        minimum = np.nanmin(score)
+        threshold = np.linspace(minimum, maximum, steps)
+        metrics = list(self.get_metrics_by_thresholds(det, y_test, score, threshold))
+        metrics = np.array(metrics).T
+        anomalies, acc, prec, rec, f_score, f01_score = metrics
+        if return_metrics:
+            return anomalies, acc, prec, rec, f_score, f01_score, threshold
+        else:
+            return threshold[np.argmax(f_score)]
 
     def evaluate(self):
         for ds in progressbar.progressbar(self.datasets):
@@ -60,7 +78,7 @@ class Evaluator:
             _, _, _, y_test = ds.data()
             for det in self.detectors:
                 score = self.results[(ds.name, det.name)]
-                y_pred = det.binarize(score)
+                y_pred = det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))
                 acc, prec, rec, f1_score, f01_score = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
                 score = self.results[(ds.name, det.name)]
                 auroc = self.get_auroc(det, ds, score)
@@ -76,13 +94,14 @@ class Evaluator:
         return df
 
     @staticmethod
-    def get_metrics_by_thresholds(det, y_true: list, y_pred: list, thresholds: list):
+    def get_metrics_by_thresholds(det, y_test: list, score: list, thresholds: list):
         for threshold in thresholds:
-            anomaly = det.binarize(y_pred, threshold=threshold)
-            metrics = Evaluator.get_accuracy_precision_recall_fscore(y_true, anomaly)
+            anomaly = det.binarize(score, threshold=threshold)
+            metrics = Evaluator.get_accuracy_precision_recall_fscore(y_test, anomaly)
             yield (anomaly.sum(), *metrics)
 
     def plot_scores(self, store=True):
+        plt.close('all')
         figures = []
         for ds in self.datasets:
             X_train, y_train, X_test, y_test = ds.data()
@@ -94,7 +113,6 @@ class Evaluator:
             sp.set_title("original training data", loc=subtitle_loc)
             for col in X_train.columns:
                 plt.plot(X_train[col])
-
             sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, 2)
             sp.set_title("original test set", loc=subtitle_loc)
             for col in X_test.columns:
@@ -126,8 +144,9 @@ class Evaluator:
         return figures
 
     def plot_threshold_comparison(self, steps=40, store=True):
+        plt.close('all')
         plots_shape = len(self.detectors), len(self.datasets)
-        fig, axes = plt.subplots(*plots_shape, figsize=(15, 15))
+        fig, axes = plt.subplots(*plots_shape, figsize=(len(self.detectors) * 5, len(self.datasets) * 5))
         # Ensure two dimensions for iteration
         axes = np.array(axes).reshape(*plots_shape).T
         plt.suptitle("Compare thresholds", fontsize=16)
@@ -135,24 +154,19 @@ class Evaluator:
             _, _, X_test, y_test = ds.data()
 
             for det, ax in zip(self.detectors, axes_row):
-                y_pred = np.array(self.results[(ds.name, det.name)])
-                if np.isnan(y_pred).any():
-                    self.logger.warning("Prediction contains NaN values. Replacing with 0 for plotting!")
-                    y_pred[np.isnan(y_pred)] = 0
+                score = np.array(self.results[(ds.name, det.name)])
 
-                maximum = y_pred.max()
-                th = np.linspace(0, maximum, steps)
-                metrics = list(self.get_metrics_by_thresholds(det, y_test, y_pred, th))
-                metrics = np.array(metrics).T
-                anomalies, acc, prec, rec, f_score, f01_score = metrics
+                anomalies, _, prec, rec, f_score, f01_score, thresh = self.get_optimal_threshold(det,
+                                                                                                 y_test,
+                                                                                                 score,
+                                                                                                 return_metrics=True)
 
-                ax.plot(th, anomalies / len(y_test),
+                ax.plot(thresh, anomalies / len(y_test),
                         label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
-                ax.plot(th, acc, label="accuracy")
-                ax.plot(th, prec, label="precision")
-                ax.plot(th, rec, label="recall")
-                ax.plot(th, f_score, label="f_score")
-                ax.plot(th, f01_score, label="f01_score")
+                ax.plot(thresh, prec, label="precision")
+                ax.plot(thresh, rec, label="recall")
+                ax.plot(thresh, f_score, label="f_score", linestyle='dashed')
+                ax.plot(thresh, f01_score, label="f01_score", linestyle='dashed')
                 ax.set_title(f"{det.name} on {ds.name}")
                 ax.set_xlabel("Threshold")
                 ax.legend()
@@ -165,6 +179,7 @@ class Evaluator:
         return fig
 
     def plot_roc_curves(self, store=True):
+        plt.close('all')
         figures = []
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
@@ -199,34 +214,36 @@ class Evaluator:
         return figures
 
     def plot_auroc(self, store=True, title='AUROC'):
+        plt.close('all')
         benchmarks = self.benchmarks()
         dataset_names = [ds.name for ds in self.datasets]
-        figures = []
+        fig = plt.figure(figsize=(7, 7))
         for det in self.detectors:
-            fig = plt.figure(figsize=(7, 7))
             aurocs = benchmarks[benchmarks['algorithm'] == det.name]['auroc']
-            plt.plot(aurocs)
-            plt.xticks(aurocs.index, dataset_names, rotation=90)
-            plt.xlabel('Dataset')
-            plt.ylabel('Area under Receiver Operating Characteristic')
-            plt.title(f'{title}: {det.name}')
-            fig.tight_layout()
-            if store:
-                self.store(fig, f"auroc_{det.name}")
-            figures.append(fig)
-        return figures
+            plt.plot(aurocs.values, label=det.name)
+        plt.xticks(range(len(self.datasets)), dataset_names, rotation=90)
+        plt.legend()
+        plt.xlabel('Dataset')
+        plt.ylabel('Area under Receiver Operating Characteristic')
+        plt.title(title)
+        fig.tight_layout()
+        if store:
+            self.store(fig, f"auroc")
+        return fig
 
     def print_tables(self):
         benchmarks = self.benchmarks()
         for ds in self.datasets:
-            self.logger.info(f"Dataset: {ds.name}")
             print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
+            table = tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+                             headers='keys', tablefmt='psql')
+            self.logger.info(f"Dataset: {ds.name}\n{table}")
             self.logger.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
                                       headers='keys', tablefmt='psql'))
 
     def store(self, fig, title, extension="pdf"):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        dir = "reports/figures/"
+        dir = self.output_dir if self.output_dir is not None else "reports/figures/"
         path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
         self.logger.info(f"Stored plot at {path}")

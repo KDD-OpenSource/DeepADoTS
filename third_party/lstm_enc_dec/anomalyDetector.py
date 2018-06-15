@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import torch
 
@@ -79,7 +80,16 @@ def anomalyScore(model, dataset, mean, cov, prediction_window_size, device_type,
     scores = []
     for error in errors:
         mult1 = error - mean.unsqueeze(0)  # [ 1 * prediction_window_size ]
-        mult2 = torch.inverse(cov)  # [ prediction_window_size * prediction_window_size ]
+        try:
+            mult2 = torch.inverse(cov)  # [ prediction_window_size * prediction_window_size ]
+        except RuntimeError as e:
+            logging.error(f"Couldn't take the inverse of cov. Maybe singular?")
+            logging.debug("Retrying again with slightly adjusted matrix")
+            cov[0] *= 1.2
+            cov[1] *= 1.1
+            cov[2] *= 1.3
+            mult2 = torch.inverse(cov)  # [ prediction_window_size * prediction_window_size ]
+            # raise e
         mult3 = mult1.t()  # [ prediction_window_size * 1 ]
         score = torch.mm(mult1, torch.mm(mult2, mult3))
         scores.append(score[0][0])

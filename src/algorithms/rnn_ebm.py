@@ -1,5 +1,3 @@
-import logging
-
 import numpy as np
 import tensorflow as tf
 from tqdm import trange
@@ -14,7 +12,7 @@ class RecurrentEBM(Algorithm):
 
     def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100,
                  min_lr=0.01, min_energy=None, batch_size=10):
-        self.name = "Recurrent EBM"
+        super().__init__(__name__, "Recurrent EBM")
         self.num_epochs = num_epochs
         self.n_hidden = n_hidden  # Size of RBM's hidden layer
         self.n_hidden_recurrent = n_hidden_recurrent  # Size of RNN's hidden layer
@@ -39,6 +37,7 @@ class RecurrentEBM(Algorithm):
         self.tf_session = None
 
     def fit(self, X, _):
+        X.fillna(0, inplace=True)
         self._build_model(X.shape[1])
 
         self.tf_session = tf.Session()
@@ -46,6 +45,7 @@ class RecurrentEBM(Algorithm):
         self._train_model(X, self.batch_size)
 
     def predict(self, X):
+        X.fillna(0, inplace=True)
         scores = []
         labels = []
 
@@ -72,7 +72,7 @@ class RecurrentEBM(Algorithm):
                                                feed_dict={self.input_data: x, self.lr: alpha,
                                                           self._batch_size: batch_size})
                     costs.append(C)
-            logging.info(f'Epoch: {epoch+1} Cost: {np.mean(costs)}')
+            self.logger.debug(f'Epoch: {epoch+1} Cost: {np.mean(costs)}')
 
     def _initialize_tf(self):
         init = tf.global_variables_initializer()
