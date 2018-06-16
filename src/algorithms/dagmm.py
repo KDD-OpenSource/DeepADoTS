@@ -39,14 +39,14 @@ class DAGMM_Module(nn.Module):
         self.register_buffer("mu", torch.zeros(n_gmm, latent_dim))
         self.register_buffer("cov", torch.zeros(n_gmm, latent_dim, latent_dim))
 
-    def relative_euclidean_distance(self, a, b):
-        return (a - b).norm(2, dim=1) / torch.clamp(a.norm(2, dim=1), min=1e-10)
+    def relative_euclidean_distance(self, a, b, dim=1):
+        return (a - b).norm(2, dim=dim) / torch.clamp(a.norm(2, dim=dim), min=1e-10)
 
     def forward(self, x):
         dec, enc = self.autoencoder(x, self.training)
 
-        rec_cosine = F.cosine_similarity(x.view(*dec.shape), dec, dim=1)
-        rec_euclidean = self.relative_euclidean_distance(x.view(*dec.shape), dec)
+        rec_cosine = F.cosine_similarity(x.view(x.shape[0], -1), dec.view(dec.shape[0], -1), dim=1)
+        rec_euclidean = self.relative_euclidean_distance(x.view(x.shape[0], -1), dec.view(dec.shape[0], -1), dim=1)
 
         # Concatenate latent representation, cosine similarity and relative Euclidean distance between x and dec(enc(x))
         z = torch.cat([enc, rec_euclidean.unsqueeze(-1), rec_cosine.unsqueeze(-1)], dim=1)
