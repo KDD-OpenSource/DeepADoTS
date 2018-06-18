@@ -5,6 +5,7 @@ import pandas as pd
 
 from .dataset import Dataset
 
+
 def get_random(x, strength=1):
     return x + np.random.random(np.shape(x)) * strength - strength / 2
 
