@@ -6,7 +6,7 @@ import pandas as pd
 from .dataset import Dataset
 
 
-def get_random(x, strength=1):
+def get_noisy_value(x, strength=1):
     return x + np.random.random(np.shape(x)) * strength - strength / 2
 
 
@@ -77,11 +77,6 @@ def xor_dim2(curve_values, anomalous, interval_length):
         return np.concatenate([nonce, curve_values]), len(nonce), len(nonce) + len(curve_values)
 
 
-# TODO: Add more complex outliers like delayed and XOR by defining a child class
-# overwriting the generate function
-# Or define another param for dim2_pause which defines values during the pause
-
-
 class SyntheticMultivariateDataset(Dataset):
 
     def __init__(self, name: str = 'Synthetic Multivariate Curve Outliers',
@@ -110,8 +105,8 @@ class SyntheticMultivariateDataset(Dataset):
     def get_random_curve(self, length_randomness=10, amplitude_randomness=1):
         is_negative = np.random.choice([True, False])
         sign = -1 if is_negative else 1
-        new_length = get_random(self.mean_curve_length, length_randomness)
-        new_amplitude = get_random(sign * self.mean_curve_amplitude, amplitude_randomness)
+        new_length = get_noisy_value(self.mean_curve_length, length_randomness)
+        new_amplitude = get_noisy_value(sign * self.mean_curve_amplitude, amplitude_randomness)
         return get_curve(new_length, new_amplitude)
 
     # The interval between two curves must be random so a detector doesn't recognize a pattern
@@ -121,7 +116,7 @@ class SyntheticMultivariateDataset(Dataset):
         return xmin + np.random.randint(diff)
 
     def add_global_noise(self, x):
-        return get_random(x, self.global_noise)
+        return get_noisy_value(x, self.global_noise)
 
     """
         pollution: Portion of anomalous curves. Because it's not known how many curves there are
