@@ -5,13 +5,6 @@ import pandas as pd
 
 from .dataset import Dataset
 
-"""
-TODO:
-- Parameter n_dim -> Variable Dimensionen (modulo 2)
-- Type=[Inverse, Factorized, Outlier in both dimension with specific delay]
-"""
-
-
 def get_random(x, strength=1):
     return x + np.random.random(np.shape(x)) * strength - strength / 2
 
@@ -48,7 +41,7 @@ def inversed_dim2(curve_values, anomalous, interval_length):
 
 def shrinked_dim2(curve_values, anomalous, interval_length):
     if not anomalous:
-        return curve_values * 2, -1, -1
+        return curve_values, -1, -1
     else:
         new_curve = curve_values[::2]
         nonce = np.zeros(len(curve_values) - len(new_curve))
@@ -58,7 +51,7 @@ def shrinked_dim2(curve_values, anomalous, interval_length):
 
 def delayed_dim2(curve_values, anomalous, interval_length):
     if not anomalous:
-        return curve_values * 2, -1, -1
+        return curve_values, -1, -1
     else:
         # The curve in the second dimension occures a few timestamps later
         nonce = np.zeros(len(curve_values) // 10)
@@ -78,9 +71,9 @@ def xor_dim2(curve_values, anomalous, interval_length):
         return np.concatenate([nonce, new_curve]), -1, -1
     else:
         # Anomaly: curves overlap (at the same time or at least half overlapping)
-        max_pause = min(len(curve_values) // 2, interval_length - curve_values)
+        max_pause = min(len(curve_values) // 2, pause_length)
         nonce = np.zeros(np.random.randint(max_pause))
-        return np.concatenate([nonce, curve_values]), len(nonce), len(nonce)+len(curve_values)
+        return np.concatenate([nonce, curve_values]), len(nonce), len(nonce) + len(curve_values)
 
 
 # TODO: Add more complex outliers like delayed and XOR by defining a child class
@@ -99,7 +92,7 @@ class SyntheticMultivariateDataset(Dataset):
                  pause_range: Tuple[int, int] = (5, 75),  # min and max value for this a pause
                  labels_padding: int = 6,
                  random_seed: int = 42,
-                 features: int = 2,  # TODO: Support more dimensions
+                 features: int = 2,
                  file_name: str = 'synthetic_mv1.pkl'):
         super().__init__(name, file_name)
         self.length = length
