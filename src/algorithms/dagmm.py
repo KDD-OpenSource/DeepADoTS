@@ -269,3 +269,7 @@ class DAGMM(Algorithm):
         if threshold is None:
             threshold = self._threshold
         return np.where(y > threshold, 1, 0)
+
+    def set_seed(self, seed):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)

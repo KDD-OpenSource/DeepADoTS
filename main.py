@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 import pandas as pd
@@ -9,6 +10,8 @@ from src.evaluation.evaluator import Evaluator
 
 
 # from src.evaluation.experiments import run_experiments
+
+RUNS = 2
 
 
 def main():
@@ -36,15 +39,33 @@ def run_pipeline():
             SyntheticDataGenerator.extreme_1_polluted(0.1),
             SyntheticDataGenerator.extreme_1_polluted(0.3),
             SyntheticDataGenerator.extreme_1_polluted(0.5),
-            SyntheticDataGenerator.extreme_1_polluted(1)
+            SyntheticDataGenerator.extreme_1_polluted(0.9)
         ]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(num_epochs=15)]
+
     evaluator = Evaluator(datasets, detectors)
-    evaluator.evaluate()
+    # perform multiple pipeline runs for more significant end results
+    # Set the random seed manually for reproducibility and more significant results
+    seeds = np.random.randint(sys.maxsize, size=RUNS)
+    results = pd.DataFrame()
+    for idx, _ in enumerate(range(RUNS)):
+        evaluator.evaluate(seeds[idx])
+        result = evaluator.benchmarks()
+        results = results.append(result, ignore_index=True)
+
+    evaluator.create_boxplots_per_algorithm(runs=RUNS, data=results)
+    evaluator.create_boxplots_per_dataset(runs=RUNS, data=results)
+
+    # average results from multiple pipeline runs
+    averaged_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
+    evaluator.benchmark_results = averaged_results
+
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
+    evaluator.create_bar_charts_per_dataset(runs=RUNS)
+    evaluator.create_bar_charts_per_algorithm(runs=RUNS)
 
 
 def evaluate_on_real_world_data_sets():

@@ -77,10 +77,6 @@ class LSTM_Enc_Dec(Algorithm):
         self.train_timeseries_dataset: preprocess_data.PickleDataLoad = None
         self.test_timeseries_dataset: preprocess_data.PickleDataLoad = None
 
-        # Set the random seed manually for reproducibility.
-        torch.manual_seed(self.seed)
-        torch.cuda.manual_seed(self.seed)
-
     def _build_model(self, feature_dim):
         self.model = RNNPredictor(rnn_type=self.model_type,
                                   enc_inp_size=feature_dim,
@@ -239,3 +235,8 @@ class LSTM_Enc_Dec(Algorithm):
             'covs': covs,
         }
         self.model.save_checkpoint(model_dictionary, save_model, self.data, self.filename)
+
+    def set_seed(self, seed):
+        self.seed = seed
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(self.seed)

@@ -39,3 +39,10 @@ class Algorithm(metaclass=abc.ABCMeta):
         :param score
         :return threshold:
         """
+
+    @abc.abstractmethod
+    def set_seed(self, seed):
+        """
+        :param seed:
+        :return:
+        """
