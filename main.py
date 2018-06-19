@@ -6,8 +6,6 @@ import pandas as pd
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
-
-
 # from src.evaluation.experiments import run_experiments
 
 
@@ -36,15 +34,16 @@ def run_pipeline():
             SyntheticDataGenerator.extreme_1_polluted(0.1),
             SyntheticDataGenerator.extreme_1_polluted(0.3),
             SyntheticDataGenerator.extreme_1_polluted(0.5),
-            SyntheticDataGenerator.extreme_1_polluted(1)
+            SyntheticDataGenerator.extreme_1_polluted(0.9)
         ]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(num_epochs=15)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
-    evaluator.print_tables()
+    '''evaluator.print_tables()
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
-    evaluator.plot_roc_curves()
+    evaluator.plot_roc_curves()'''
+    evaluator.generate_latex()
 
 
 def evaluate_on_real_world_data_sets():
