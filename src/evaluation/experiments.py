@@ -3,8 +3,8 @@ import os
 import numpy as np
 
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
-from src.datasets import SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
+from src.datasets import SyntheticDataGenerator, MultivariateAnomalyFunction
 
 
 # Validates all algorithms regarding polluted data based on a given outlier type.
@@ -60,6 +60,22 @@ def run_extremes_experiment(outlier_type='extreme_1', output_dir=None, steps=10)
     return evaluator
 
 
+def run_multivariate_experiment(output_dir=None):
+    anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor']
+    datasets = [
+        MultivariateAnomalyFunction.get_multivariate_dataset(dim_func) for dim_func in anomaly_functions
+    ]
+    detectors = [RecurrentEBM(num_epochs=5), LSTMAD(num_epochs=5)]
+    evaluator = Evaluator(datasets, detectors, output_dir)
+    evaluator.evaluate()
+    evaluator.plot_auroc(title='Area under the curve for multivariate outliers')
+    evaluator.print_tables()
+    evaluator.plot_threshold_comparison()
+    evaluator.plot_scores()
+    evaluator.plot_roc_curves()
+    return evaluator
+
+
 def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5, use_zero=True):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
 
@@ -74,6 +90,9 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5, use_zero
     announce_experiment('Outlier height')
     run_extremes_experiment(outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
                             steps=steps)
+
+    announce_experiment('Multivariate Datasets')
+    run_multivariate_experiment(output_dir=os.path.join(output_dir, 'multivariate'))
 
 
 def announce_experiment(title: str, dashes: int = 70):
