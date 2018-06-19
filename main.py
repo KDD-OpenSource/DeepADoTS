@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 import pandas as pd
@@ -44,9 +45,11 @@ def run_pipeline():
 
     evaluator = Evaluator(datasets, detectors)
     # perform multiple pipeline runs for more significant end results
+    # Set the random seed manually for reproducibility and more significant results
+    seeds = np.random.randint(sys.maxsize, size=RUNS)
     results = pd.DataFrame()
-    for _ in range(RUNS):
-        evaluator.evaluate()
+    for idx, _ in enumerate(range(RUNS)):
+        evaluator.evaluate(seeds[idx])
         result = evaluator.benchmarks()
         results = results.append(result, ignore_index=True)
 

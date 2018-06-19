@@ -50,8 +50,6 @@ class LSTMAD(Algorithm):
 
         self.optimizer_type = optimizer
 
-        torch.manual_seed(0)
-
     def fit(self, X, _):
         self._build_model(X.shape[-1])
 
@@ -123,3 +121,7 @@ class LSTMAD(Algorithm):
 
     def threshold(self, score):
         return np.nanmean(score) + 1.5 * np.nanstd(score)
+
+    def set_seed(self, seed):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)

@@ -211,3 +211,6 @@ class Donut(Algorithm):
 
     def threshold(self, score):
         return 0
+
+    def set_seed(self, seed):
+        tf.set_random_seed(seed)
