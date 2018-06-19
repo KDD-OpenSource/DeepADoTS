@@ -108,8 +108,8 @@ venv.bak/
 
 # SyncThing data
 data/
-reports/data
-reports/figures
-reports/logs
-reports/tables
+reports/data/
+reports/figures/
+reports/logs/
+reports/tables/
 models/
