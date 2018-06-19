@@ -6,8 +6,6 @@ import pandas as pd
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
-
-
 # from src.evaluation.experiments import run_experiments
 
 RUNS = 2
@@ -63,6 +61,7 @@ def run_pipeline():
     evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
     evaluator.create_bar_charts_per_algorithm(runs=RUNS)
+    evaluator.generate_latex()
 
 
 def evaluate_on_real_world_data_sets():

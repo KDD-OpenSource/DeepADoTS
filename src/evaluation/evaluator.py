@@ -94,13 +94,6 @@ class Evaluator:
                                ignore_index=True)
         return df
 
-    def store(self, fig, title, extension="pdf"):
-        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        dir = self.output_dir if self.output_dir is not None else "reports/figures/"
-        path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
-        fig.savefig(path)
-        self.logger.info(f"Stored plot at {path}")
-
     @staticmethod
     def get_metrics_by_thresholds(det, y_test: list, score: list, thresholds: list):
         for threshold in thresholds:
@@ -244,6 +237,8 @@ class Evaluator:
             table = tabulate(self.benchmark_results[self.benchmark_results['dataset'] == ds.name][print_order],
                              headers='keys', tablefmt='psql')
             self.logger.info(f"Dataset: {ds.name}\n{table}")
+            self.logger.info(tabulate(self.benchmark_results[self.benchmark_results['dataset'] == ds.name][print_order],
+                                      headers='keys', tablefmt='psql'))
 
     # create boxplot diagrams for auc values for each dataset per algorithm
     def create_boxplots_per_algorithm(self, runs, data):
@@ -283,3 +278,29 @@ class Evaluator:
             plt.title(f"AUC on {ds.name} performing {runs} runs")
             plt.tight_layout()
             self.store(plt.gcf(), f"barchart_auc_for_{ds.name}_{runs}_runs")
+
+    def store(self, fig, title, extension="pdf"):
+        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+        _dir = self.output_dir if self.output_dir is not None else "reports/figures/"
+        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        fig.savefig(path)
+        self.logger.info(f"Stored plot at {path}")
+
+    def store_text(self, content, title, extension="txt"):
+        timestamp = int(time.time())
+        _dir = "reports/tables/"
+        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w') as f:
+            f.write(content)
+        self.logger.info(f"Stored {extension} file at {path}")
+
+    def generate_latex(self):
+        benchmarks = self.benchmarks()
+        result = ""
+        for ds in self.datasets:
+            print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
+            content = f'''{ds.name}:\n\n{tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+                           headers='keys', tablefmt='latex')}\n\n'''
+            result += content
+        self.store_text(content=result, title="latex_table_results", extension="tex")
