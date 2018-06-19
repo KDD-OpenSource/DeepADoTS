@@ -247,19 +247,33 @@ class Evaluator:
 
     # create boxplot diagrams for auc values for each dataset per algorithm
     def create_boxplots_per_algorithm(self, runs, data):
-        data[['algorithm', 'auroc', 'dataset']].groupby('algorithm').boxplot(by='dataset', rot=90, figsize=(10, 10))
-        plt.suptitle("AUC grouped by dataset, per algorithm", y=0.999)
-        plt.subplots_adjust(top=0.9, hspace=0.4)
-        plt.tight_layout()
-        self.store(plt.gcf(), f"boxplots_auc_per_algorithm_{runs}_runs")
+        relevant_results = data[["algorithm", "dataset", "auroc"]]
+        for det in self.detectors:
+            relevant_results[relevant_results["algorithm"] == det.name].boxplot(by="dataset", figsize=(15, 15))
+            plt.title(f"AUC grouped by dataset for {det.name} performing {runs} runs")
+            plt.suptitle("")
+            plt.tight_layout()
+            self.store(plt.gcf(), f"boxplot_auc_for_{det.name}_{runs}_runs")
 
     # create boxplot diagrams for auc values for each algorithm per dataset
     def create_boxplots_per_dataset(self, runs, data):
-        data[['algorithm', 'auroc', 'dataset']].groupby('dataset').boxplot(by='algorithm', rot=90, figsize=(10, 10))
-        plt.suptitle("AUC grouped by algorithm, per dataset", y=0.999)
-        plt.subplots_adjust(top=0.9, hspace=0.4)
-        plt.tight_layout()
-        self.store(plt.gcf(), f"boxplots_auc_per_dataset_{runs}_runs")
+        relevant_results = data[["algorithm", "dataset", "auroc"]]
+        for ds in self.datasets:
+            relevant_results[relevant_results["dataset"] == ds.name].boxplot(by="algorithm", figsize=(15, 15))
+            plt.title(f"AUC grouped by algorithm for {ds.name} peforming {runs} runs")
+            plt.suptitle("")
+            plt.tight_layout()
+            self.store(plt.gcf(), f"boxplots_auc_for_{ds.name}_{runs}_runs")
+
+    # create bar charts for averaged pipeline results per algorithm
+    def create_bar_charts_per_algorithm(self, runs):
+        relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
+        for det in self.detectors:
+            relevant_results[relevant_results["algorithm"] == det.name].plot(x="dataset", kind="bar",
+                                                                             figsize=(7, 7))
+            plt.title(f"AUC for {det.name} performing {runs} runs")
+            plt.tight_layout()
+            self.store(plt.gcf(), f"barchart_auc_for_{det.name}_{runs}_runs")
 
     # create bar charts for averaged pipeline results per dataset
     def create_bar_charts_per_dataset(self, runs):
@@ -268,13 +282,4 @@ class Evaluator:
             relevant_results[relevant_results["dataset"] == ds.name].plot(x="algorithm", kind="bar", figsize=(7, 7))
             plt.title(f"AUC on {ds.name} performing {runs} runs")
             plt.tight_layout()
-            self.store(plt.gcf(), f"auc_for_{ds.name}_{runs}_runs")
-
-    # create bar charts for averaged pipeline results per algorithm
-    def create_bar_charts_per_detector(self, runs):
-        relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
-        for det in self.detectors:
-            relevant_results[relevant_results["algorithm"] == det.name].plot(x="dataset", kind="bar", figsize=(7, 7))
-            plt.title(f"AUC for {det.name} performing {runs} runs")
-            plt.tight_layout()
-            self.store(plt.gcf(), f"auc_for_{det.name}_{runs}_runs")
+            self.store(plt.gcf(), f"barchart_auc_for_{ds.name}_{runs}_runs")

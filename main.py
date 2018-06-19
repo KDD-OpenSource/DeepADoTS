@@ -62,7 +62,7 @@ def run_pipeline():
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
-    evaluator.create_bar_charts_per_detector(runs=RUNS)
+    evaluator.create_bar_charts_per_algorithm(runs=RUNS)
 
 
 def evaluate_on_real_world_data_sets():
