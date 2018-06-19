@@ -54,7 +54,7 @@ def delayed_dim2(curve_values, anomalous, _):
     if not anomalous:
         return curve_values, -1, -1
     else:
-        # The curve in the second dimension occures a few timestamps later
+        # The curve in the second dimension occurs a few timestamps later
         nonce = np.zeros(len(curve_values) // 10)
         values = np.concatenate([nonce, curve_values])
         return values, 0, len(values)
@@ -170,7 +170,7 @@ class SyntheticMultivariateDataset(Dataset):
         # Add anomaly labels with slight padding (dont start with the first interval value).
         # The padding is curve_length / padding_factor
         if create_anomaly:
-            assert end > start and start >= 0, f'Invalid anomaly indizes: {start} to {end}'
+            assert end > start >= 0, f'Invalid anomaly indices: {start} to {end}'
             padding = (end - start) // self.labels_padding
             interval_labels[start+padding:end-padding] += 1
 
