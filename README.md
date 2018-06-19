@@ -27,6 +27,8 @@ pip install -r requirements.txt
 ├── reports                 <- Generated analysis as HTML, PDF, LaTeX, etc.
 │   └── figures             <- Generated graphics and figures to be used in reporting
 │   └── data                <- Pickled results shown in figures (for reproduction)
+│   └── logs                <- Generated log files with parameter settings for detectors for reproduction
+│   └── tables              <- Generated Latex code for the tables for paper
 │
 ├── requirements.txt        <- The requirements file for reproducing the analysis environment
 │
