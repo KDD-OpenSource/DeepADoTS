@@ -252,6 +252,7 @@ class Evaluator:
         timestamp = int(time.time())
         _dir = "reports/tables/"
         path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as f:
             f.write(content)
         self.logger.info(f"Stored {extension} file at {path}")
