@@ -243,8 +243,8 @@ class Evaluator:
 
     def store(self, fig, title, extension="pdf"):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        dir = self.output_dir if self.output_dir is not None else "reports/figures/"
-        path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        _dir = self.output_dir if self.output_dir is not None else "reports/figures/"
+        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
         self.logger.info(f"Stored plot at {path}")
 
