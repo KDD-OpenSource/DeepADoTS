@@ -30,17 +30,17 @@ def get_curve(length, amplitude):
 # The last two values are ignored for generation of not anomalous data
 
 
-def doubled_dim2(curve_values, anomalous, interval_length):
+def doubled_dim2(curve_values, anomalous, _):
     factor = 4 if anomalous else 2
     return curve_values * factor, 0, len(curve_values)
 
 
-def inversed_dim2(curve_values, anomalous, interval_length):
+def inversed_dim2(curve_values, anomalous, _):
     factor = -2 if anomalous else 2
     return curve_values * factor, 0, len(curve_values)
 
 
-def shrinked_dim2(curve_values, anomalous, interval_length):
+def shrinked_dim2(curve_values, anomalous, _):
     if not anomalous:
         return curve_values, -1, -1
     else:
@@ -50,7 +50,7 @@ def shrinked_dim2(curve_values, anomalous, interval_length):
         return values, 0, len(values)
 
 
-def delayed_dim2(curve_values, anomalous, interval_length):
+def delayed_dim2(curve_values, anomalous, _):
     if not anomalous:
         return curve_values, -1, -1
     else:
