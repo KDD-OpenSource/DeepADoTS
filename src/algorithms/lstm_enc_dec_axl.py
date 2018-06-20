@@ -52,7 +52,7 @@ class LSTMED(Algorithm):
 
         self.lstmed.train()
         for epoch in range(self.num_epochs):
-            logging.debug(f'Epoch {epoch}/{self.num_epochs}.')
+            logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in data_loader:
                 output = self.lstmed(to_var(ts_batch))
 
