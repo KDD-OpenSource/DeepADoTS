@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
@@ -74,31 +72,3 @@ def run_multivariate_experiment(output_dir=None):
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
     return evaluator
-
-
-def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
-    output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
-
-    announce_experiment('Missing Values')
-    run_pollution_experiment(outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
-                             steps=steps)
-
-    announce_experiment('Pollution')
-    run_missing_experiment(outlier_type, output_dir=os.path.join(output_dir, 'missing'),
-                           steps=steps)
-
-    announce_experiment('Outlier height')
-    run_extremes_experiment(outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
-                            steps=steps)
-
-    announce_experiment('Multivariate Datasets')
-    run_multivariate_experiment(output_dir=os.path.join(output_dir, 'multivariate'))
-
-
-def announce_experiment(title: str, dashes: int = 70):
-    print(f'\n###{"-"*dashes}###')
-    message = f'Experiment: {title}'
-    before = (dashes - len(message)) // 2
-    after = dashes - len(message) - before
-    print(f'###{"-"*before}{message}{"-"*after}###')
-    print(f'###{"-"*dashes}###\n')
