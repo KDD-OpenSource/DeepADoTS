@@ -10,7 +10,7 @@ from src.evaluation.experiments import run_experiments
 
 
 def main():
-    #run_pipeline()
+    # run_pipeline()
     run_experiments()
 
 
