@@ -203,6 +203,8 @@ class DAGMM(Algorithm):
         X = X.dropna()
         data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
         self.dagmm = DAGMM_Module(n_features=X.shape[1], n_gmm=self.gmm_k)
+        if torch.cuda.is_available():
+            self.dagmm.cuda()
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
         self.dagmm.eval()
 
