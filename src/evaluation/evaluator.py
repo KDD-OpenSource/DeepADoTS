@@ -157,10 +157,8 @@ class Evaluator:
             for det, ax in zip(self.detectors, axes_row):
                 score = np.array(self.results[(ds.name, det.name)])
 
-                anomalies, _, prec, rec, f_score, f01_score, thresh = self.get_optimal_threshold(det,
-                                                                                                 y_test,
-                                                                                                 score,
-                                                                                                 return_metrics=True)
+                anomalies, _, prec, rec, f_score, f01_score, thresh = self.get_optimal_threshold(
+                    det, y_test, score, return_metrics=True)
 
                 ax.plot(thresh, anomalies / len(y_test),
                         label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")

@@ -6,14 +6,15 @@ import pandas as pd
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
-# from src.evaluation.experiments import run_experiments
+from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
+                        run_multivariate_experiment
 
 RUNS = 2
 
 
 def main():
     run_pipeline()
-    # run_experiments()
+    run_experiments()
 
 
 def run_pipeline():
@@ -29,14 +30,6 @@ def run_pipeline():
             SyntheticDataGenerator.trend_1(),
             SyntheticDataGenerator.combined_1(),
             SyntheticDataGenerator.combined_4(),
-            SyntheticDataGenerator.variance_1_missing(0.1),
-            SyntheticDataGenerator.variance_1_missing(0.3),
-            SyntheticDataGenerator.variance_1_missing(0.5),
-            SyntheticDataGenerator.variance_1_missing(0.8),
-            SyntheticDataGenerator.extreme_1_polluted(0.1),
-            SyntheticDataGenerator.extreme_1_polluted(0.3),
-            SyntheticDataGenerator.extreme_1_polluted(0.5),
-            SyntheticDataGenerator.extreme_1_polluted(0.9)
         ]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(num_epochs=15)]
 
@@ -84,6 +77,41 @@ def evaluate_on_real_world_data_sets():
     donut.fit(X_train, y_train)
     pred = donut.predict(X_test)
     print("Donut results: ", pred)
+
+
+def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
+    output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
+    if os.environ.get("CIRCLECI", False):
+        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5), DAGMM(),
+                     LSTM_Enc_Dec(num_epochs=2)]
+        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+                                steps=1)
+    else:
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(num_epochs=15)]
+
+        announce_experiment('Missing Values')
+        run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
+                                 steps=steps)
+
+        announce_experiment('Pollution')
+        run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
+                               steps=steps)
+
+        announce_experiment('Outlier height')
+        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+                                steps=steps)
+
+        announce_experiment('Multivariate Datasets')
+        run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
+
+
+def announce_experiment(title: str, dashes: int = 70):
+    print(f'\n###{"-"*dashes}###')
+    message = f'Experiment: {title}'
+    before = (dashes - len(message)) // 2
+    after = dashes - len(message) - before
+    print(f'###{"-"*before}{message}{"-"*after}###')
+    print(f'###{"-"*dashes}###\n')
 
 
 if __name__ == '__main__':
