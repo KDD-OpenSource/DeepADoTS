@@ -15,7 +15,7 @@ RUN apt-get update && \
 
 WORKDIR /repo
 
-RUN python3.6 -m pip --no-cache-dir install -r repo/requirements.txt
+RUN python3.6 -m pip --no-cache-dir install -r requirements.txt
 RUN python3.6 -m pip --no-cache-dir install tensorflow-gpu
 
 RUN mkdir -p /root/.config/matplotlib
