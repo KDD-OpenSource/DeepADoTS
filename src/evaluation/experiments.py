@@ -13,7 +13,7 @@ def run_pollution_experiment(outlier_type='extreme_1', output_dir=None, steps=5)
     datasets = [
         SyntheticDataGenerator.get(f'{outlier_type}_polluted', pollution) for pollution in np.linspace(0, 1, steps)
     ]
-    detectors = [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
+    detectors = [LSTM_Enc_Dec(num_epochs=15), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for polluted data')
@@ -28,11 +28,11 @@ def run_pollution_experiment(outlier_type='extreme_1', output_dir=None, steps=5)
 # The percentage of missing values within the training data is tested from 0 to 100% (with default
 # steps=5). By default the missing values are represented as zeros since no algorithm can't handle
 # nan values.
-def run_missing_experiment(outlier_type='extreme_1', output_dir=None, steps=5, use_zero=True):
+def run_missing_experiment(outlier_type='extreme_1', output_dir=None, steps=5):
     datasets = [
-        SyntheticDataGenerator.get(f'{outlier_type}_missing', missing, use_zero) for missing in np.linspace(0, 1, steps)
+        SyntheticDataGenerator.get(f'{outlier_type}_missing', missing) for missing in np.linspace(0, 1, steps)
     ]
-    detectors = [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
+    detectors = [LSTM_Enc_Dec(num_epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for missing values')
@@ -49,7 +49,7 @@ def run_extremes_experiment(outlier_type='extreme_1', output_dir=None, steps=10)
     datasets = [
         SyntheticDataGenerator.get(f'{outlier_type}_extremeness', extreme) for extreme in np.linspace(1, 10, steps)
     ]
-    detectors = [LSTM_Enc_Dec(epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
+    detectors = [LSTM_Enc_Dec(num_epochs=200), DAGMM(), Donut(), RecurrentEBM(), LSTMAD()]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
     evaluator.plot_auroc(title='Area under the curve for differing outlier heights')
@@ -76,7 +76,7 @@ def run_multivariate_experiment(output_dir=None):
     return evaluator
 
 
-def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5, use_zero=True):
+def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
 
     announce_experiment('Missing Values')
@@ -85,7 +85,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5, use_zero
 
     announce_experiment('Pollution')
     run_missing_experiment(outlier_type, output_dir=os.path.join(output_dir, 'missing'),
-                           steps=steps, use_zero=use_zero)
+                           steps=steps)
 
     announce_experiment('Outlier height')
     run_extremes_experiment(outlier_type, output_dir=os.path.join(output_dir, 'extremes'),

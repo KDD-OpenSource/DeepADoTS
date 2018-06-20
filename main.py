@@ -17,8 +17,8 @@ def main():
 def run_pipeline():
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(max_epoch=5), DAGMM(),
-                     LSTM_Enc_Dec(epochs=2)]
+        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5), DAGMM(),
+                     LSTM_Enc_Dec(num_epochs=2)]
     else:
         datasets = [
             SyntheticDataGenerator.extreme_1(),
@@ -34,15 +34,16 @@ def run_pipeline():
             SyntheticDataGenerator.extreme_1_polluted(0.1),
             SyntheticDataGenerator.extreme_1_polluted(0.3),
             SyntheticDataGenerator.extreme_1_polluted(0.5),
-            SyntheticDataGenerator.extreme_1_polluted(1)
+            SyntheticDataGenerator.extreme_1_polluted(0.9)
         ]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(epochs=200)]
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(num_epochs=15)]
     evaluator = Evaluator(datasets, detectors)
     evaluator.evaluate()
-    evaluator.print_tables()
+    '''evaluator.print_tables()
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
-    evaluator.plot_roc_curves()
+    evaluator.plot_roc_curves()'''
+    evaluator.generate_latex()
 
 
 def evaluate_on_real_world_data_sets():
