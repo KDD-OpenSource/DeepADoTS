@@ -8,6 +8,8 @@ from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
 # from src.evaluation.experiments import run_experiments
 
+RUNS = 2
+
 
 def main():
     run_pipeline()
@@ -37,12 +39,28 @@ def run_pipeline():
             SyntheticDataGenerator.extreme_1_polluted(0.9)
         ]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(num_epochs=15)]
+
     evaluator = Evaluator(datasets, detectors)
-    evaluator.evaluate()
-    '''evaluator.print_tables()
+    # perform multiple pipeline runs for more significant end results
+    results = pd.DataFrame()
+    for _ in range(RUNS):
+        evaluator.evaluate()
+        result = evaluator.benchmarks()
+        results = results.append(result, ignore_index=True)
+
+    evaluator.create_boxplots_per_algorithm(runs=RUNS, data=results)
+    evaluator.create_boxplots_per_dataset(runs=RUNS, data=results)
+
+    # average results from multiple pipeline runs
+    averaged_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
+    evaluator.benchmark_results = averaged_results
+
+    evaluator.print_tables()
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
-    evaluator.plot_roc_curves()'''
+    evaluator.plot_roc_curves()
+    evaluator.create_bar_charts_per_dataset(runs=RUNS)
+    evaluator.create_bar_charts_per_algorithm(runs=RUNS)
     evaluator.generate_latex()
 
 
