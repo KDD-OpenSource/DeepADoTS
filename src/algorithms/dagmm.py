@@ -201,6 +201,7 @@ class DAGMM(Algorithm):
         """Learn the mixture probability, mean and covariance for each component k.
         Store the computed energy based on the training data and the aforementioned parameters."""
         X = X.dropna()
+        raise Exception("Some exception")
         data_loader = DataLoader(dataset=CustomDataLoader(X.values), batch_size=self.batch_size, shuffle=False)
         self.dagmm = DAGMM_Module(n_features=X.shape[1], n_gmm=self.gmm_k)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
