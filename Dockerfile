@@ -13,11 +13,6 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/* && \
   apt-get autoremove
 
-# Create the user
-#RUN useradd --create-home -s /bin/bash --no-user-group -u $USERID $USERNAME && \
-#    adduser $USERNAME sudo && \
-#    echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
 ADD . /repo
 
 RUN python3.6 -m pip --no-cache-dir install -r repo/requirements.txt
