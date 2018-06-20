@@ -13,7 +13,7 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/* && \
   apt-get autoremove
 
-ADD . /repo
+WORKDIR /repo
 
 RUN python3.6 -m pip --no-cache-dir install -r repo/requirements.txt
 RUN python3.6 -m pip --no-cache-dir install tensorflow-gpu
