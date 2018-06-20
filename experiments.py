@@ -1,13 +1,12 @@
 import numpy as np
 
-from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
 from src.evaluation.evaluator import Evaluator
 from src.datasets import SyntheticDataGenerator, MultivariateAnomalyFunction
 
 
 # Validates all algorithms regarding polluted data based on a given outlier type.
 # The pollution of the training data is tested from 0 to 100% (with default steps=5).
-def run_pollution_experiment(detectors, outlier_type='extreme_1', output_dir=None):
+def run_pollution_experiment(detectors, outlier_type='extreme_1', output_dir=None, steps=5):
     datasets = [
         SyntheticDataGenerator.get(f'{outlier_type}_polluted', pollution) for pollution in np.linspace(0, 1, steps)
     ]
