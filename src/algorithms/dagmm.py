@@ -107,13 +107,11 @@ class DAGMM_Module(nn.Module):
             cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
 
             determinant = np.linalg.det(cov_k.data.cpu().numpy() * (2 * np.pi))
-            if not np.isnan(determinant).any():
+            if not np.isnan(determinant):
                 det_cov.append(determinant)
             else:
-                logging.warn('Determinant was NaN')
-                det_cov.append(torch.zeros_like(determinant))
-
-            det_cov.append(np.linalg.det(cov_k.data.cpu().numpy() * (2 * np.pi)))
+                logging.warn(f'Determinant was NaN')
+                det_cov.append(torch.zeros(determinant.shape))
             cov_diag = cov_diag + torch.sum(1 / cov_k.diag())
 
         # K x D x D
@@ -148,7 +146,7 @@ class DAGMM_Module(nn.Module):
 
 
 class DAGMM(Algorithm):
-    def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-3, batch_size=50, gmm_k=3,
+    def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=50, gmm_k=3,
                  normal_percentile=80, sequence_length=15, autoencoder_type=NNAutoEncoder, autoencoder_args=None):
         window_name = 'withWindow' if sequence_length > 1 else 'withoutWindow'
         super().__init__(__name__, f'DAGMM_{autoencoder_type.__name__}_{window_name}')
@@ -191,8 +189,8 @@ class DAGMM(Algorithm):
         hidden_size = max(1, X.shape[1]//20)
         autoencoder = self.autoencoder_type(n_features=X.shape[1], sequence_length=self.sequence_length,
                                             hidden_size=hidden_size, **self.autoencoder_args)
-        self.dagmm = DAGMM_Module(autoencoder, n_gmm=self.gmm_k)
-        self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr, latent_dim=hidden_size+2)
+        self.dagmm = DAGMM_Module(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size+2)
+        self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
 
         for _ in range(self.num_epochs):
             for input_data in data_loader:
@@ -233,7 +231,7 @@ class DAGMM(Algorithm):
                 index = i1 * self.batch_size + i2
                 window_elements = list(range(index, index + self.sequence_length, 1))
                 train_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
-        self.train_energy = np.nanmean(train_energy, axis=0)
+        self.train_energy = np.nanmedian(train_energy, axis=0)
 
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
@@ -251,7 +249,7 @@ class DAGMM(Algorithm):
             window_elements = np.arange(idx, idx + self.sequence_length, 1)
             test_energy[idx % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
 
-        test_energy = np.nanmean(test_energy, axis=0)
+        test_energy = np.nanmedian(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
         self._threshold = np.percentile(combined_energy, self.normal_percentile)
