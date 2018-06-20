@@ -13,9 +13,9 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/* && \
   apt-get autoremove
 
-WORKDIR /repo
+ADD . /repo
 
-RUN python3.6 -m pip --no-cache-dir install -r requirements.txt
+RUN python3.6 -m pip --no-cache-dir install -r repo/requirements.txt
 RUN python3.6 -m pip --no-cache-dir install tensorflow-gpu
 
 RUN mkdir -p /root/.config/matplotlib
@@ -25,3 +25,5 @@ ENV CUDA_HOME=/usr/local/cuda
 ENV CUDA_ROOT=$CUDA_HOME
 ENV PATH=$PATH:$CUDA_ROOT/bin:$HOME/bin
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDA_ROOT/lib64
+
+WORKDIR /repo
