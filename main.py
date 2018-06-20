@@ -84,12 +84,15 @@ def evaluate_on_real_world_data_sets():
 def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
     if os.environ.get("CIRCLECI", False):
-        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5), DAGMM(),
-                     LSTM_Enc_Dec(num_epochs=2)]
+        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5),
+                     LSTM_Enc_Dec(num_epochs=2), DAGMM(num_epochs=2),
+                     DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
         run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
                                 steps=1)
     else:
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(num_epochs=15)]
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTM_Enc_Dec(num_epochs=15),
+                     DAGMM(sequence_length=1), DAGMM(sequence_length=15),
+                     DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
         announce_experiment('Missing Values')
         run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
