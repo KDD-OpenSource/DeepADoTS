@@ -25,7 +25,7 @@ class LSTMED(Algorithm):
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length
         self.batch_size = batch_size
-        self.epochs = epochs
+        self.num_epochs = num_epochs
 
         self.n_layers = n_layers
         self.use_bias = use_bias
@@ -47,8 +47,8 @@ class LSTMED(Algorithm):
         optimizer = torch.optim.Adam(self.lstmed.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
         self.lstmed.train()
-        for epoch in range(self.epochs):
-            logging.debug(f'Epoch {epoch}/{self.epochs}.')
+        for epoch in range(self.num_epochs):
+            logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in data_loader:
                 output = self.lstmed(to_var(ts_batch))
 
