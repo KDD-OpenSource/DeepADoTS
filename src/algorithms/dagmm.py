@@ -252,7 +252,7 @@ class DAGMM(Algorithm):
         test_energy = np.nanmedian(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
-        self._threshold = np.percentile(combined_energy, self.normal_percentile)
+        self._threshold = np.nanpercentile(combined_energy, self.normal_percentile)
         return test_energy
 
     def threshold(self, score):
