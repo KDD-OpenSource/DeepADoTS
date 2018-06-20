@@ -1,6 +1,6 @@
 """Adapted from Daniel Stanley Tan (https://github.com/danieltan07/dagmm)"""
 import logging
-from itertools import chain
+import sys
 
 import numpy as np
 import pandas as pd
@@ -26,7 +26,7 @@ class DAGMM_Module(nn.Module):
     def __init__(self, autoencoder, n_gmm=2, latent_dim=3):
         super(DAGMM_Module, self).__init__()
 
-        self.autoencoder = autoencoder
+        self.add_module('autoencoder', autoencoder)
 
         layers = []
         layers += [nn.Linear(latent_dim, 10)]
@@ -45,7 +45,7 @@ class DAGMM_Module(nn.Module):
         return (a - b).norm(2, dim=dim) / torch.clamp(a.norm(2, dim=dim), min=1e-10)
 
     def forward(self, x):
-        dec, enc = self.autoencoder(x, self.training)
+        dec, enc = self.autoencoder(x)
 
         rec_cosine = F.cosine_similarity(x.view(x.shape[0], -1), dec.view(dec.shape[0], -1), dim=1)
         rec_euclidean = self.relative_euclidean_distance(x.view(x.shape[0], -1), dec.view(dec.shape[0], -1), dim=1)
@@ -106,12 +106,12 @@ class DAGMM_Module(nn.Module):
             cov_k = cov[i] + to_var(torch.eye(d) * eps)
             cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
 
-            determinant = np.linalg.det(cov_k.data.cpu().numpy() * (2 * np.pi))
-            if not np.isnan(determinant):
-                det_cov.append(determinant)
-            else:
-                logging.warn(f'Determinant was NaN')
-                det_cov.append(torch.zeros(determinant.shape))
+            eigvals = np.linalg.eigvals(cov_k.data.cpu().numpy() * (2 * np.pi))
+            if np.min(eigvals) < 0:
+                logging.warn(f'Determinant was negative! Clipping Eigenvalues to 0+epsilon from {np.min(eigvals)}')
+            determinant = np.prod(np.clip(eigvals, a_min=sys.float_info.epsilon, a_max=None))
+            det_cov.append(determinant)
+
             cov_diag = cov_diag + torch.sum(1 / cov_k.diag())
 
         # K x D x D
@@ -135,18 +135,16 @@ class DAGMM_Module(nn.Module):
         return sample_energy, cov_diag
 
     def loss_function(self, x, x_hat, z, gamma, lambda_energy, lambda_cov_diag):
+
         recon_error = torch.mean((x.view(*x_hat.shape) - x_hat) ** 2)
         phi, mu, cov = self.compute_gmm_params(z, gamma)
         sample_energy, cov_diag = self.compute_energy(z, phi, mu, cov)
         loss = recon_error + lambda_energy * sample_energy + lambda_cov_diag * cov_diag
         return loss, sample_energy, recon_error, cov_diag
 
-    def parameters(self):
-        return chain(super().parameters(), self.autoencoder.parameters())
-
 
 class DAGMM(Algorithm):
-    def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=50, gmm_k=3,
+    def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-2, batch_size=50, gmm_k=3,
                  normal_percentile=80, sequence_length=15, autoencoder_type=NNAutoEncoder, autoencoder_args=None):
         window_name = 'withWindow' if sequence_length > 1 else 'withoutWindow'
         super().__init__(__name__, f'DAGMM_{autoencoder_type.__name__}_{window_name}')
