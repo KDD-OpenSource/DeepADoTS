@@ -37,6 +37,7 @@ class RecurrentEBM(Algorithm):
         self.tf_session = None
 
     def fit(self, X, _):
+        X.fillna(0, inplace=True)
         self._build_model(X.shape[1])
 
         self.tf_session = tf.Session()
@@ -44,6 +45,7 @@ class RecurrentEBM(Algorithm):
         self._train_model(X, self.batch_size)
 
     def predict(self, X):
+        X.fillna(0, inplace=True)
         scores = []
         labels = []
 
