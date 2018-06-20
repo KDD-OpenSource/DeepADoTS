@@ -24,8 +24,9 @@ do
     # Forward stderr and stdout
     python main.py > program_output 2>&1
     EXIT="$?"
-    cat program_output | grep "Traceback" -A 20 > exceptions
-    N_EXCEPTIONS=$(cat exceptions | grep "Traceback" | wc -l)
+    # Match first traceback
+    cat program_output | python -c 'import fileinput;import re;stdin="".join(fileinput.input());regex=r"Traceback[\s\S]*?(?=\n{2,})";print(re.findall(regex, stdin)[0].split("\n")[-1])' > exceptions
+    N_EXCEPTIONS=$(wc -l < exceptions)
     AUTHOR=$(git log -1 | tr '\n' ',' | awk '{split($0,a,"Author: "); print a[2]}' | awk '{split($0,a," <"); print a[1]}')
     if [ "$N_EXCEPTIONS" -eq 0 ] && [ "$EXIT" -eq 0 ]
     then
