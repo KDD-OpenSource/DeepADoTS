@@ -46,6 +46,8 @@ class DAGMM_Module(nn.Module):
 
     def forward(self, x):
         dec, enc = self.autoencoder(x, self.training)
+        if np.isnan(dec.detach().numpy()).any():
+            import IPython; IPython.embed()
 
         rec_cosine = F.cosine_similarity(x.view(x.shape[0], -1), dec.view(dec.shape[0], -1), dim=1)
         rec_euclidean = self.relative_euclidean_distance(x.view(x.shape[0], -1), dec.view(dec.shape[0], -1), dim=1)
