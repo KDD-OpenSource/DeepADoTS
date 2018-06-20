@@ -12,6 +12,7 @@ def run_pollution_experiment(detectors, outlier_type='extreme_1', output_dir=Non
     ]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
+    evaluator.benchmark_results = evaluator.benchmarks()
     evaluator.plot_auroc(title='Area under the curve for polluted data')
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
@@ -30,6 +31,7 @@ def run_missing_experiment(detectors, outlier_type='extreme_1', output_dir=None,
     ]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
+    evaluator.benchmark_results = evaluator.benchmarks()
     evaluator.plot_auroc(title='Area under the curve for missing values')
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
@@ -46,6 +48,7 @@ def run_extremes_experiment(detectors, outlier_type='extreme_1', output_dir=None
     ]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
+    evaluator.benchmark_results = evaluator.benchmarks()
     evaluator.plot_auroc(title='Area under the curve for differing outlier heights')
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
@@ -61,6 +64,7 @@ def run_multivariate_experiment(detectors, output_dir=None):
     ]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
+    evaluator.benchmark_results = evaluator.benchmarks()
     evaluator.plot_auroc(title='Area under the curve for multivariate outliers')
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
