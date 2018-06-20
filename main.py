@@ -10,7 +10,7 @@ from src.evaluation.experiments import run_experiments
 
 
 def main():
-    # run_pipeline()
+    run_pipeline()
     run_experiments()
 
 
@@ -27,14 +27,6 @@ def run_pipeline():
             SyntheticDataGenerator.trend_1(),
             SyntheticDataGenerator.combined_1(),
             SyntheticDataGenerator.combined_4(),
-            SyntheticDataGenerator.variance_1_missing(0.1),
-            SyntheticDataGenerator.variance_1_missing(0.3),
-            SyntheticDataGenerator.variance_1_missing(0.5),
-            SyntheticDataGenerator.variance_1_missing(0.8),
-            SyntheticDataGenerator.extreme_1_polluted(0.1),
-            SyntheticDataGenerator.extreme_1_polluted(0.3),
-            SyntheticDataGenerator.extreme_1_polluted(0.5),
-            SyntheticDataGenerator.extreme_1_polluted(0.9)
         ]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(num_epochs=15)]
     evaluator = Evaluator(datasets, detectors)
