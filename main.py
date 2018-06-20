@@ -64,23 +64,27 @@ def evaluate_on_real_world_data_sets():
 def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
     if os.environ.get("CIRCLECI", False):
-        run_extremes_experiment(outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5), DAGMM(),
+                     LSTM_Enc_Dec(num_epochs=2)]
+        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
                                 steps=1)
     else:
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(num_epochs=15)]
+
         announce_experiment('Missing Values')
-        run_pollution_experiment(outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
+        run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
                                  steps=steps)
 
         announce_experiment('Pollution')
-        run_missing_experiment(outlier_type, output_dir=os.path.join(output_dir, 'missing'),
+        run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
                                steps=steps)
 
         announce_experiment('Outlier height')
-        run_extremes_experiment(outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
                                 steps=steps)
 
         announce_experiment('Multivariate Datasets')
-        run_multivariate_experiment(output_dir=os.path.join(output_dir, 'multivariate'))
+        run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
 
 
 def announce_experiment(title: str, dashes: int = 70):
