@@ -26,6 +26,7 @@ class Evaluator:
         self.results = dict()
         init_logging(output_dir or 'reports/logs/')
         self.logger = logging.getLogger(__name__)
+        self.benchmark_results = None
 
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
@@ -157,10 +158,8 @@ class Evaluator:
             for det, ax in zip(self.detectors, axes_row):
                 score = np.array(self.results[(ds.name, det.name)])
 
-                anomalies, _, prec, rec, f_score, f01_score, thresh = self.get_optimal_threshold(det,
-                                                                                                 y_test,
-                                                                                                 score,
-                                                                                                 return_metrics=True)
+                anomalies, _, prec, rec, f_score, f01_score, thresh = self.get_optimal_threshold(
+                    det, y_test, score, return_metrics=True)
 
                 ax.plot(thresh, anomalies / len(y_test),
                         label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
@@ -216,11 +215,10 @@ class Evaluator:
 
     def plot_auroc(self, store=True, title='AUROC'):
         plt.close('all')
-        benchmarks = self.benchmarks()
         dataset_names = [ds.name for ds in self.datasets]
         fig = plt.figure(figsize=(7, 7))
         for det in self.detectors:
-            aurocs = benchmarks[benchmarks['algorithm'] == det.name]['auroc']
+            aurocs = self.benchmark_results[self.benchmark_results['algorithm'] == det.name]['auroc']
             plt.plot(aurocs.values, label=det.name)
         plt.xticks(range(len(self.datasets)), dataset_names, rotation=90)
         plt.legend()
@@ -233,14 +231,52 @@ class Evaluator:
         return fig
 
     def print_tables(self):
-        benchmarks = self.benchmarks()
         for ds in self.datasets:
             print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            table = tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+            table = tabulate(self.benchmark_results[self.benchmark_results['dataset'] == ds.name][print_order],
                              headers='keys', tablefmt='psql')
             self.logger.info(f"Dataset: {ds.name}\n{table}")
-            self.logger.info(tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+            self.logger.info(tabulate(self.benchmark_results[self.benchmark_results['dataset'] == ds.name][print_order],
                                       headers='keys', tablefmt='psql'))
+
+    # create boxplot diagrams for auc values for each dataset per algorithm
+    def create_boxplots_per_algorithm(self, runs, data):
+        relevant_results = data[["algorithm", "dataset", "auroc"]]
+        for det in self.detectors:
+            relevant_results[relevant_results["algorithm"] == det.name].boxplot(by="dataset", figsize=(15, 15))
+            plt.title(f"AUC grouped by dataset for {det.name} performing {runs} runs")
+            plt.suptitle("")
+            plt.tight_layout()
+            self.store(plt.gcf(), f"boxplot_auc_for_{det.name}_{runs}_runs")
+
+    # create boxplot diagrams for auc values for each algorithm per dataset
+    def create_boxplots_per_dataset(self, runs, data):
+        relevant_results = data[["algorithm", "dataset", "auroc"]]
+        for ds in self.datasets:
+            relevant_results[relevant_results["dataset"] == ds.name].boxplot(by="algorithm", figsize=(15, 15))
+            plt.title(f"AUC grouped by algorithm for {ds.name} peforming {runs} runs")
+            plt.suptitle("")
+            plt.tight_layout()
+            self.store(plt.gcf(), f"boxplots_auc_for_{ds.name}_{runs}_runs")
+
+    # create bar charts for averaged pipeline results per algorithm
+    def create_bar_charts_per_algorithm(self, runs):
+        relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
+        for det in self.detectors:
+            relevant_results[relevant_results["algorithm"] == det.name].plot(x="dataset", kind="bar",
+                                                                             figsize=(7, 7))
+            plt.title(f"AUC for {det.name} performing {runs} runs")
+            plt.tight_layout()
+            self.store(plt.gcf(), f"barchart_auc_for_{det.name}_{runs}_runs")
+
+    # create bar charts for averaged pipeline results per dataset
+    def create_bar_charts_per_dataset(self, runs):
+        relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
+        for ds in self.datasets:
+            relevant_results[relevant_results["dataset"] == ds.name].plot(x="algorithm", kind="bar", figsize=(7, 7))
+            plt.title(f"AUC on {ds.name} performing {runs} runs")
+            plt.tight_layout()
+            self.store(plt.gcf(), f"barchart_auc_for_{ds.name}_{runs}_runs")
 
     def store(self, fig, title, extension="pdf"):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
