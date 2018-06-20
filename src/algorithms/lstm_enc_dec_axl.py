@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+from scipy.stats import multivariate_normal
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
@@ -18,14 +19,14 @@ def to_var(x, volatile=False):
 
 
 class LSTMED(Algorithm):
-    def __init__(self, hidden_size: int=5, sequence_length: int= 30, batch_size: int=20, num_epochs: int=10,
-                 n_layers: tuple = (1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
+    def __init__(self, hidden_size: int=5, sequence_length: int=30, batch_size: int=20, num_epochs: int=10,
+                 n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
                  lr: float=0.1, weight_decay: float=1e-4, criterion=nn.MSELoss()):
         super().__init__(__name__, 'LSTMED')
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length
         self.batch_size = batch_size
-        self.epochs = epochs
+        self.num_epochs = num_epochs
 
         self.n_layers = n_layers
         self.use_bias = use_bias
@@ -37,6 +38,9 @@ class LSTMED(Algorithm):
 
         self.lstmed = None
 
+        self.mean = None
+        self.cov = None
+
     def fit(self, X: pd.DataFrame, _):
         data = X.values
         sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
@@ -47,32 +51,48 @@ class LSTMED(Algorithm):
         optimizer = torch.optim.Adam(self.lstmed.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
         self.lstmed.train()
-        for epoch in range(self.epochs):
-            logging.debug(f'Epoch {epoch}/{self.epochs}.')
+        for epoch in range(self.num_epochs):
+            logging.debug(f'Epoch {epoch}/{self.num_epochs}.')
             for ts_batch in data_loader:
                 output = self.lstmed(to_var(ts_batch))
 
                 loss = self.criterion(output, ts_batch.float())
-
                 self.lstmed.zero_grad()
                 loss.backward()
                 optimizer.step()
+
+        self.lstmed.eval()
+        error_vectors = []
+        for ts_batch in data_loader:
+            output = self.lstmed(to_var(ts_batch))
+            error = self.criterion(reduce=False)(output, ts_batch.float())
+            error_vectors += list(error.view(ts_batch.size(0), -1).data.numpy())
+
+        self.mean = np.mean(error_vectors, axis=0)
+        self.cov = np.cov(error_vectors, rowvar=False)
 
     def predict(self, X: pd.DataFrame):
         prediction_batch_size = 1
 
         data = X.values
         sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
-        data_loader = DataLoader(dataset=sequences, batch_size=prediction_batch_size, shuffle=False, drop_last=True)
+        data_loader = DataLoader(dataset=sequences, batch_size=prediction_batch_size, shuffle=False, drop_last=False)
 
         self.lstmed.batch_size = prediction_batch_size  # (!)
         self.lstmed.eval()
-        errors = [np.nan]*(self.sequence_length-1)
-        for ts in data_loader:
-            output = self.lstmed(ts)
-            errors.append(np.float(self.criterion(output, ts.float())))
-        logging.debug('LSTMED just returning MSE. Does not comply with the paper.')
-        return np.array(errors)
+
+        scores = np.full((self.sequence_length, len(data)), np.nan)
+        for idx, ts in enumerate(data_loader):
+            output = self.lstmed(to_var(ts))
+
+            error = self.criterion(reduce=False)(output, ts.float())
+            score = -multivariate_normal.logpdf(error.view(1, -1).data.numpy(), mean=self.mean, cov=self.cov)
+
+            window_elements = np.arange(idx, idx + self.sequence_length, 1)
+            scores[idx % self.sequence_length, window_elements] = score
+
+        scores = np.nanmean(scores, axis=0)
+        return scores
 
     def binarize(self, score, threshold=None):
         threshold = threshold if threshold is not None else self.threshold(score)
