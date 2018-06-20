@@ -6,12 +6,12 @@ import pandas as pd
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
-# from src.evaluation.experiments import run_experiments
+from src.evaluation.experiments import run_experiments
 
 
 def main():
-    run_pipeline()
-    # run_experiments()
+    #run_pipeline()
+    run_experiments()
 
 
 def run_pipeline():
