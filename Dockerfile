@@ -18,13 +18,13 @@ RUN apt-get update && \
 #    adduser $USERNAME sudo && \
 #    echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-ADD . .
+ADD . /repo
 
-RUN python3.6 -m pip --no-cache-dir install -r requirements.txt
+RUN python3.6 -m pip --no-cache-dir install -r repo/requirements.txt
 RUN python3.6 -m pip --no-cache-dir install tensorflow-gpu
 
-#RUN touch ~/.config/matplotlib/matplotlibrc
-#RUN echo "backend: Agg" > ~/.config/matplotlib/matplotlibrc
+RUN mkdir -p /root/.config/matplotlib
+RUN echo "backend : Agg" > /root/.config/matplotlib/matplotlibrc
 
 ENV CUDA_HOME=/usr/local/cuda
 ENV CUDA_ROOT=$CUDA_HOME
