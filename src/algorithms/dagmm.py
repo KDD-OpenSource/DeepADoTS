@@ -1,4 +1,6 @@
 """Adapted from Daniel Stanley Tan (https://github.com/danieltan07/dagmm)"""
+import logging
+from itertools import chain
 
 import numpy as np
 import pandas as pd
@@ -104,6 +106,13 @@ class DAGMM_Module(nn.Module):
             cov_k = cov[i] + to_var(torch.eye(d) * eps)
             cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
 
+            determinant = np.linalg.det(cov_k.data.cpu().numpy() * (2 * np.pi))
+            if not np.isnan(determinant).any():
+                det_cov.append(determinant)
+            else:
+                logging.warn('Determinant was NaN')
+                det_cov.append(torch.zeros_like(determinant))
+
             det_cov.append(np.linalg.det(cov_k.data.cpu().numpy() * (2 * np.pi)))
             cov_diag = cov_diag + torch.sum(1 / cov_k.diag())
 
@@ -134,12 +143,12 @@ class DAGMM_Module(nn.Module):
         loss = recon_error + lambda_energy * sample_energy + lambda_cov_diag * cov_diag
         return loss, sample_energy, recon_error, cov_diag
 
-    def reset_state(self):
-        self.autoencoder.reset_state()
+    def parameters(self):
+        return chain(super().parameters(), self.autoencoder.parameters())
 
 
 class DAGMM(Algorithm):
-    def __init__(self, num_epochs=5, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-4, batch_size=50, gmm_k=3,
+    def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-3, batch_size=50, gmm_k=3,
                  normal_percentile=80, sequence_length=15, autoencoder_type=NNAutoEncoder, autoencoder_args=None):
         window_name = 'withWindow' if sequence_length > 1 else 'withoutWindow'
         super().__init__(__name__, f'DAGMM_{autoencoder_type.__name__}_{window_name}')
@@ -179,22 +188,22 @@ class DAGMM(Algorithm):
         # Each point is a flattened window and thus has as many features as sequence_length * features
         multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=multi_points, batch_size=self.batch_size, shuffle=True, drop_last=True)
+        hidden_size = max(1, X.shape[1]//20)
         autoencoder = self.autoencoder_type(n_features=X.shape[1], sequence_length=self.sequence_length,
-                                            **self.autoencoder_args)
+                                            hidden_size=hidden_size, **self.autoencoder_args)
         self.dagmm = DAGMM_Module(autoencoder, n_gmm=self.gmm_k)
-        self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
-        self.dagmm.eval()
+        self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr, latent_dim=hidden_size+2)
 
         for _ in range(self.num_epochs):
             for input_data in data_loader:
                 input_data = to_var(input_data)
                 self.dagmm_step(input_data.float())
 
+        self.dagmm.eval()
         n = 0
         mu_sum = 0
         cov_sum = 0
         gamma_sum = 0
-
         for input_data in data_loader:
             input_data = to_var(input_data)
             _, _, z, gamma = self.dagmm(input_data.float())
@@ -225,7 +234,6 @@ class DAGMM(Algorithm):
                 window_elements = list(range(index, index + self.sequence_length, 1))
                 train_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
         self.train_energy = np.nanmean(train_energy, axis=0)
-        self.dagmm.reset_state()
 
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
