@@ -13,9 +13,9 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/* && \
   apt-get autoremove
 
-ADD requirements.txt /repo
+ADD requirements.txt /repo/requirements.txt
 
-RUN python3.6 -m pip --no-cache-dir install -r repo/requirements.txt
+RUN python3.6 -m pip --no-cache-dir install -r /repo/requirements.txt
 RUN python3.6 -m pip --no-cache-dir install tensorflow-gpu
 
 RUN mkdir -p /root/.config/matplotlib
