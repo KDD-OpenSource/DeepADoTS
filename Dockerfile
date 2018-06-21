@@ -8,7 +8,7 @@ RUN apt-get update && \
   # We need Python3.6
   add-apt-repository ppa:jonathonf/python-3.6 -y && \
   apt-get update && \
-  apt-get install -y python3-pip python3.6 git python3.6-tk && \
+  apt-get install -y python3-pip python3.6 git nano python3.6-tk && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/* && \
   apt-get autoremove
