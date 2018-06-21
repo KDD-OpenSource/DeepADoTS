@@ -1,24 +1,16 @@
-import abc
-from itertools import chain
-
 import torch
 import torch.nn as nn
 
 
-class AutoEncoder():
-
-    @abc.abstractmethod
-    def __call__(self, x, training=False):
-        """Run autoencoder, return (decoded, encoded)"""
-
-    @abc.abstractmethod
-    def parameters(self):
-        """Return parameters of enclosed models"""
+class AutoEncoder(nn.Module):
+    """AutoEncoder class, forward needs to return (decoded, encoded)"""
 
 
 class NNAutoEncoder(AutoEncoder):
 
     def __init__(self, n_features=118, sequence_length=1, hidden_size=1):
+        super().__init__()
+
         n_features = n_features * sequence_length
 
         layers = []
@@ -43,10 +35,7 @@ class NNAutoEncoder(AutoEncoder):
 
         self._decoder = nn.Sequential(*layers)
 
-    def parameters(self):
-        return chain(self._encoder.parameters(), self._decoder.parameters())
-
-    def __call__(self, x, training=False):
+    def forward(self, x):
         x = x.view(x.shape[0], -1)
 
         enc = self._encoder(x)
@@ -60,6 +49,8 @@ class LSTMAutoEncoder(AutoEncoder):
 
     def __init__(self, n_features: int, sequence_length: int, hidden_size: int = 1, n_layers: tuple = (3, 3),
                  use_bias: tuple = (True, True), dropout: tuple = (0.3, 0.3)):
+        super().__init__()
+
         self.n_features = n_features
         self.sequence_length = sequence_length
         self.hidden_size = hidden_size
@@ -74,18 +65,15 @@ class LSTMAutoEncoder(AutoEncoder):
                                num_layers=self.n_layers[1], bias=self.use_bias[1], dropout=self.dropout[1])
         self.hidden2output = nn.Linear(self.hidden_size, self.n_features)
 
-    def init_hidden(self, batch_size):
+    def _init_hidden(self, batch_size):
         return (torch.zeros(self.n_layers[0], batch_size, self.hidden_size),
                 torch.zeros(self.n_layers[0], batch_size, self.hidden_size))
 
-    def parameters(self):
-        return chain(self.encoder.parameters(), self.decoder.parameters(), self.hidden2output.parameters())
-
-    def __call__(self, ts_batch, training=False):
+    def forward(self, ts_batch):
         batch_size = ts_batch.shape[0]
 
         # 1. Encode the timeseries to make use of the last hidden state.
-        enc_hidden = self.init_hidden(ts_batch.shape[0])  # initialization with zero
+        enc_hidden = self._init_hidden(ts_batch.shape[0])  # initialization with zero
         _, enc_hidden = self.encoder(ts_batch.float(), enc_hidden)  # .float() here or .double() for the model
 
         # 2. Use hidden state as initialization for our Decoder-LSTM
@@ -99,7 +87,7 @@ class LSTMAutoEncoder(AutoEncoder):
         for i in reversed(range(ts_batch.shape[1])):
             output[:, i, :] = self.hidden2output(dec_hidden[0][0, :])
 
-            if training:
+            if self.training:
                 _, dec_hidden = self.decoder(ts_batch[:, i].unsqueeze(1).float(), dec_hidden)
             else:
                 _, dec_hidden = self.decoder(output[:, i].unsqueeze(1), dec_hidden)
