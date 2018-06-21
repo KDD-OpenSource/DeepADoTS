@@ -188,9 +188,6 @@ class DAGMM(Algorithm):
         autoencoder = self.autoencoder_type(n_features=X.shape[1], sequence_length=self.sequence_length,
                                             hidden_size=hidden_size, **self.autoencoder_args)
         self.dagmm = DAGMM_Module(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size+2)
-        if torch.cuda.is_available():
-            self.dagmm.cuda()
-
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
 
         for _ in range(self.num_epochs):
