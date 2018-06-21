@@ -8,6 +8,7 @@ import torch.nn as nn
 from scipy.stats import multivariate_normal
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+from torch.utils.data.sampler import SubsetRandomSampler
 
 from .algorithm import Algorithm
 
@@ -44,8 +45,15 @@ class LSTMED(Algorithm):
     def fit(self, X: pd.DataFrame, _):
         X = X.dropna()
         data = X.values
+
         sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
-        data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=True, drop_last=True)
+        indices = np.random.permutation(len(sequences))
+        split_point = int(0.75 * len(sequences))  # magic number
+
+        train_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, drop_last=True,
+                                  sampler=SubsetRandomSampler(indices[:split_point]))
+        train_gaussian_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, drop_last=True,
+                                           sampler=SubsetRandomSampler(indices[split_point:]))
 
         self.lstmed = LSTMEDModule(n_features=X.shape[1], hidden_size=self.hidden_size, batch_size=self.batch_size,
                                    n_layers=self.n_layers, use_bias=self.use_bias, dropout=self.dropout)
@@ -54,7 +62,7 @@ class LSTMED(Algorithm):
         self.lstmed.train()
         for epoch in range(self.num_epochs):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
-            for ts_batch in data_loader:
+            for ts_batch in train_loader:
                 output = self.lstmed(to_var(ts_batch))
 
                 loss = self.criterion()(output, ts_batch.float())
@@ -64,7 +72,7 @@ class LSTMED(Algorithm):
 
         self.lstmed.eval()
         error_vectors = []
-        for ts_batch in data_loader:
+        for ts_batch in train_gaussian_loader:
             output = self.lstmed(to_var(ts_batch))
             error = self.criterion(reduce=False)(output, ts_batch.float())
             error_vectors += list(error.view(ts_batch.size(0), -1).data.numpy())
