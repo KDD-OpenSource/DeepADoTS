@@ -21,7 +21,7 @@ def to_var(x, volatile=False):
 class LSTMED(Algorithm):
     def __init__(self, hidden_size: int=5, sequence_length: int=30, batch_size: int=20, num_epochs: int=10,
                  n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
-                 lr: float=0.1, weight_decay: float=1e-4, criterion=nn.MSELoss()):
+                 lr: float=0.1, weight_decay: float=1e-4, criterion=nn.MSELoss):
         super().__init__(__name__, 'LSTMED')
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length
@@ -42,6 +42,7 @@ class LSTMED(Algorithm):
         self.cov = None
 
     def fit(self, X: pd.DataFrame, _):
+        X = X.dropna()
         data = X.values
         sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=True, drop_last=True)
@@ -56,7 +57,7 @@ class LSTMED(Algorithm):
             for ts_batch in data_loader:
                 output = self.lstmed(to_var(ts_batch))
 
-                loss = self.criterion(output, ts_batch.float())
+                loss = self.criterion()(output, ts_batch.float())
                 self.lstmed.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -74,6 +75,7 @@ class LSTMED(Algorithm):
     def predict(self, X: pd.DataFrame):
         prediction_batch_size = 1
 
+        X = X.dropna()
         data = X.values
         sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=sequences, batch_size=prediction_batch_size, shuffle=False, drop_last=False)
