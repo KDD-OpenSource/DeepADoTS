@@ -38,11 +38,10 @@ class SyntheticDataGenerator:
         return func(*args, **kwargs)
 
     @staticmethod
-    def extreme_1():
+    def extreme_1(n=1):
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        n = 1
         k = 1
         shift_config = {}
         behavior = None
@@ -93,9 +92,9 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def extreme_1_extremeness(extreme_value=10):
+    def extreme_1_extremeness(extreme_value=10, n=1):
         """Full pollution -> All anomalies from test set are in train set"""
-        dataset = SyntheticDataGenerator.extreme_1()
+        dataset = SyntheticDataGenerator.extreme_1(n)
 
         dataset.outlier_config['extreme'][0]['value'] = extreme_value
 
@@ -103,18 +102,17 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def extreme_1_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.extreme_1()
+    def extreme_1_missing(missing_percentage=0.1, n=1):
+        dataset = SyntheticDataGenerator.extreme_1(n)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Extreme Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def shift_1():
+    def shift_1(n=1):
         length = 3000
         train_split = 0.7
-        n = 1
         k = 1
         shift_config = {}
         behavior = None
@@ -135,16 +133,16 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def shift_1_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.shift_1()
+    def shift_1_missing(missing_percentage=0.1, n=1):
+        dataset = SyntheticDataGenerator.shift_1(n)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Shift Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def shift_1_polluted(pollution_percentage=0.2):
-        dataset = SyntheticDataGenerator.shift_1()
+    def shift_1_polluted(pollution_percentage=0.2, n=1):
+        dataset = SyntheticDataGenerator.shift_1(n)
 
         train_length = int(dataset.train_split * dataset.length)
         np.random.seed(123)
@@ -164,10 +162,9 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def variance_1():
+    def variance_1(n=1):
         length = 3000
         train_split = 0.7
-        n = 1
         k = 1
         shift_config = {}
         behavior = None
@@ -186,16 +183,16 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def variance_1_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.variance_1()
+    def variance_1_missing(missing_percentage=0.1, n=1):
+        dataset = SyntheticDataGenerator.variance_1(n)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Variance Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def variance_1_polluted(pollution_percentage=0.2):
-        dataset = SyntheticDataGenerator.variance_1()
+    def variance_1_polluted(pollution_percentage=0.2, n=1):
+        dataset = SyntheticDataGenerator.variance_1(n)
 
         train_length = int(dataset.train_split * dataset.length)
         np.random.seed(123)
@@ -215,10 +212,9 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def trend_1():
+    def trend_1(n=1):
         length = 3000
         train_split = 0.7
-        n = 1
         k = 1
         shift_config = {}
         behavior = None
@@ -237,16 +233,16 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def trend_1_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.trend_1()
+    def trend_1_missing(missing_percentage=0.1, n=1):
+        dataset = SyntheticDataGenerator.trend_1(n)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Trend Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def trend_1_polluted(pollution_percentage=0.2):
-        dataset = SyntheticDataGenerator.trend_1()
+    def trend_1_polluted(pollution_percentage=0.2, n=1):
+        dataset = SyntheticDataGenerator.trend_1(n)
 
         train_length = int(dataset.train_split * dataset.length)
         np.random.seed(123)
@@ -266,11 +262,10 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def combined_1():
+    def combined_1(n=1):
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        n = 1
         k = 1
         shift_config = {}
         behavior = None
@@ -304,19 +299,18 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def combined_1_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.combined_1()
+    def combined_1_missing(missing_percentage=0.1, n=1):
+        dataset = SyntheticDataGenerator.combined_1(n)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Combined Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def combined_4():
+    def combined_4(n=4):
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        n = 4
         k = 1
         shift_config = {}
         behavior = None
@@ -351,19 +345,18 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def combined_4_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.combined_4()
+    def combined_4_missing(missing_percentage=0.1, n=4):
+        dataset = SyntheticDataGenerator.combined_4(n)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Combined Outliers 4D (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def mv_extreme_1():
+    def mv_extreme_1(n=2):
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        n = 2
         k = 2
         shift_config = {}
         behavior = None
@@ -435,10 +428,9 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_shift_1():
+    def mv_shift_1(n=2):
         length = 3000
         train_split = 0.7
-        n = 2
         k = 2
         shift_config = {}
         behavior = None
@@ -488,10 +480,9 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_variance_1():
+    def mv_variance_1(n=2):
         length = 3000
         train_split = 0.7
-        n = 2
         k = 2
         shift_config = {}
         behavior = None
@@ -529,10 +520,9 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_trend_1():
+    def mv_trend_1(n=2):
         length = 3000
         train_split = 0.7
-        n = 2
         k = 2
         shift_config = {}
         behavior = None
@@ -566,11 +556,10 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_xor_extreme_1():
+    def mv_xor_extreme_1(n=2):
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        n = 2
         k = 2
         shift_config = {}
         behavior = None
@@ -642,11 +631,10 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def behavior_sine_1(cycle_length=200):
+    def behavior_sine_1(cycle_length=200, n=1):
         """Test seasonality (long term frequency)"""
         length = 3000
         train_split = 0.7
-        n = 1
         k = 1
         shift_config = {}
         behavior = sine_generator
