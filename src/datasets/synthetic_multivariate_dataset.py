@@ -68,11 +68,14 @@ class SyntheticMultivariateDataset(Dataset):
     """
     def generate_data(self, pollution=0.5):
         values = np.zeros((self.length, self.features))
+        xaxis_distances = np.linspace(0, 100, self.features)
+        for index in range(self.features):
+            values[:,index].fill(xaxis_distances[index])
         labels = np.zeros(self.length)
         pos = self.create_pause()
 
         # First pos data points are noise (don't start directly with curve)
-        values[:pos] = self.add_global_noise(values[:pos])
+        values[:pos, :] = self.add_global_noise(values[:pos])
 
         while pos < self.length - self.mean_curve_length - 20:
             # General outline for the repeating curves, varying height and length
@@ -81,10 +84,10 @@ class SyntheticMultivariateDataset(Dataset):
             create_anomaly = np.random.choice([False, True], p=[1-pollution, pollution])
             # After curve add pause, only noise
             end_of_interval = pos + len(curve) + self.create_pause()
-            self.insert_features(values[pos:end_of_interval], labels[pos:end_of_interval], curve, create_anomaly)
+            self.insert_features(values[pos:end_of_interval, :], labels[pos:end_of_interval], curve, create_anomaly)
             pos = end_of_interval
         # rest of values is noise
-        values[pos:] = self.add_global_noise(values[pos:])
+        values[:pos, :] = self.add_global_noise(values[:pos, :])
         return pd.DataFrame(values), pd.Series(labels)
 
     """
@@ -95,7 +98,7 @@ class SyntheticMultivariateDataset(Dataset):
     """
     def insert_features(self, interval_values: np.ndarray, interval_labels: np.ndarray,
                         curve: np.ndarray, create_anomaly: bool):
-        assert self.features == 2, 'Only two features are supported right now!'
+        #assert self.features == 2, 'Only two features are supported right now!'
 
         # Insert curve and pause in first dimension (after adding the global noise)
         interval_values[:len(curve), 0] = self.add_global_noise(curve)

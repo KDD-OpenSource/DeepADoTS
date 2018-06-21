@@ -7,7 +7,7 @@ from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec, LST
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-                        run_multivariate_experiment
+                        run_multivariate_experiment, run_multid_multivariate_experiment
 
 RUNS = 2
 
@@ -109,6 +109,8 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         announce_experiment('Multivariate Datasets')
         run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
 
+        announce_experiment('Multi-D Multivariate Datasets')
+        run_multid_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
 
 def announce_experiment(title: str, dashes: int = 70):
     print(f'\n###{"-"*dashes}###')

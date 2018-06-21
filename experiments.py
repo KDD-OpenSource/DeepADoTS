@@ -71,3 +71,18 @@ def run_multivariate_experiment(detectors, output_dir=None):
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
     return evaluator
+
+
+def run_multid_multivariate_experiment(detectors, output_dir=None, steps=2):
+    datasets = [
+        MultivariateAnomalyFunction.get_multivariate_dataset('doubled', features=dim) for dim in np.linspace(6, 10, steps, dtype=int)
+    ]
+    evaluator = Evaluator(datasets, detectors, output_dir)
+    evaluator.evaluate()
+    evaluator.benchmark_results = evaluator.benchmarks()
+    evaluator.plot_auroc(title='Area under the curve for multivariate outliers')
+    evaluator.print_tables()
+    evaluator.plot_threshold_comparison()
+    evaluator.plot_scores()
+    evaluator.plot_roc_curves()
+    return evaluator
