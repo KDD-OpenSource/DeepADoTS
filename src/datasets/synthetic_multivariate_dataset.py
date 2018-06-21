@@ -70,7 +70,7 @@ class SyntheticMultivariateDataset(Dataset):
         values = np.zeros((self.length, self.features))
         xaxis_distances = np.linspace(0, 100, self.features)
         for index in range(self.features):
-            values[:,index].fill(xaxis_distances[index])
+            values[:, index].fill(xaxis_distances[index])
         labels = np.zeros(self.length)
         pos = self.create_pause()
 
@@ -98,7 +98,6 @@ class SyntheticMultivariateDataset(Dataset):
     """
     def insert_features(self, interval_values: np.ndarray, interval_labels: np.ndarray,
                         curve: np.ndarray, create_anomaly: bool):
-        #assert self.features == 2, 'Only two features are supported right now!'
 
         # Insert curve and pause in first dimension (after adding the global noise)
         interval_values[:len(curve), 0] = self.add_global_noise(curve)

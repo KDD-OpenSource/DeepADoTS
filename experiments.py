@@ -74,8 +74,9 @@ def run_multivariate_experiment(detectors, output_dir=None):
 
 
 def run_multid_multivariate_experiment(detectors, output_dir=None, steps=2):
+    num_dims = np.linspace(6, 10, steps, dtype=int)
     datasets = [
-        MultivariateAnomalyFunction.get_multivariate_dataset('doubled', features=dim) for dim in np.linspace(6, 10, steps, dtype=int)
+        MultivariateAnomalyFunction.get_multivariate_dataset('doubled', features=dim) for dim in num_dims
     ]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()

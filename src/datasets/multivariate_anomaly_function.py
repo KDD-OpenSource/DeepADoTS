@@ -15,7 +15,10 @@ class MultivariateAnomalyFunction:
     @staticmethod
     def get_multivariate_dataset(method, *args, **kwargs):
         func = getattr(MultivariateAnomalyFunction, method)
-        return SyntheticMultivariateDataset(anomaly_func=func, name=f'Synthetic Multivariate {method} Curve Outliers', *args, **kwargs)
+        return SyntheticMultivariateDataset(anomaly_func=func,
+                                            name=f'Synthetic Multivariate {method} Curve Outliers',
+                                            *args,
+                                            **kwargs)
 
     @staticmethod
     def doubled(curve_values, anomalous, _):

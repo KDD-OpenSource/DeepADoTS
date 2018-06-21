@@ -112,6 +112,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         announce_experiment('Multi-D Multivariate Datasets')
         run_multid_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
 
+
 def announce_experiment(title: str, dashes: int = 70):
     print(f'\n###{"-"*dashes}###')
     message = f'Experiment: {title}'
