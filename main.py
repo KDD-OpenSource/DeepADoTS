@@ -94,11 +94,11 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
                      DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                      DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
-        announce_experiment('Missing Values')
+        announce_experiment('Pollution')
         run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
                                  steps=steps)
 
-        announce_experiment('Pollution')
+        announce_experiment('Missing Values')
         run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
                                steps=steps)
 
