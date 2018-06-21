@@ -31,7 +31,7 @@ def run_pipeline():
             SyntheticDataGenerator.combined_1(),
             SyntheticDataGenerator.combined_4(),
         ]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=15),
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
                      DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                      DAGMM(sequence_length=1, autoencoder_type=LSTMAutoEncoder),
                      DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
@@ -91,7 +91,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
                                 steps=1)
     else:
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=15),
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
                      DAGMM(sequence_length=1),
                      DAGMM(sequence_length=15),
                      DAGMM(sequence_length=1, autoencoder_type=LSTMAutoEncoder),
