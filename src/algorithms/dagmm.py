@@ -12,34 +12,29 @@ from torch.utils.data import DataLoader
 
 from .algorithm import Algorithm
 from .autoencoder import NNAutoEncoder
+from .cuda_utils import GPUWrapper
 
 
-def to_var(x, volatile=False):
-    if torch.cuda.is_available():
-        x = x.cuda()
-    return Variable(x, volatile=volatile)
-
-
-class DAGMM_Module(nn.Module):
+class DAGMMModule(nn.Module):
     """Residual Block."""
 
     def __init__(self, autoencoder, n_gmm=2, latent_dim=3):
-        super(DAGMM_Module, self).__init__()
+        super(DAGMMModule, self).__init__()
 
         self.add_module('autoencoder', autoencoder)
 
-        layers = []
-        layers += [nn.Linear(latent_dim, 10)]
-        layers += [nn.Tanh()]
-        layers += [nn.Dropout(p=0.5)]
-        layers += [nn.Linear(10, n_gmm)]
-        layers += [nn.Softmax(dim=1)]
-
+        layers = [
+            nn.Linear(latent_dim, 10),
+            nn.Tanh(),
+            nn.Dropout(p=0.5),
+            nn.Linear(10, n_gmm),
+            nn.Softmax(dim=1)
+        ]
         self.estimation = nn.Sequential(*layers)
 
-        self.register_buffer("phi", torch.zeros(n_gmm))
-        self.register_buffer("mu", torch.zeros(n_gmm, latent_dim))
-        self.register_buffer("cov", torch.zeros(n_gmm, latent_dim, latent_dim))
+        self.register_buffer('phi', torch.zeros(n_gmm))
+        self.register_buffer('mu', torch.zeros(n_gmm, latent_dim))
+        self.register_buffer('cov', torch.zeros(n_gmm, latent_dim, latent_dim))
 
     def relative_euclidean_distance(self, a, b, dim=1):
         return (a - b).norm(2, dim=dim) / torch.clamp(a.norm(2, dim=dim), min=1e-10)
@@ -87,11 +82,11 @@ class DAGMM_Module(nn.Module):
 
     def compute_energy(self, z, phi=None, mu=None, cov=None, size_average=True):
         if phi is None:
-            phi = to_var(self.phi)
+            phi = Variable(self.phi)
         if mu is None:
-            mu = to_var(self.mu)
+            mu = Variable(self.mu)
         if cov is None:
-            cov = to_var(self.cov)
+            cov = Variable(self.cov)
 
         k, d, _ = cov.size()
 
@@ -103,12 +98,12 @@ class DAGMM_Module(nn.Module):
         eps = 1e-12
         for i in range(k):
             # K x D x D
-            cov_k = cov[i] + to_var(torch.eye(d) * eps)
+            cov_k = cov[i] + Variable(torch.eye(d) * eps)
             cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
 
             eigvals = np.linalg.eigvals(cov_k.data.cpu().numpy() * (2 * np.pi))
             if np.min(eigvals) < 0:
-                logging.warn(f'Determinant was negative! Clipping Eigenvalues to 0+epsilon from {np.min(eigvals)}')
+                logging.warning(f'Determinant was negative! Clipping Eigenvalues to 0+epsilon from {np.min(eigvals)}')
             determinant = np.prod(np.clip(eigvals, a_min=sys.float_info.epsilon, a_max=None))
             det_cov.append(determinant)
 
@@ -117,7 +112,7 @@ class DAGMM_Module(nn.Module):
         # K x D x D
         cov_inverse = torch.cat(cov_inverse, dim=0)
         # K
-        det_cov = to_var(torch.from_numpy(np.float32(np.array(det_cov))))
+        det_cov = Variable(torch.from_numpy(np.float32(np.array(det_cov))))
 
         # N x K
         exp_term_tmp = -0.5 * torch.sum(torch.sum(z_mu.unsqueeze(-1) * cov_inverse.unsqueeze(0), dim=-2) * z_mu, dim=-1)
@@ -143,11 +138,13 @@ class DAGMM_Module(nn.Module):
         return loss, sample_energy, recon_error, cov_diag
 
 
-class DAGMM(Algorithm):
+class DAGMM(Algorithm, GPUWrapper):
     def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-2, batch_size=50, gmm_k=3,
-                 normal_percentile=80, sequence_length=15, autoencoder_type=NNAutoEncoder, autoencoder_args=None):
+                 normal_percentile=80, sequence_length=15, autoencoder_type=NNAutoEncoder, autoencoder_args=None,
+                 gpu: int=0):
         window_name = 'withWindow' if sequence_length > 1 else 'withoutWindow'
-        super().__init__(__name__, f'DAGMM_{autoencoder_type.__name__}_{window_name}')
+        Algorithm.__init__(self, __name__, f'DAGMM_{autoencoder_type.__name__}_{window_name}')
+        GPUWrapper.__init__(self, gpu)
         self.num_epochs = num_epochs
         self.lambda_energy = lambda_energy
         self.lambda_cov_diag = lambda_cov_diag
@@ -187,12 +184,13 @@ class DAGMM(Algorithm):
         hidden_size = max(1, X.shape[1]//20)
         autoencoder = self.autoencoder_type(n_features=X.shape[1], sequence_length=self.sequence_length,
                                             hidden_size=hidden_size, **self.autoencoder_args)
-        self.dagmm = DAGMM_Module(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size+2)
+        self.dagmm = DAGMMModule(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size + 2)
+        self.to_device(self.dagmm)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
 
         for _ in range(self.num_epochs):
             for input_data in data_loader:
-                input_data = to_var(input_data)
+                input_data = self.to_var(input_data)
                 self.dagmm_step(input_data.float())
 
         self.dagmm.eval()
@@ -201,7 +199,7 @@ class DAGMM(Algorithm):
         cov_sum = 0
         gamma_sum = 0
         for input_data in data_loader:
-            input_data = to_var(input_data)
+            input_data = self.to_var(input_data)
             _, _, z, gamma = self.dagmm(input_data.float())
             phi, mu, cov = self.dagmm.compute_gmm_params(z, gamma)
 
@@ -220,8 +218,8 @@ class DAGMM(Algorithm):
         train_length = len(data_loader) * self.batch_size + self.sequence_length - 1
         train_energy = np.full((self.sequence_length, train_length), np.nan)
         for i1, ts_batch in enumerate(data_loader):
-            ts_batch = to_var(ts_batch)
-            _, _, z, _ = self.dagmm(input_data.float())
+            ts_batch = self.to_var(ts_batch)
+            _, _, z, _ = self.dagmm(ts_batch.float())
             sample_energies, _ = self.dagmm.compute_energy(z, phi=train_phi, mu=train_mu, cov=train_cov,
                                                            size_average=False)
 
@@ -241,8 +239,8 @@ class DAGMM(Algorithm):
         data_loader = DataLoader(dataset=multi_points, batch_size=1, shuffle=False)
         test_energy = np.full((self.sequence_length, len(data)), np.nan)
 
-        for idx, long_point in enumerate(data_loader):
-            _, _, z, _ = self.dagmm(to_var(long_point).float())
+        for idx, multi_point in enumerate(data_loader):
+            _, _, z, _ = self.dagmm(self.to_var(multi_point).float())
             sample_energy, _ = self.dagmm.compute_energy(z, size_average=False)
             window_elements = np.arange(idx, idx + self.sequence_length, 1)
             test_energy[idx % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()

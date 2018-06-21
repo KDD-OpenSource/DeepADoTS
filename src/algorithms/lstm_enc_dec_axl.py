@@ -6,24 +6,19 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from scipy.stats import multivariate_normal
-from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
 from .algorithm import Algorithm
+from .cuda_utils import GPUWrapper
 
 
-def to_var(x, volatile=False):
-    if torch.cuda.is_available():
-        x = x.cuda()
-    return Variable(x, volatile=volatile)
-
-
-class LSTMED(Algorithm):
+class LSTMED(Algorithm, GPUWrapper):
     def __init__(self, hidden_size: int=5, sequence_length: int=30, batch_size: int=20, num_epochs: int=10,
                  n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
-                 lr: float=0.1, weight_decay: float=1e-4, criterion=nn.MSELoss):
-        super().__init__(__name__, 'LSTMED')
+                 lr: float=0.1, weight_decay: float=1e-4, criterion=nn.MSELoss, gpu: int=0):
+        Algorithm.__init__(self, __name__, 'LSTMED')
+        GPUWrapper.__init__(self, gpu)
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length
         self.batch_size = batch_size
@@ -57,13 +52,14 @@ class LSTMED(Algorithm):
 
         self.lstmed = LSTMEDModule(n_features=X.shape[1], hidden_size=self.hidden_size, batch_size=self.batch_size,
                                    n_layers=self.n_layers, use_bias=self.use_bias, dropout=self.dropout)
+        self.to_device(self.lstmed)
         optimizer = torch.optim.Adam(self.lstmed.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
         self.lstmed.train()
         for epoch in range(self.num_epochs):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in train_loader:
-                output = self.lstmed(to_var(ts_batch))
+                output = self.lstmed(self.to_var(ts_batch))
 
                 loss = self.criterion()(output, ts_batch.float())
                 self.lstmed.zero_grad()
@@ -73,7 +69,7 @@ class LSTMED(Algorithm):
         self.lstmed.eval()
         error_vectors = []
         for ts_batch in train_gaussian_loader:
-            output = self.lstmed(to_var(ts_batch))
+            output = self.lstmed(self.to_var(ts_batch))
             error = self.criterion(reduce=False)(output, ts_batch.float())
             error_vectors += list(error.view(ts_batch.size(0), -1).data.numpy())
 
@@ -93,7 +89,7 @@ class LSTMED(Algorithm):
 
         scores = np.full((self.sequence_length, len(data)), np.nan)
         for idx, ts in enumerate(data_loader):
-            output = self.lstmed(to_var(ts))
+            output = self.lstmed(self.to_var(ts))
 
             error = self.criterion(reduce=False)(output, ts.float())
             score = -multivariate_normal.logpdf(error.view(1, -1).data.numpy(), mean=self.mean, cov=self.cov)

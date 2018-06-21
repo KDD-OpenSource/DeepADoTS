@@ -2,17 +2,19 @@ import numpy as np
 import tensorflow as tf
 from tqdm import trange
 
-from . import Algorithm
+from .algorithm import Algorithm
+from .cuda_utils import GPUWrapper
 
 
-class RecurrentEBM(Algorithm):
+class RecurrentEBM(Algorithm, GPUWrapper):
     """ Recurrent Energy-Based Model implementation using TensorFlow.
     The interface of the class is sklearn-like.
     """
 
     def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100,
-                 min_lr=0.01, min_energy=None, batch_size=10):
-        super().__init__(__name__, "Recurrent EBM")
+                 min_lr=0.01, min_energy=None, batch_size=10, gpu: int=0):
+        Algorithm.__init__(self, __name__, "Recurrent EBM")
+        GPUWrapper.__init__(self, gpu)
         self.num_epochs = num_epochs
         self.n_hidden = n_hidden  # Size of RBM's hidden layer
         self.n_hidden_recurrent = n_hidden_recurrent  # Size of RNN's hidden layer
@@ -37,29 +39,31 @@ class RecurrentEBM(Algorithm):
         self.tf_session = None
 
     def fit(self, X, _):
-        X.fillna(0, inplace=True)
-        self._build_model(X.shape[1])
+        with self.tf_device:
+            X.fillna(0, inplace=True)
+            self._build_model(X.shape[1])
 
-        self.tf_session = tf.Session()
-        self._initialize_tf()
-        self._train_model(X, self.batch_size)
+            self.tf_session = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+            self._initialize_tf()
+            self._train_model(X, self.batch_size)
 
     def predict(self, X):
-        X.fillna(0, inplace=True)
-        scores = []
-        labels = []
+        with self.tf_device:
+            X.fillna(0, inplace=True)
+            scores = []
+            labels = []
 
-        for i in range(len(X)):
-            reconstruction_err = self.tf_session.run([self.cost],
-                                                     feed_dict={self.input_data: X[i:i + 1],
-                                                                self._batch_size: 1})
-            scores.append(reconstruction_err[0])
-            if self.min_energy is not None:
-                labels.append(reconstruction_err[0] >= self.min_energy)
-        scores = np.array(scores)
-        labels = np.array(labels)
+            for i in range(len(X)):
+                reconstruction_err = self.tf_session.run([self.cost],
+                                                         feed_dict={self.input_data: X[i:i + 1],
+                                                                    self._batch_size: 1})
+                scores.append(reconstruction_err[0])
+                if self.min_energy is not None:
+                    labels.append(reconstruction_err[0] >= self.min_energy)
+            scores = np.array(scores)
+            labels = np.array(labels)
 
-        return (labels, scores) if self.min_energy is not None else scores
+            return (labels, scores) if self.min_energy is not None else scores
 
     def _train_model(self, train_set, batch_size):
         for epoch in trange(self.num_epochs):
