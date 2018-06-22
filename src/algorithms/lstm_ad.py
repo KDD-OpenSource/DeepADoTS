@@ -112,11 +112,11 @@ class LSTMAD(Algorithm, GPUWrapper):
         return input_data, target_data
 
     def _calc_errors(self, predictions, target_data):
-        errors = [predictions.data.numpy()[:, self.len_out - 1:, :, 0]]
+        errors = [predictions.data.cpu().numpy()[:, self.len_out - 1:, :, 0]]
         for l in range(1, self.len_out):
-            errors += [predictions.data.numpy()[:, self.len_out - 1 - l:-l, :, l]]
+            errors += [predictions.data.cpu().numpy()[:, self.len_out - 1 - l:-l, :, l]]
         errors = np.stack(errors, axis=3)
-        errors = target_data.data.numpy()[:, self.len_out - 1:, :, 0][..., np.newaxis] - errors
+        errors = target_data.data.cpu().numpy()[:, self.len_out - 1:, :, 0][..., np.newaxis] - errors
         return errors
 
     def _build_model(self, d, batch_size):

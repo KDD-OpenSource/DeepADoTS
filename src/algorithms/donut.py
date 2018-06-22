@@ -156,7 +156,7 @@ class Donut(Algorithm, GPUWrapper):
             self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
             for col_idx in trange(len(X.columns)):
                 col = X.columns[col_idx]
-                tf_session = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+                tf_session = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
                 timestamps = X.index
                 features = X.loc[:, col].values
                 labels = y

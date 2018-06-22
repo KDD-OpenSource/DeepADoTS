@@ -98,7 +98,7 @@ class DAGMMModule(nn.Module):
         eps = 1e-12
         for i in range(k):
             # K x D x D
-            cov_k = cov[i] + Variable(torch.eye(d) * eps)
+            cov_k = cov[i] + Variable(torch.eye(d).cuda() * eps)
             cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
 
             eigvals = np.linalg.eigvals(cov_k.data.cpu().numpy() * (2 * np.pi))
@@ -122,7 +122,7 @@ class DAGMMModule(nn.Module):
         exp_term = torch.exp(exp_term_tmp - max_val)
 
         sample_energy = -max_val.squeeze() - torch.log(
-            torch.sum(phi.unsqueeze(0) * exp_term / (torch.sqrt(det_cov)).unsqueeze(0), dim=1) + eps)
+            torch.sum(phi.unsqueeze(0).cuda() * exp_term / (torch.sqrt(det_cov.cuda())).unsqueeze(0), dim=1) + eps)
 
         if size_average:
             sample_energy = torch.mean(sample_energy)
