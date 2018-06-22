@@ -43,7 +43,7 @@ class RecurrentEBM(Algorithm, GPUWrapper):
             X.fillna(0, inplace=True)
             self._build_model(X.shape[1])
 
-            self.tf_session = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+            self.tf_session = tf.Session(config=tf.ConfigProto(log_device_placement=False))
             self._initialize_tf()
             self._train_model(X, self.batch_size)
 
