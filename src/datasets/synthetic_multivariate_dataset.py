@@ -100,7 +100,7 @@ class SyntheticMultivariateDataset(Dataset):
                         curve: np.ndarray, create_anomaly: bool):
 
         # Insert curve and pause in first dimension (after adding the global noise)
-        interval_values[:len(curve), 0] = self.add_global_noise(curve)
+        interval_values[:len(curve), 0] += self.add_global_noise(curve)
         interval_values[len(curve):, 0] = self.add_global_noise(interval_values[len(curve):, 0])
 
         # Get values of anomaly_func and fill missing spots with noise
@@ -109,7 +109,7 @@ class SyntheticMultivariateDataset(Dataset):
         anomaly_values, start, end = self.anomaly_func(curve, create_anomaly, interval_length)
         assert len(anomaly_values) <= interval_length, f'Interval too long: {len(anomaly_values)} > {interval_length}'
 
-        interval_values[:len(anomaly_values), 1] = self.add_global_noise(anomaly_values)
+        interval_values[:len(anomaly_values), 1] += self.add_global_noise(anomaly_values)
         # Fill interval up with noisy zero values
         interval_values[len(anomaly_values):, 1] = self.add_global_noise(interval_values[len(anomaly_values):, 1])
 
