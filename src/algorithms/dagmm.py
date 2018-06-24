@@ -15,11 +15,12 @@ from .autoencoder import NNAutoEncoder
 from .cuda_utils import GPUWrapper
 
 
-class DAGMMModule(nn.Module):
+class DAGMMModule(nn.Module, GPUWrapper):
     """Residual Block."""
 
-    def __init__(self, autoencoder, n_gmm=2, latent_dim=3):
+    def __init__(self, autoencoder, n_gmm=2, latent_dim=3, gpu=0):
         super(DAGMMModule, self).__init__()
+        GPUWrapper.__init__(self, gpu)
 
         self.add_module('autoencoder', autoencoder)
 
@@ -31,10 +32,11 @@ class DAGMMModule(nn.Module):
             nn.Softmax(dim=1)
         ]
         self.estimation = nn.Sequential(*layers)
+        self.to_device(self.estimation)
 
-        self.register_buffer('phi', torch.zeros(n_gmm))
-        self.register_buffer('mu', torch.zeros(n_gmm, latent_dim))
-        self.register_buffer('cov', torch.zeros(n_gmm, latent_dim, latent_dim))
+        self.register_buffer('phi', self.to_var(torch.zeros(n_gmm)))
+        self.register_buffer('mu', self.to_var(torch.zeros(n_gmm, latent_dim)))
+        self.register_buffer('cov', self.to_var(torch.zeros(n_gmm, latent_dim, latent_dim)))
 
     def relative_euclidean_distance(self, a, b, dim=1):
         return (a - b).norm(2, dim=dim) / torch.clamp(a.norm(2, dim=dim), min=1e-10)
@@ -98,7 +100,7 @@ class DAGMMModule(nn.Module):
         eps = 1e-12
         for i in range(k):
             # K x D x D
-            cov_k = cov[i] + Variable(torch.eye(d).cuda() * eps)
+            cov_k = cov[i] + self.to_var(torch.eye(d) * eps)
             cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
 
             eigvals = np.linalg.eigvals(cov_k.data.cpu().numpy() * (2 * np.pi))
@@ -122,7 +124,7 @@ class DAGMMModule(nn.Module):
         exp_term = torch.exp(exp_term_tmp - max_val)
 
         sample_energy = -max_val.squeeze() - torch.log(
-            torch.sum(phi.unsqueeze(0).cuda() * exp_term / (torch.sqrt(det_cov.cuda())).unsqueeze(0), dim=1) + eps)
+            torch.sum(self.to_var(phi.unsqueeze(0)) * exp_term / (torch.sqrt(self.to_var(det_cov))).unsqueeze(0), dim=1) + eps)
 
         if size_average:
             sample_energy = torch.mean(sample_energy)
@@ -154,7 +156,7 @@ class DAGMM(Algorithm, GPUWrapper):
         self.gmm_k = gmm_k  # Number of Gaussian mixtures
         self.normal_percentile = normal_percentile  # Up to which percentile data should be considered normal
         self.autoencoder_type = autoencoder_type
-        self.autoencoder_args = autoencoder_args or {}
+        self.autoencoder_args = autoencoder_args or {'gpu': gpu}
 
         self.dagmm, self.optimizer, self.train_energy, self._threshold = None, None, None, None
 
@@ -184,7 +186,7 @@ class DAGMM(Algorithm, GPUWrapper):
         hidden_size = max(1, X.shape[1]//20)
         autoencoder = self.autoencoder_type(n_features=X.shape[1], sequence_length=self.sequence_length,
                                             hidden_size=hidden_size, **self.autoencoder_args)
-        self.dagmm = DAGMMModule(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size + 2)
+        self.dagmm = DAGMMModule(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size + 2, gpu=self.gpu)
         self.to_device(self.dagmm)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
 

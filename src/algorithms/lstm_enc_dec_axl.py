@@ -46,12 +46,12 @@ class LSTMED(Algorithm, GPUWrapper):
         split_point = int(0.75 * len(sequences))  # magic number
 
         train_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, drop_last=True,
-                                  sampler=SubsetRandomSampler(indices[:split_point]))
+                                  sampler=SubsetRandomSampler(indices[:split_point]), pin_memory=True)
         train_gaussian_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, drop_last=True,
                                            sampler=SubsetRandomSampler(indices[split_point:]), pin_memory=True)
 
         self.lstmed = LSTMEDModule(n_features=X.shape[1], hidden_size=self.hidden_size, batch_size=self.batch_size,
-                                   n_layers=self.n_layers, use_bias=self.use_bias, dropout=self.dropout).cuda()
+                                   n_layers=self.n_layers, use_bias=self.use_bias, dropout=self.dropout)
         self.to_device(self.lstmed)
         optimizer = torch.optim.Adam(self.lstmed.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
@@ -60,7 +60,7 @@ class LSTMED(Algorithm, GPUWrapper):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in train_loader:
                 output = self.lstmed(self.to_var(ts_batch))
-                loss = self.criterion()(output, ts_batch.float().cuda())
+                loss = self.criterion()(output, self.to_var(ts_batch.float()))
                 self.lstmed.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -69,7 +69,7 @@ class LSTMED(Algorithm, GPUWrapper):
         error_vectors = []
         for ts_batch in train_gaussian_loader:
             output = self.lstmed(self.to_var(ts_batch))
-            error = self.criterion(reduce=False)(output, ts_batch.float().cuda())
+            error = self.criterion(reduce=False)(output, self.to_var(ts_batch.float()))
             error_vectors += list(error.view(ts_batch.size(0), -1).data.cpu().numpy())
 
         self.mean = np.mean(error_vectors, axis=0)
@@ -90,7 +90,7 @@ class LSTMED(Algorithm, GPUWrapper):
         for idx, ts in enumerate(data_loader):
             output = self.lstmed(self.to_var(ts))
 
-            error = self.criterion(reduce=False)(output, ts.float().cuda())
+            error = self.criterion(reduce=False)(output, self.to_var(ts.float()))
             score = -multivariate_normal.logpdf(error.view(1, -1).data.cpu().numpy(), mean=self.mean, cov=self.cov)
 
             window_elements = np.arange(idx, idx + self.sequence_length, 1)
@@ -108,10 +108,11 @@ class LSTMED(Algorithm, GPUWrapper):
         return np.nanmean(score) + 2*np.nanstd(score)
 
 
-class LSTMEDModule(nn.Module):
+class LSTMEDModule(nn.Module, GPUWrapper):
     def __init__(self, n_features: int, hidden_size: int, batch_size: int,
-                 n_layers: tuple, use_bias: tuple, dropout: tuple):
+                 n_layers: tuple, use_bias: tuple, dropout: tuple, gpu: int = 0):
         super().__init__()
+        GPUWrapper.__init__(self, gpu)
         self.n_features = n_features
         self.hidden_size = hidden_size
         self.batch_size = batch_size
@@ -121,28 +122,31 @@ class LSTMEDModule(nn.Module):
         self.dropout = dropout
 
         self.encoder = nn.LSTM(self.n_features, self.hidden_size, batch_first=True,
-                               num_layers=self.n_layers[0], bias=self.use_bias[0], dropout=self.dropout[0]).cuda()
+                               num_layers=self.n_layers[0], bias=self.use_bias[0], dropout=self.dropout[0])
+        self.to_device(self.encoder)
         self.decoder = nn.LSTM(self.n_features, self.hidden_size, batch_first=True,
-                               num_layers=self.n_layers[1], bias=self.use_bias[1], dropout=self.dropout[1]).cuda()
-        self.hidden2output = nn.Linear(self.hidden_size, self.n_features).cuda()
+                               num_layers=self.n_layers[1], bias=self.use_bias[1], dropout=self.dropout[1])
+        self.to_device(self.decoder)
+        self.hidden2output = nn.Linear(self.hidden_size, self.n_features)
+        self.to_device(self.hidden2output)
 
     def init_hidden(self):
-        return (torch.zeros(1, self.batch_size, self.hidden_size).cuda(),  # first is no of layer.
-                torch.zeros(1, self.batch_size, self.hidden_size).cuda())
+        return (self.to_var(torch.zeros(1, self.batch_size, self.hidden_size)),  # first is no of layer.
+                self.to_var(torch.zeros(1, self.batch_size, self.hidden_size)))
 
     def forward(self, ts_batch, return_hidden=False):
         # 1. Encode the timeseries to make use of the last hidden state.
         enc_hidden = self.init_hidden()  # initialization with zero
-        _, enc_hidden = self.encoder(ts_batch.float().cuda(), enc_hidden)  # .float() here or .double() for the model
+        _, enc_hidden = self.encoder(self.to_var(ts_batch.float()), enc_hidden)  # .float() here or .double() for the model
 
         # 2. Use hidden state as initialization for our Decoder-LSTM
-        dec_hidden = (enc_hidden[0], torch.zeros(1, self.batch_size, self.hidden_size).cuda())
+        dec_hidden = (enc_hidden[0], self.to_var(torch.zeros(1, self.batch_size, self.hidden_size)))
 
         # 3. Also, use this hidden state to get the first output aka the last point of the reconstructed timeseries
         # 4. Reconstruct timeseries backwards
         #    * Use true data for training decoder
         #    * Use hidden2output for prediction
-        output = torch.zeros(ts_batch.size()).cuda()
+        output = self.to_var(torch.zeros(ts_batch.size()))
         for i in reversed(range(ts_batch.shape[1])):
             output[:, i, :] = self.hidden2output(dec_hidden[0][0, :])
 
