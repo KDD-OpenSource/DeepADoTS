@@ -170,7 +170,7 @@ class DAGMM(Algorithm):
                                                                                     self.lambda_energy,
                                                                                     self.lambda_cov_diag)
         self.reset_grad()
-        total_loss = torch.clamp(total_loss, max=1e8) # Extremely high loss can cause NaN gradients
+        total_loss = torch.clamp(total_loss, max=1e8)  # Extremely high loss can cause NaN gradients
         total_loss.backward()
         torch.nn.utils.clip_grad_norm_(self.dagmm.parameters(), 5)
         self.optimizer.step()
