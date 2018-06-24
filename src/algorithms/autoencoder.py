@@ -60,14 +60,14 @@ class LSTMAutoEncoder(AutoEncoder):
         self.dropout = dropout
 
         self.encoder = nn.LSTM(self.n_features, self.hidden_size, batch_first=True,
-                               num_layers=self.n_layers[0], bias=self.use_bias[0], dropout=self.dropout[0])
+                               num_layers=self.n_layers[0], bias=self.use_bias[0], dropout=self.dropout[0]).cuda()
         self.decoder = nn.LSTM(self.n_features, self.hidden_size, batch_first=True,
-                               num_layers=self.n_layers[1], bias=self.use_bias[1], dropout=self.dropout[1])
-        self.hidden2output = nn.Linear(self.hidden_size, self.n_features)
+                               num_layers=self.n_layers[1], bias=self.use_bias[1], dropout=self.dropout[1]).cuda()
+        self.hidden2output = nn.Linear(self.hidden_size, self.n_features).cuda()
 
     def _init_hidden(self, batch_size):
-        return (torch.zeros(self.n_layers[0], batch_size, self.hidden_size),
-                torch.zeros(self.n_layers[0], batch_size, self.hidden_size))
+        return (torch.zeros(self.n_layers[0], batch_size, self.hidden_size).cuda(),
+                torch.zeros(self.n_layers[0], batch_size, self.hidden_size).cuda())
 
     def forward(self, ts_batch):
         batch_size = ts_batch.shape[0]
@@ -77,13 +77,13 @@ class LSTMAutoEncoder(AutoEncoder):
         _, enc_hidden = self.encoder(ts_batch.float(), enc_hidden)  # .float() here or .double() for the model
 
         # 2. Use hidden state as initialization for our Decoder-LSTM
-        dec_hidden = (enc_hidden[0], torch.zeros(self.n_layers[1], batch_size, self.hidden_size))
+        dec_hidden = (enc_hidden[0], torch.zeros(self.n_layers[1], batch_size, self.hidden_size).cuda())
 
         # 3. Also, use this hidden state to get the first output aka the last point of the reconstructed timeseries
         # 4. Reconstruct timeseries backwards
         #    * Use true data for training decoder
         #    * Use hidden2output for prediction
-        output = torch.zeros(ts_batch.size())
+        output = torch.zeros(ts_batch.size()).cuda()
         for i in reversed(range(ts_batch.shape[1])):
             output[:, i, :] = self.hidden2output(dec_hidden[0][0, :])
 
