@@ -249,6 +249,7 @@ class Evaluator:
         for det in self.detectors:
             relevant_results[relevant_results["algorithm"] == det.name].boxplot(by="dataset", figsize=(15, 15))
             plt.title(f"AUC grouped by dataset for {det.name} performing {runs} runs")
+            plt.ylim(ymin=0, ymax=1)
             plt.suptitle("")
             plt.tight_layout()
             self.store(plt.gcf(), f"boxplot_auc_for_{det.name}_{runs}_runs")
@@ -259,6 +260,7 @@ class Evaluator:
         for ds in self.datasets:
             relevant_results[relevant_results["dataset"] == ds.name].boxplot(by="algorithm", figsize=(15, 15))
             plt.title(f"AUC grouped by algorithm for {ds.name} peforming {runs} runs")
+            plt.ylim(ymin=0, ymax=1)
             plt.suptitle("")
             plt.tight_layout()
             self.store(plt.gcf(), f"boxplots_auc_for_{ds.name}_{runs}_runs")
@@ -270,6 +272,7 @@ class Evaluator:
             relevant_results[relevant_results["algorithm"] == det.name].plot(x="dataset", kind="bar",
                                                                              figsize=(7, 7))
             plt.title(f"AUC for {det.name} performing {runs} runs")
+            plt.ylim(ymin=0, ymax=1)
             plt.tight_layout()
             self.store(plt.gcf(), f"barchart_auc_for_{det.name}_{runs}_runs")
 
@@ -279,6 +282,7 @@ class Evaluator:
         for ds in self.datasets:
             relevant_results[relevant_results["dataset"] == ds.name].plot(x="algorithm", kind="bar", figsize=(7, 7))
             plt.title(f"AUC on {ds.name} performing {runs} runs")
+            plt.ylim(ymin=0, ymax=1)
             plt.tight_layout()
             self.store(plt.gcf(), f"barchart_auc_for_{ds.name}_{runs}_runs")
 
