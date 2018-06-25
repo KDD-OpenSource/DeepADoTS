@@ -42,6 +42,12 @@ pip install -r requirements.txt
 └── main.py                 <- Script that orchestrates the components in the project
 ```
 
+## Deployment
+
+- Install nvidia-docker
+- `docker build -t mp2018 .`
+- `nvidia-docker run -ti mp2018 /bin/bash -c "python3.6 /repo/main.py"`
+
 ## Credits
 
 [dagmm](https://github.com/danieltan07/dagmm)
