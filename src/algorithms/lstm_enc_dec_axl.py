@@ -14,9 +14,9 @@ from .cuda_utils import GPUWrapper
 
 
 class LSTMED(Algorithm, GPUWrapper):
-    def __init__(self, hidden_size: int=5, sequence_length: int=30, batch_size: int=20, num_epochs: int=10,
-                 n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
-                 lr: float=0.1, weight_decay: float=1e-4, criterion=nn.MSELoss, gpu: int=0):
+    def __init__(self, hidden_size: int = 5, sequence_length: int = 30, batch_size: int = 20, num_epochs: int = 10,
+                 n_layers: tuple = (1, 1), use_bias: tuple = (True, True), dropout: tuple = (0, 0),
+                 lr: float = 0.1, weight_decay: float = 1e-4, criterion=nn.MSELoss, gpu: int = 0):
         Algorithm.__init__(self, __name__, 'LSTMED')
         GPUWrapper.__init__(self, gpu)
         self.hidden_size = hidden_size
@@ -105,7 +105,7 @@ class LSTMED(Algorithm, GPUWrapper):
         return np.where(score >= threshold, 1, 0)
 
     def threshold(self, score):
-        return np.nanmean(score) + 2*np.nanstd(score)
+        return np.nanmean(score) + 2 * np.nanstd(score)
 
 
 class LSTMEDModule(nn.Module, GPUWrapper):
@@ -137,7 +137,8 @@ class LSTMEDModule(nn.Module, GPUWrapper):
     def forward(self, ts_batch, return_hidden=False):
         # 1. Encode the timeseries to make use of the last hidden state.
         enc_hidden = self.init_hidden()  # initialization with zero
-        _, enc_hidden = self.encoder(self.to_var(ts_batch.float()), enc_hidden)  # .float() here or .double() for the model
+        _, enc_hidden = self.encoder(self.to_var(ts_batch.float()),
+                                     enc_hidden)  # .float() here or .double() for the model
 
         # 2. Use hidden state as initialization for our Decoder-LSTM
         dec_hidden = (enc_hidden[0], self.to_var(torch.zeros(1, self.batch_size, self.hidden_size)))

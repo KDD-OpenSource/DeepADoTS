@@ -124,7 +124,8 @@ class DAGMMModule(nn.Module, GPUWrapper):
         exp_term = torch.exp(exp_term_tmp - max_val)
 
         sample_energy = -max_val.squeeze() - torch.log(
-            torch.sum(self.to_var(phi.unsqueeze(0)) * exp_term / (torch.sqrt(self.to_var(det_cov))).unsqueeze(0), dim=1) + eps)
+            torch.sum(self.to_var(phi.unsqueeze(0)) * exp_term / (torch.sqrt(self.to_var(det_cov))).unsqueeze(0),
+                      dim=1) + eps)
 
         if size_average:
             sample_energy = torch.mean(sample_energy)
@@ -143,7 +144,7 @@ class DAGMMModule(nn.Module, GPUWrapper):
 class DAGMM(Algorithm, GPUWrapper):
     def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-2, batch_size=50, gmm_k=3,
                  normal_percentile=80, sequence_length=15, autoencoder_type=NNAutoEncoder, autoencoder_args=None,
-                 gpu: int=0):
+                 gpu: int = 0):
         window_name = 'withWindow' if sequence_length > 1 else 'withoutWindow'
         Algorithm.__init__(self, __name__, f'DAGMM_{autoencoder_type.__name__}_{window_name}')
         GPUWrapper.__init__(self, gpu)
@@ -183,7 +184,7 @@ class DAGMM(Algorithm, GPUWrapper):
         # Each point is a flattened window and thus has as many features as sequence_length * features
         multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=multi_points, batch_size=self.batch_size, shuffle=True, drop_last=True)
-        hidden_size = max(1, X.shape[1]//20)
+        hidden_size = max(1, X.shape[1] // 20)
         autoencoder = self.autoencoder_type(n_features=X.shape[1], sequence_length=self.sequence_length,
                                             hidden_size=hidden_size, **self.autoencoder_args)
         self.dagmm = DAGMMModule(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size + 2, gpu=self.gpu)
