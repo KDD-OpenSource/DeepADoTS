@@ -39,7 +39,7 @@ class LSTMAD(Algorithm):
     The interface of the class is sklearn-like.
     """
 
-    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=128, optimizer=torch.optim.Rprop):
+    def __init__(self, len_in=1, len_out=10, num_epochs=20, lr=0.01, batch_size=128, optimizer=torch.optim.Rprop):
         super().__init__(__name__, "LSTM-AD")
         self.len_in = len_in
         self.len_out = len_out
@@ -88,7 +88,7 @@ class LSTMAD(Algorithm):
         mean = np.mean(norm, axis=0)
         cov = np.cov(norm.T)
 
-        scores = -multivariate_normal.logpdf(norm, mean=mean, cov=cov)
+        scores = -multivariate_normal.logpdf(norm, mean=mean, cov=cov, allow_singular=True)
         scores = np.pad(scores, (self.len_in + self.len_out - 1, self.len_out - 1), 'constant', constant_values=np.nan)
         return scores
 
