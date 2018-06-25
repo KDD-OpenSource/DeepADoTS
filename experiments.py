@@ -8,7 +8,7 @@ from src.datasets import SyntheticDataGenerator, MultivariateAnomalyFunction
 # The pollution of the training data is tested from 0 to 100% (with default steps=5).
 def run_pollution_experiment(detectors, outlier_type='extreme_1', output_dir=None, steps=5):
     datasets = [
-        SyntheticDataGenerator.get(f'{outlier_type}_polluted', pollution) for pollution in np.linspace(0, 1, steps)
+        SyntheticDataGenerator.get(f'{outlier_type}_polluted', pollution) for pollution in np.linspace(0, 0.5, steps)
     ]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
@@ -27,7 +27,7 @@ def run_pollution_experiment(detectors, outlier_type='extreme_1', output_dir=Non
 # nan values.
 def run_missing_experiment(detectors, outlier_type='extreme_1', output_dir=None, steps=5):
     datasets = [
-        SyntheticDataGenerator.get(f'{outlier_type}_missing', missing) for missing in np.linspace(0, 1, steps)
+        SyntheticDataGenerator.get(f'{outlier_type}_missing', missing) for missing in np.linspace(0, 0.9, steps)
     ]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
