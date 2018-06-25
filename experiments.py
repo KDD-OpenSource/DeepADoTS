@@ -40,6 +40,21 @@ def run_missing_experiment(detectors, outlier_type='extreme_1', output_dir=None,
     return evaluator
 
 
+def run_multid_experiment(detectors, outlier_type='extreme_1', output_dir=None, steps=5):
+    datasets = [
+        SyntheticDataGenerator.get('extreme_1', num_dim) for num_dim in np.linspace(1, 100, steps, dtype=int)
+    ]
+    evaluator = Evaluator(datasets, detectors, output_dir)
+    evaluator.evaluate()
+    evaluator.benchmark_results = evaluator.benchmarks()
+    evaluator.plot_auroc(title='Area under the curve for missing values')
+    evaluator.print_tables()
+    evaluator.plot_threshold_comparison()
+    evaluator.plot_scores()
+    evaluator.plot_roc_curves()
+    return evaluator
+
+
 # Validates all algorithms regarding different heights of extreme outliers
 # The extreme values are added to the outlier timestamps everywhere in the dataset distribution.
 def run_extremes_experiment(detectors, outlier_type='extreme_1', output_dir=None, steps=10):

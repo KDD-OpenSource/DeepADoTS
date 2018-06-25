@@ -6,8 +6,8 @@ import pandas as pd
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec, LSTMAutoEncoder
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
-from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-                        run_multivariate_experiment
+from experiments import run_pollution_experiment, run_extremes_experiment, \
+                        run_multivariate_experiment, run_missing_experiment, run_multid_experiment
 
 RUNS = 2
 
@@ -81,7 +81,7 @@ def evaluate_on_real_world_data_sets():
     print("Donut results: ", pred)
 
 
-def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
+def run_experiments(outlier_type='extreme_1', output_dir=None, steps=10):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
     if os.environ.get("CIRCLECI", False):
         detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5),
@@ -94,12 +94,17 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
                      DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                      DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
-        announce_experiment('Missing Values')
+        announce_experiment('Pollution')
         run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
                                  steps=steps)
-
-        announce_experiment('Pollution')
+        announce_experiment('Missing Values')
         run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
+                               steps=steps)
+        run_missing_experiment(detectors, 'variance_1', output_dir=os.path.join(output_dir, 'missing'),
+                               steps=steps)
+        run_missing_experiment(detectors, 'trend_1', output_dir=os.path.join(output_dir, 'missing'),
+                               steps=steps)
+        run_missing_experiment(detectors, 'shift_1', output_dir=os.path.join(output_dir, 'missing'),
                                steps=steps)
 
         announce_experiment('Outlier height')
@@ -108,6 +113,9 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
 
         announce_experiment('Multivariate Datasets')
         run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
+
+        run_multid_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multid'),
+                              steps=20)
 
 
 def announce_experiment(title: str, dashes: int = 70):
