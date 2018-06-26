@@ -4,34 +4,36 @@ import sys
 import numpy as np
 import pandas as pd
 
-from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM_Enc_Dec
+from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoEncoder
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
-
-
-# from src.evaluation.experiments import run_experiments
+from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
+                        run_multivariate_experiment
 
 RUNS = 2
 
 
 def main():
-    run_pipeline()
-    # run_experiments()
+    #run_pipeline()
+    run_experiments()
 
 
 def run_pipeline():
     datasets = None
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1(seed=42)]
-        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5), DAGMM(),
-                     LSTM_Enc_Dec(num_epochs=2)]
+        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5), DAGMM(num_epochs=2),
+                     LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(num_epochs=15)]
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
+                     DAGMM(sequence_length=1), DAGMM(sequence_length=15),
+                     DAGMM(sequence_length=1, autoencoder_type=LSTMAutoEncoder),
+                     DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
     # perform multiple pipeline runs for more significant end results
     # Set the random seed manually for reproducibility and more significant results
     # numpy expects a max. 32-bit unsigned integer
-    seeds = np.random.randint(low=0, high=2**32 - 1, size=RUNS)
+    seeds = np.random.randint(low=0, high=2**32 - 1, size=RUNS, dtype="uint32")
     results = pd.DataFrame()
     evaluator = None
 
@@ -54,6 +56,8 @@ def run_pipeline():
     evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
     evaluator.create_bar_charts_per_algorithm(runs=RUNS)
+    evaluator.generate_latex()
+
 
 def evaluate_on_real_world_data_sets(seed):
     dagmm = DAGMM()
@@ -79,6 +83,7 @@ def evaluate_on_real_world_data_sets(seed):
     pred = donut.predict(X_test)
     print("Donut results: ", pred)
 
+
 def get_datasets(seed):
     datasets = [
         SyntheticDataGenerator.extreme_1(seed),
@@ -97,6 +102,51 @@ def get_datasets(seed):
         SyntheticDataGenerator.extreme_1_polluted(seed, 0.9)
     ]
     return datasets
+
+
+def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
+    output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
+    # Set the random seed manually for reproducibility and more significant results
+    # numpy expects a max. 32-bit unsigned integer
+    seed = np.random.randint(low=0, high=2**32 - 1, size=1, dtype="uint32")[0]
+
+    if os.environ.get("CIRCLECI", False):
+        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5),
+                     LSTMED(num_epochs=2), DAGMM(num_epochs=2),
+                     DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
+        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+                                steps=1, seed=seed)
+    else:
+        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
+                     DAGMM(sequence_length=1),
+                     DAGMM(sequence_length=15),
+                     DAGMM(sequence_length=1, autoencoder_type=LSTMAutoEncoder),
+                     DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
+        detectors = [RecurrentEBM(num_epochs=1)]
+
+        announce_experiment('Pollution')
+        run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
+                                 steps=steps, seed=seed)
+
+        announce_experiment('Missing Values')
+        run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
+                               steps=steps, seed=seed)
+
+        announce_experiment('Outlier height')
+        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+                                steps=steps, seed=seed)
+
+        announce_experiment('Multivariate Datasets')
+        run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'), seed=seed)
+
+
+def announce_experiment(title: str, dashes: int = 70):
+    print(f'\n###{"-"*dashes}###')
+    message = f'Experiment: {title}'
+    before = (dashes - len(message)) // 2
+    after = dashes - len(message) - before
+    print(f'###{"-"*before}{message}{"-"*after}###')
+    print(f'###{"-"*dashes}###\n')
 
 
 if __name__ == '__main__':

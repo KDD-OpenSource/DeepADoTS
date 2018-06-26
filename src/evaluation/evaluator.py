@@ -12,6 +12,7 @@ from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
 from sklearn.metrics import roc_curve, auc
 from tabulate import tabulate
+from textwrap import wrap
 
 from .config import init_logging
 
@@ -40,6 +41,8 @@ class Evaluator:
 
     @staticmethod
     def get_auroc(det, ds, score):
+        if np.isnan(score).all():
+            score = np.zeros_like(score)
         _, _, _, y_test = ds.data()
         score_nonan = score.copy()
         # Rank NaN below every other value in terms of anomaly score
@@ -70,7 +73,7 @@ class Evaluator:
                     score = det.predict(X_test)
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
-                    self.logger.error(f"An exception occured while training {det.name} on {ds}: {e}")
+                    self.logger.error(f"An exception occurred while training {det.name} on {ds}: {e}")
                     self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
 
@@ -94,13 +97,6 @@ class Evaluator:
                                 "auroc": auroc},
                                ignore_index=True)
         return df
-
-    def store(self, fig, title, extension="pdf"):
-        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        dir = self.output_dir if self.output_dir is not None else "reports/figures/"
-        path = os.path.join(dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
-        fig.savefig(path)
-        self.logger.info(f"Stored plot at {path}")
 
     @staticmethod
     def get_metrics_by_thresholds(det, y_test: list, score: list, thresholds: list):
@@ -165,10 +161,8 @@ class Evaluator:
             for det, ax in zip(self.detectors, axes_row):
                 score = np.array(self.results[(ds.name, det.name)])
 
-                anomalies, _, prec, rec, f_score, f01_score, thresh = self.get_optimal_threshold(det,
-                                                                                                 y_test,
-                                                                                                 score,
-                                                                                                 return_metrics=True)
+                anomalies, _, prec, rec, f_score, f01_score, thresh = self.get_optimal_threshold(
+                    det, y_test, score, return_metrics=True)
 
                 ax.plot(thresh, anomalies / len(y_test),
                         label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
@@ -200,6 +194,8 @@ class Evaluator:
             for det in self.detectors:
                 self.logger.info(f"Plotting ROC curve for {det.name} on {ds.name}")
                 score = self.results[(ds.name, det.name)]
+                if np.isnan(score).all():
+                    score = np.zeros_like(score)
                 # Rank NaN below every other value in terms of anomaly score
                 score[np.isnan(score)] = np.nanmin(score) - sys.float_info.epsilon
                 fpr, tpr, _ = roc_curve(y_test, score)
@@ -214,7 +210,7 @@ class Evaluator:
                 plt.xlabel("False Positive Rate")
                 plt.ylabel("True Positive Rate")
                 plt.gca().set_aspect("equal", adjustable="box")
-                plt.title(det.name)
+                plt.title('\n'.join(wrap(det.name, 20)))
                 plt.legend(loc="lower right")
             plt.tight_layout()
             if store:
@@ -245,6 +241,8 @@ class Evaluator:
             table = tabulate(self.benchmark_results[self.benchmark_results['dataset'] == ds.name][print_order],
                              headers='keys', tablefmt='psql')
             self.logger.info(f"Dataset: {ds.name}\n{table}")
+            self.logger.info(tabulate(self.benchmark_results[self.benchmark_results['dataset'] == ds.name][print_order],
+                                      headers='keys', tablefmt='psql'))
 
     # create boxplot diagrams for auc values for each dataset per algorithm
     def create_boxplots_per_algorithm(self, runs, data):
@@ -284,3 +282,29 @@ class Evaluator:
             plt.title(f"AUC on {ds.name} performing {runs} runs")
             plt.tight_layout()
             self.store(plt.gcf(), f"barchart_auc_for_{ds.name}_{runs}_runs")
+
+    def store(self, fig, title, extension="pdf"):
+        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+        _dir = self.output_dir if self.output_dir is not None else "reports/figures/"
+        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        fig.savefig(path)
+        self.logger.info(f"Stored plot at {path}")
+
+    def store_text(self, content, title, extension="txt"):
+        timestamp = int(time.time())
+        _dir = "reports/tables/"
+        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w') as f:
+            f.write(content)
+        self.logger.info(f"Stored {extension} file at {path}")
+
+    def generate_latex(self):
+        benchmarks = self.benchmarks()
+        result = ""
+        for ds in self.datasets:
+            print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
+            content = f'''{ds.name}:\n\n{tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
+                           headers='keys', tablefmt='latex')}\n\n'''
+            result += content
+        self.store_text(content=result, title="latex_table_results", extension="tex")

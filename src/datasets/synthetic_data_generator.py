@@ -35,7 +35,9 @@ class SyntheticDataGenerator:
     @staticmethod
     def get(method, *args, **kwargs):
         func = getattr(SyntheticDataGenerator, method)
-        return func(*args, **kwargs)
+        a = func(*args, **kwargs)
+        print(a)
+        return a
 
     @staticmethod
     def extreme_1(seed):
@@ -95,6 +97,7 @@ class SyntheticDataGenerator:
     @staticmethod
     def extreme_1_extremeness(seed, extreme_value=10):
         """Full pollution -> All anomalies from test set are in train set"""
+        print("seed2: ", seed)
         dataset = SyntheticDataGenerator.extreme_1(seed)
 
         dataset.outlier_config['extreme'][0]['value'] = extreme_value
