@@ -98,19 +98,22 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
                      DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
         announce_experiment('Pollution')
-        run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
-                                 steps=steps)
+        ev_pol = run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
+                                          steps=steps)
 
         announce_experiment('Missing Values')
-        run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
-                               steps=steps)
+        ev_mis = run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
+                                        steps=steps)
 
         announce_experiment('Outlier height')
-        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
-                                steps=steps)
+        ev_extr = run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+                                          steps=steps)
 
         announce_experiment('Multivariate Datasets')
-        run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
+        ev_mv = run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
+
+        evaluators = [ev_pol, ev_mis, ev_extr, ev_mv]
+        Evaluator.plot_heatmap(evaluators)
 
 
 def announce_experiment(title: str, dashes: int = 70):

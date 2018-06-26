@@ -6,6 +6,7 @@ import traceback
 
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as path_effects
+from matplotlib.font_manager import FontProperties
 import numpy as np
 import pandas as pd
 import progressbar
@@ -284,10 +285,13 @@ class Evaluator:
             plt.tight_layout()
             self.store(plt.gcf(), f"barchart_auc_for_{ds.name}_{runs}_runs")
 
-    def store(self, fig, title, extension="pdf"):
+    def store(self, fig, title, extension="pdf", no_counters=False):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
         _dir = self.output_dir if self.output_dir is not None else "reports/figures/"
-        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        if no_counters:
+            path = os.path.join(_dir, f"{title}-{timestamp}.{extension}")
+        else:
+            path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
         self.logger.info(f"Stored plot at {path}")
 
@@ -310,70 +314,106 @@ class Evaluator:
             result += content
         self.store_text(content=result, title="latex_table_results", extension="tex")
 
-    def get_key_and_value(self, datasetName):
+    @staticmethod
+    def translate_var_key(keyName):
+        if keyName == 'pol':
+            return 'Pollution'
+        if keyName == 'mis':
+            return 'Missing'
+        if keyName == 'extremeness':
+            return 'Extremeness'
+        if keyName == 'f':
+            return 'Multivariate'
+        # self.logger('Unexpected dataset name (unknown variable in name)')
+        return None
+
+    @staticmethod
+    def get_key_and_value(datasetName):
         # Extract var name and value from dataset name
         var_re = re.compile(r'.+\((\w*)=(.*)\)')
         # e.g. 'Syn Extreme Outliers (pol=0.1)'
         match = var_re.search(datasetName)
         if not match:
-            self.logger.warn('Unexpected dataset name (not variable in name)')
+            # self.logger.warn('Unexpected dataset name (not variable in name)')
             return '', ''
         var_key = match.group(1)
         var_value = match.group(2)
-        return var_key, var_value
+        return Evaluator.translate_var_key(var_key), var_value
 
-    def translate_var_key(self, keyName):
-        if keyName == 'pol':
-            return 'Pollution'
-        if keyName == 'mis':
-            return 'Missing'
-        self.logger('Unexpected dataset name (unknown variable in name)')
-        return None
+    @staticmethod
+    def get_dataset_types(mi_df):
+        types = mi_df.index.get_level_values('Type')
+        indexes = np.unique(types, return_index=True)[1]
+        return [types[index] for index in sorted(indexes)]
 
-    def get_multi_index_dataframe(self):
-        detectors = [str(x) for x in self.detectors]
-        variables = [self.get_key_and_value(str(x)) for x in self.datasets]
-        datasetTypes = np.unique([self.translate_var_key(key) for key, _ in variables])
-        # Translation might have failed and returned None
-        datasetTypes = [x for x in datasetTypes if x is not None]
-        datasetLevels = np.unique([value for _, value in variables])
-        assert len(datasetTypes) * len(datasetLevels) == len(variables), 'Same levels for each dataset type required'
+    @staticmethod
+    def insert_multi_index_yaxis(ax, mi_df):
+        typeTitleOffset = -1.6  # depends on string length of xaxis ticklabels
 
-        datasets = pd.MultiIndex.from_product([datasetTypes, datasetLevels])
-        results_matrix = self.benchmark_results['auroc'].values.reshape((len(datasets), len(detectors)))
-        return pd.DataFrame(results_matrix, index=datasets, columns=detectors), datasetTypes, datasetLevels
-
-    def plot_heatmap(self, store=True):
-        mi_df, datasetTypes, datasetLevels = self.get_multi_index_dataframe()
-        fig, ax = plt.subplots(figsize=(8, 8))
-        im = ax.imshow(mi_df, cmap=plt.get_cmap("YlOrRd"))
-        plt.colorbar(im)
         detectors, datasets = mi_df.columns, mi_df.index
+        datasetTypes = Evaluator.get_dataset_types(mi_df)  # Returns unique entries keeping original order
 
-        # Show MultiIndex for ordinate
-        ax.set_xticks(np.arange(len(detectors)))
         ax.set_yticks(np.arange(len(datasets)))
         ax.set_yticklabels([x[1] for x in datasets])
-        for idx, section in enumerate(datasetTypes):
-            titlePos = idx * len(datasetLevels) + 0.5 * (len(datasetLevels) - 1)
-            ax.text(-1.8, titlePos, section, ha="center", va="center", rotation=90)
-            if idx < len(datasetTypes) - 1:
-                sepPos = idx * len(datasetLevels) + (len(datasetLevels) - 0.6)
-                ax.text(-1.5, sepPos, '_'*10, ha="center", va="center")
 
-        # Rotate the tick labels and set their alignment
+        yAxisTitlePos = 0  # Store at which position we are for plotting the next title
+        for idx, datasetType in enumerate(datasetTypes):
+            sectionFrame = mi_df.iloc[mi_df.index.get_level_values('Type') == datasetType]
+            # Somehow it's sorted by its occurence (which is what we want here)
+            datasetLevels = sectionFrame.index.remove_unused_levels().levels[1]
+            titlePos = yAxisTitlePos + 0.5 * (len(datasetLevels) - 1)
+            ax.text(typeTitleOffset, titlePos, datasetType, ha="center", va="center", rotation=90,
+                    fontproperties=FontProperties(weight='bold'))
+            if idx < len(datasetTypes) - 1:
+                sepPos = yAxisTitlePos + (len(datasetLevels) - 0.6)
+                ax.text(-0.5, sepPos, '_'*int(typeTitleOffset*-10), ha="right", va="center")
+            yAxisTitlePos += len(datasetLevels)
+
+    @staticmethod
+    def to_multi_index_frame(evaluators):
+        evaluator = evaluators[0]
+        detectors = evaluator.detectors
+        for otherEvaluator in evaluators[1:]:
+            assert evaluator.detectors == otherEvaluator.detectors, 'All evaluators should use the same detectors'
+        datasets = [[evaluator.get_key_and_value(str(d)) for d in ev.datasets] for ev in evaluators]
+        datasets = [tuple(d) for d in np.concatenate(datasets)]  # Required for MultiIndex.from_tuples
+        datasets = pd.MultiIndex.from_tuples(datasets, names=['Type', 'Level'])
+
+        auroc_matrix = np.concatenate([ev.benchmark_results['auroc'].values.reshape((len(ev.datasets), len(detectors)))
+                                       for ev in evaluators])
+        return pd.DataFrame(auroc_matrix, index=datasets, columns=detectors)
+
+    def get_multi_index_dataframe(self):
+        return Evaluator.to_multi_index_frame([self])
+
+    @staticmethod
+    def plot_heatmap(evaluators, store=True):
+        mi_df = Evaluator.to_multi_index_frame(evaluators)
+        detectors, datasets = mi_df.columns, mi_df.index
+
+        fig, ax = plt.subplots(figsize=(len(detectors) + 2, len(datasets)))
+        im = ax.imshow(mi_df, cmap=plt.get_cmap("YlOrRd"))
+        plt.colorbar(im)
+
+        # Show MultiIndex for ordinate
+        Evaluator.insert_multi_index_yaxis(ax, mi_df)
+
+        # Rotate the tick labels and set their alignment.
+        ax.set_xticks(np.arange(len(detectors)))
         ax.set_xticklabels(detectors)
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
 
-        # Loop over data dimensions and create text annotations
+        # Loop over data dimensions and create text annotations.
         for i in range(len(detectors)):
             for j in range(len(datasets)):
-                ax.text(i, j, f'{mi_df.iloc[j, i]:.2f}', ha="center", va="center", color="w",
-                        path_effects=[path_effects.withSimplePatchShadow(
-                            offset=(1, -1), shadow_rgbFace="b", alpha=0.9)])
+                text = ax.text(i, j, f'{mi_df.iloc[j, i]:.2f}', ha="center", va="center", color="w",
+                               path_effects=[path_effects.withSimplePatchShadow(offset=(1, -1), shadow_rgbFace="b", alpha=0.9)])
 
         ax.set_title('AUROC over all datasets and detectors')
         fig.tight_layout()
         if store:
-            self.store(fig, f"heatmap_{'_'.join(datasetTypes)}")
+            evaluators[0].store(fig, 'heatmap', no_counters=True)
         return fig
+
+    def plot_single_heatmap(self, store=True):
+        Evaluator.plot_heatmap([self], store)
