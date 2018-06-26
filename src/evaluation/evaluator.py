@@ -411,9 +411,11 @@ class Evaluator:
                             offset=(1, -1), shadow_rgbFace="b", alpha=0.9)])
 
         ax.set_title('AUROC over all datasets and detectors')
-        fig.tight_layout()
         if store:
             evaluators[0].store(fig, 'heatmap', no_counters=True)
+        # Prevent bug where x axis ticks are completely outside of bounds (matplotlib/issues/5456)
+        if len(datasets) > 2:
+            fig.tight_layout()
         return fig
 
     def plot_single_heatmap(self, store=True):

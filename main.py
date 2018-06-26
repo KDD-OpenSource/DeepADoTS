@@ -53,6 +53,7 @@ def run_pipeline():
 
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
+    evaluator.plot_single_heatmap()
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
@@ -88,8 +89,9 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5),
                      LSTMED(num_epochs=2), DAGMM(num_epochs=2),
                      DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
-        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
-                                steps=1)
+        ev = run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+                                     steps=1)
+        ev.plot_single_heatmap()
     else:
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
                      DAGMM(sequence_length=1),
