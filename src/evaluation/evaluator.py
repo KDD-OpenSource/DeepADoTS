@@ -1,9 +1,11 @@
 import logging
 import os
+import re
 import sys
 import traceback
 
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
 import numpy as np
 import pandas as pd
 import progressbar
@@ -307,3 +309,71 @@ class Evaluator:
                            headers='keys', tablefmt='latex')}\n\n'''
             result += content
         self.store_text(content=result, title="latex_table_results", extension="tex")
+
+    def get_key_and_value(self, datasetName):
+        # Extract var name and value from dataset name
+        var_re = re.compile(r'.+\((\w*)=(.*)\)')
+        # e.g. 'Syn Extreme Outliers (pol=0.1)'
+        match = var_re.search(datasetName)
+        if not match:
+            self.logger.warn('Unexpected dataset name (not variable in name)')
+            return '', ''
+        var_key = match.group(1)
+        var_value = match.group(2)
+        return var_key, var_value
+
+    def translate_var_key(self, keyName):
+        if keyName == 'pol':
+            return 'Pollution'
+        if keyName == 'mis':
+            return 'Missing'
+        self.logger('Unexpected dataset name (unknown variable in name)')
+        return None
+
+    def get_multi_index_dataframe(self):
+        detectors = [str(x) for x in self.detectors]
+        variables = [self.get_key_and_value(str(x)) for x in self.datasets]
+        datasetTypes = np.unique([self.translate_var_key(key) for key, _ in variables])
+        # Translation might have failed and returned None
+        datasetTypes = [x for x in datasetTypes if x is not None]
+        datasetLevels = np.unique([value for _, value in variables])
+        assert len(datasetTypes) * len(datasetLevels) == len(variables), 'Same levels for each dataset type required'
+
+        datasets = pd.MultiIndex.from_product([datasetTypes, datasetLevels])
+        results_matrix = self.benchmark_results['auroc'].values.reshape((len(datasets), len(detectors)))
+        return pd.DataFrame(results_matrix, index=datasets, columns=detectors), datasetTypes, datasetLevels
+
+    def plot_heatmap(self, store=True):
+        mi_df, datasetTypes, datasetLevels = self.get_multi_index_dataframe()
+        fig, ax = plt.subplots(figsize=(8, 8))
+        im = ax.imshow(mi_df, cmap=plt.get_cmap("jet"))
+        plt.colorbar(im)
+        detectors, datasets = mi_df.columns, mi_df.index
+
+        # Show MultiIndex for ordinate
+        ax.set_xticks(np.arange(len(detectors)))
+        ax.set_yticks(np.arange(len(datasets)))
+        ax.set_yticklabels([x[1] for x in datasets])
+        for idx, section in enumerate(datasetTypes):
+            titlePos = idx * len(datasetLevels) + 0.5 * (len(datasetLevels) - 1)
+            ax.text(-1.8, titlePos, section, ha="center", va="center", rotation=90)
+            if idx < len(datasetTypes) - 1:
+                sepPos = idx * len(datasetLevels) + (len(datasetLevels) - 0.6)
+                ax.text(-1.5, sepPos, '_'*10, ha="center", va="center")
+
+        # Rotate the tick labels and set their alignment
+        ax.set_xticklabels(detectors)
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+        # Loop over data dimensions and create text annotations
+        for i in range(len(detectors)):
+            for j in range(len(datasets)):
+                ax.text(i, j, f'{mi_df.iloc[j, i]:.2f}', ha="center", va="center", color="w",
+                        path_effects=[path_effects.withSimplePatchShadow(
+                            offset=(1, -1), shadow_rgbFace="b", alpha=0.9)])
+
+        ax.set_title('AUROC over all datasets and detectors')
+        fig.tight_layout()
+        if store:
+            self.store(fig, f"heatmap_{'_'.join(datasetTypes)}")
+        return fig
