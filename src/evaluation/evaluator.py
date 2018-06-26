@@ -350,7 +350,7 @@ class Evaluator:
     def insert_multi_index_yaxis(ax, mi_df):
         typeTitleOffset = -1.6  # depends on string length of xaxis ticklabels
 
-        detectors, datasets = mi_df.columns, mi_df.index
+        datasets = mi_df.index
         datasetTypes = Evaluator.get_dataset_types(mi_df)  # Returns unique entries keeping original order
 
         ax.set_yticks(np.arange(len(datasets)))
@@ -406,8 +406,9 @@ class Evaluator:
         # Loop over data dimensions and create text annotations.
         for i in range(len(detectors)):
             for j in range(len(datasets)):
-                text = ax.text(i, j, f'{mi_df.iloc[j, i]:.2f}', ha="center", va="center", color="w",
-                               path_effects=[path_effects.withSimplePatchShadow(offset=(1, -1), shadow_rgbFace="b", alpha=0.9)])
+                ax.text(i, j, f'{mi_df.iloc[j, i]:.2f}', ha="center", va="center", color="w",
+                        path_effects=[path_effects.withSimplePatchShadow(
+                            offset=(1, -1), shadow_rgbFace="b", alpha=0.9)])
 
         ax.set_title('AUROC over all datasets and detectors')
         fig.tight_layout()
