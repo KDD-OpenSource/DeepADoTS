@@ -49,12 +49,12 @@ class SyntheticDataGenerator:
         baseline_config = {}
 
         # outliers randomly distributed over all dimensions
-        np.random.seed(123)
-        outlier_dim = np.random.choice(n, 20, replace=True)
-        np.random.seed(None)
         timestamps = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,), (2361,), (2369,),
                       (2428,), (2510,), (2512,), (2538,), (2567,), (2589,), (2695,), (2819,),
                       (2892,), (2940,), (2952,), (2970,)]
+        np.random.seed(123)
+        outlier_dim = np.random.choice(n, len(timestamps), replace=True)
+        np.random.seed(None)
 
         outlier_assignment = dict()
         for i in range(len(outlier_dim)):
@@ -70,7 +70,8 @@ class SyntheticDataGenerator:
         pollution_config = {}
         random_state = 42
 
-        return SyntheticDataset(name='Synthetic Extreme Outliers', file_name='extreme1.pkl', length=length, n=n, k=k,
+        return SyntheticDataset(name=f'Syn Extreme Outliers (dim={n})', file_name='extreme1.pkl',
+                                length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,
@@ -133,7 +134,7 @@ class SyntheticDataGenerator:
         pollution_config = {}
         random_state = 42
 
-        return SyntheticDataset(name='Synthetic Shift Outliers', file_name='shift1.pkl', length=length, n=n, k=k,
+        return SyntheticDataset(name=f'Syn Shift Outliers (dim={n})', file_name='shift1.pkl', length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,
@@ -183,7 +184,8 @@ class SyntheticDataGenerator:
         pollution_config = {}
         random_state = 42
 
-        return SyntheticDataset(name='Synthetic Variance Outliers', file_name='variance1.pkl', length=length, n=n, k=k,
+        return SyntheticDataset(name=f'Syn Variance Outliers (dim={n})', file_name='variance1.pkl',
+                                length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,
@@ -233,7 +235,7 @@ class SyntheticDataGenerator:
         pollution_config = {}
         random_state = 42
 
-        return SyntheticDataset(name='Synthetic Trend Outliers', file_name='trend1.pkl', length=length, n=n, k=k,
+        return SyntheticDataset(name=f'Syn Trend Outliers (dim={n})', file_name='trend1.pkl', length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,
