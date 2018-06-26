@@ -62,7 +62,7 @@ class Evaluator:
     def evaluate(self, seed):
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
-            for index, det in enumerate(progressbar.progressbar(self.detectors)):
+            for det in progressbar.progressbar(self.detectors):
                 self.logger.info(f"Training {det.name} on {ds}")
                 try:
                     det.set_seed(seed)

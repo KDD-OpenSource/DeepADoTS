@@ -20,36 +20,24 @@ def main():
 
 
 def run_pipeline():
+    datasets = None
     if os.environ.get("CIRCLECI", False):
-        datasets = [SyntheticDataGenerator.extreme_1()]
+        datasets = [SyntheticDataGenerator.extreme_1(seed=42)]
         detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5), DAGMM(),
                      LSTM_Enc_Dec(num_epochs=2)]
     else:
-        datasets = [
-            SyntheticDataGenerator.extreme_1(),
-            SyntheticDataGenerator.variance_1(),
-            SyntheticDataGenerator.shift_1(),
-            SyntheticDataGenerator.trend_1(),
-            SyntheticDataGenerator.combined_1(),
-            SyntheticDataGenerator.combined_4(),
-            SyntheticDataGenerator.variance_1_missing(0.1),
-            SyntheticDataGenerator.variance_1_missing(0.3),
-            SyntheticDataGenerator.variance_1_missing(0.5),
-            SyntheticDataGenerator.variance_1_missing(0.8),
-            SyntheticDataGenerator.extreme_1_polluted(0.1),
-            SyntheticDataGenerator.extreme_1_polluted(0.3),
-            SyntheticDataGenerator.extreme_1_polluted(0.5),
-            SyntheticDataGenerator.extreme_1_polluted(0.9)
-        ]
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), DAGMM(), LSTM_Enc_Dec(num_epochs=15)]
 
-    evaluator = Evaluator(datasets, detectors)
     # perform multiple pipeline runs for more significant end results
     # Set the random seed manually for reproducibility and more significant results
-    seeds = np.random.randint(sys.maxsize, size=RUNS)
+    # numpy expects a max. 32-bit unsigned integer
+    seeds = np.random.randint(low=0, high=2**32 - 1, size=RUNS)
     results = pd.DataFrame()
-    for idx, _ in enumerate(range(RUNS)):
-        evaluator.evaluate(seeds[idx])
+    evaluator = None
+
+    for seed in seeds:
+        evaluator = Evaluator(datasets if datasets else get_datasets(seed), detectors)
+        evaluator.evaluate(seed)
         result = evaluator.benchmarks()
         results = results.append(result, ignore_index=True)
 
@@ -67,16 +55,18 @@ def run_pipeline():
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
     evaluator.create_bar_charts_per_algorithm(runs=RUNS)
 
-
-def evaluate_on_real_world_data_sets():
+def evaluate_on_real_world_data_sets(seed):
     dagmm = DAGMM()
-    kdd_cup = KDDCup()
+    dagmm.set_seed(seed)
+    # numpy expects a 32-bit unsigned integer
+    kdd_cup = KDDCup(seed)
     X_train, y_train, X_test, y_test = kdd_cup.data()
     dagmm.fit(X_train, y_train)
     pred = dagmm.predict(X_test)
     print(Evaluator.get_accuracy_precision_recall_fscore(y_test, pred))
 
     donut = Donut()
+    donut.set_seed(seed)
     air_quality = AirQuality().data()
     X = air_quality.loc[:, [air_quality.columns[2], "timestamps"]]
     X["timestamps"] = X.index
@@ -88,6 +78,25 @@ def evaluate_on_real_world_data_sets():
     donut.fit(X_train, y_train)
     pred = donut.predict(X_test)
     print("Donut results: ", pred)
+
+def get_datasets(seed):
+    datasets = [
+        SyntheticDataGenerator.extreme_1(seed),
+        SyntheticDataGenerator.variance_1(seed),
+        SyntheticDataGenerator.shift_1(seed),
+        SyntheticDataGenerator.trend_1(seed),
+        SyntheticDataGenerator.combined_1(seed),
+        SyntheticDataGenerator.combined_4(seed),
+        SyntheticDataGenerator.variance_1_missing(seed, 0.1),
+        SyntheticDataGenerator.variance_1_missing(seed, 0.3),
+        SyntheticDataGenerator.variance_1_missing(seed, 0.5),
+        SyntheticDataGenerator.variance_1_missing(seed, 0.8),
+        SyntheticDataGenerator.extreme_1_polluted(seed, 0.1),
+        SyntheticDataGenerator.extreme_1_polluted(seed, 0.3),
+        SyntheticDataGenerator.extreme_1_polluted(seed, 0.5),
+        SyntheticDataGenerator.extreme_1_polluted(seed, 0.9)
+    ]
+    return datasets
 
 
 if __name__ == '__main__':
