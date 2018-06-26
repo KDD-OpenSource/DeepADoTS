@@ -346,7 +346,7 @@ class Evaluator:
     def plot_heatmap(self, store=True):
         mi_df, datasetTypes, datasetLevels = self.get_multi_index_dataframe()
         fig, ax = plt.subplots(figsize=(8, 8))
-        im = ax.imshow(mi_df, cmap=plt.get_cmap("jet"))
+        im = ax.imshow(mi_df, cmap=plt.get_cmap("YlOrRd"))
         plt.colorbar(im)
         detectors, datasets = mi_df.columns, mi_df.index
 
