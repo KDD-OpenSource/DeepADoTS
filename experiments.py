@@ -40,7 +40,7 @@ def run_missing_experiment(detectors, outlier_type='extreme_1', output_dir=None,
     return evaluator
 
 
-def run_multid_experiment(detectors, outlier_type='extreme_1', output_dir=None, steps=5):
+def run_multi_dim_experiment(detectors, outlier_type='extreme_1', output_dir=None, steps=5):
     datasets = [
         SyntheticDataGenerator.get('extreme_1', num_dim) for num_dim in np.linspace(1, 100, steps, dtype=int)
     ]

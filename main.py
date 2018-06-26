@@ -118,7 +118,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=10):
         announce_experiment('Multivariate Datasets')
         run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
 
-        run_multid_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multid'),
+        run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multid'),
                               steps=20)
 
 
