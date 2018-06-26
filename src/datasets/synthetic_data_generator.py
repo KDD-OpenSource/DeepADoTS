@@ -47,19 +47,26 @@ class SyntheticDataGenerator:
         behavior = None
         behavior_config = {}
         baseline_config = {}
-        outlier_config = {
-            'extreme': [
-                {
-                    'n': 0,
-                    'timestamps': [
-                        (2192,), (2212,), (2258,), (2262,), (2319,), (2343,),
-                        (2361,), (2369,), (2428,), (2510,), (2512,), (2538,),
-                        (2567,), (2589,), (2695,), (2819,), (2892,), (2940,),
-                        (2952,), (2970,)
-                    ]
-                }
-            ]
-        }
+
+        # outliers randomly distributed over all dimensions
+        np.random.seed(123)
+        outlier_dim = np.random.choice(n, 20, replace=True)
+        np.random.seed(None)
+        timestamps = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,), (2361,), (2369,),
+                      (2428,), (2510,), (2512,), (2538,), (2567,), (2589,), (2695,), (2819,),
+                      (2892,), (2940,), (2952,), (2970,)]
+
+        outlier_assignment = dict()
+        for i in range(len(outlier_dim)):
+            if outlier_dim[i] in outlier_assignment:
+                outlier_assignment[outlier_dim[i]].append(timestamps[i])
+            else:
+                outlier_assignment[outlier_dim[i]] = []
+        extreme_outlier_config = []
+        for dim, ts in outlier_assignment.items():
+            extreme_outlier_config.append(dict({'n': dim, 'timestamps': ts}))
+        outlier_config = {'extreme': extreme_outlier_config}
+
         pollution_config = {}
         random_state = 42
 
