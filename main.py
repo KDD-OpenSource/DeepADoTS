@@ -105,11 +105,12 @@ def get_datasets(seed):
 
 def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
-    # Set the random seed manually for reproducibility and more significant results
-    # numpy expects a max. 32-bit unsigned integer
-    seed = np.random.randint(low=0, high=2**32 - 1, size=1, dtype="uint32")[0]
 
     if os.environ.get("CIRCLECI", False):
+        # Set the random seed manually for reproducibility and more significant results
+        # numpy expects a max. 32-bit unsigned integer
+        seed = np.random.randint(low=0, high=2 ** 32 - 1, size=1, dtype="uint32")[0]
+
         detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5),
                      LSTMED(num_epochs=2), DAGMM(num_epochs=2),
                      DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
@@ -121,22 +122,23 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
                      DAGMM(sequence_length=15),
                      DAGMM(sequence_length=1, autoencoder_type=LSTMAutoEncoder),
                      DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
-        detectors = [RecurrentEBM(num_epochs=1)]
+
+        seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
 
         announce_experiment('Pollution')
-        run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
-                                 steps=steps, seed=seed)
+        run_pollution_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
+                                 steps=steps)
 
         announce_experiment('Missing Values')
-        run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
-                               steps=steps, seed=seed)
+        run_missing_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
+                               steps=steps)
 
         announce_experiment('Outlier height')
-        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
-                                steps=steps, seed=seed)
+        run_extremes_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+                                steps=steps)
 
         announce_experiment('Multivariate Datasets')
-        run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'), seed=seed)
+        run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
 
 def announce_experiment(title: str, dashes: int = 70):

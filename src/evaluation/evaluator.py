@@ -151,10 +151,10 @@ class Evaluator:
     def plot_threshold_comparison(self, steps=40, store=True):
         plt.close('all')
         plots_shape = len(self.detectors), len(self.datasets)
-        fig, axes = plt.subplots(*plots_shape, figsize=(len(self.detectors) * 5, len(self.datasets) * 5))
+        fig, axes = plt.subplots(*plots_shape, figsize=(len(self.detectors) * 15, len(self.datasets) * 5))
         # Ensure two dimensions for iteration
         axes = np.array(axes).reshape(*plots_shape).T
-        plt.suptitle("Compare thresholds", fontsize=16)
+        plt.suptitle("Compare thresholds", fontsize=10)
         for ds, axes_row in zip(self.datasets, axes):
             _, _, X_test, y_test = ds.data()
 
@@ -174,9 +174,10 @@ class Evaluator:
                 ax.set_xlabel("Threshold")
                 ax.legend()
 
-        fig.tight_layout()
         # Avoid overlapping title and axis labels
-        fig.subplots_adjust(top=0.9, hspace=0.4)
+        # throws errors
+        # fig.subplots_adjust(top=0.9, hspace=0.4, right=1, left=0)
+        # fig.tight_layout()
         if store:
             self.store(fig, "metrics_by_thresholds")
         return fig
