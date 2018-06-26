@@ -96,5 +96,5 @@ def run_experiment_evaluation(evaluator=None, runs=None, results=None, outlier_t
     evaluator.create_bar_charts_per_dataset(runs=runs)
     evaluator.create_bar_charts_per_algorithm(runs=runs)
     evaluator.generate_latex()
-    evaluator.plot_auroc(title=f"Area under the curve for differing {datasets_name} anomalies ")
+    evaluator.plot_auroc(title=title)
     return evaluator

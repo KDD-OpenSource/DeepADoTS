@@ -1,5 +1,4 @@
 import os
-import sys
 
 import numpy as np
 import pandas as pd
@@ -14,7 +13,7 @@ RUNS = 2
 
 
 def main():
-    #run_pipeline()
+    # run_pipeline()
     run_experiments()
 
 
