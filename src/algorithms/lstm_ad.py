@@ -1,6 +1,7 @@
 from . import Algorithm
 
 import numpy as np
+import pandas as pd
 from scipy.stats import multivariate_normal
 import torch
 from torch.autograd import Variable
@@ -50,47 +51,62 @@ class LSTMAD(Algorithm):
 
         self.optimizer_type = optimizer
 
+        self.mean = None
+        self.cov = None
+
         torch.manual_seed(0)
 
     def fit(self, X, _):
         self._build_model(X.shape[-1])
 
-        X = np.expand_dims(X, axis=0)
-        input_data = Variable(torch.from_numpy(X[:, :-self.len_out, :]), requires_grad=False)
+        self.model.train()
+        split_point = int(0.75*len(X))
+        X_train = X.loc[:split_point, :]
+        X_train_gaussian = X.loc[split_point:, :]
 
-        target_data = []
-        for l in range(self.len_out - 1):
-            target_data += [X[:, 1+l:-self.len_out+1+l, :]]
-        target_data += [X[:, self.len_out:, :]]
-        target_data = Variable(torch.from_numpy(np.stack(target_data, axis=3)), requires_grad=False)
+        input_data_train, target_data_train = self._input_and_target_data(X_train)
+        self._train_model(input_data_train, target_data_train)
 
-        self._train_model(input_data, target_data)
-
-    def predict(self, X):
-        X = np.expand_dims(X, axis=0)
-        input_data = Variable(torch.from_numpy(X[:, :-self.len_out, :]), requires_grad=False)
-        target_data = []
-        for l in range(self.len_out - 1):
-            target_data += [X[:, 1+l:-self.len_out+1+l, :]]
-        target_data += [X[:, self.len_out:, :]]
-        target_data = Variable(torch.from_numpy(np.stack(target_data, axis=3)), requires_grad=False)
-
-        predictions = self.model(input_data)
-
-        errors = [predictions.data.numpy()[:, self.len_out-1:, :, 0]]
-        for l in range(1, self.len_out):
-            errors += [predictions.data.numpy()[:, self.len_out-1-l:-l, :, l]]
-        errors = np.stack(errors, axis=3)
-        errors = target_data.data.numpy()[:, self.len_out-1:, :, 0][..., np.newaxis] - errors
+        self.model.eval()
+        input_data_gaussian, target_data_gaussian = self._input_and_target_data(X_train_gaussian)
+        predictions_gaussian = self.model(input_data_gaussian)
+        errors = self._calc_errors(predictions_gaussian, target_data_gaussian)
 
         # fit multivariate Gaussian on (validation set) error distribution (via maximum likelihood estimation)
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
-        mean = np.mean(norm, axis=0)
-        cov = np.cov(norm.T)
+        self.mean = np.mean(norm, axis=0)
+        self.cov = np.cov(norm.T)
 
-        scores = -multivariate_normal.logpdf(norm, mean=mean, cov=cov, allow_singular=True)
+    def predict(self, X):
+        self.model.eval()
+        input_data, target_data = self._input_and_target_data(X)
+
+        predictions = self.model(input_data)
+        errors = self._calc_errors(predictions, target_data)
+
+        norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
+        scores = -multivariate_normal.logpdf(norm, mean=self.mean, cov=self.cov)
         scores = np.pad(scores, (self.len_in + self.len_out - 1, self.len_out - 1), 'constant', constant_values=np.nan)
         return scores
+
+    def _input_and_target_data(self, X: pd.DataFrame):
+        X = np.expand_dims(X, axis=0)
+        input_data = Variable(torch.from_numpy(X[:, :-self.len_out, :]), requires_grad=False)
+        target_data = []
+        for l in range(self.len_out - 1):
+            target_data += [X[:, 1 + l:-self.len_out + 1 + l, :]]
+        target_data += [X[:, self.len_out:, :]]
+        target_data = Variable(torch.from_numpy(np.stack(target_data, axis=3)), requires_grad=False)
+
+        return input_data, target_data
+
+    def _calc_errors(self, predictions, target_data):
+        errors = [predictions.data.numpy()[:, self.len_out - 1:, :, 0]]
+        for l in range(1, self.len_out):
+            errors += [predictions.data.numpy()[:, self.len_out - 1 - l:-l, :, l]]
+        errors = np.stack(errors, axis=3)
+        errors = target_data.data.numpy()[:, self.len_out - 1:, :, 0][..., np.newaxis] - errors
+        return errors
 
     def _build_model(self, d):
         self.model = LSTMSequence(d, len_in=self.len_in, len_out=self.len_out)
