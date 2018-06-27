@@ -49,8 +49,8 @@ class LSTMAD(Algorithm, GPUWrapper):
     """
 
     def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1, optimizer=torch.optim.Rprop,
-                 gpu: int=0):
-        Algorithm.__init__(self, __name__, 'LSTM-AD')
+                 framework=Algorithm.Frameworks.PyTorch, gpu: int=0):
+        Algorithm.__init__(self, __name__, 'LSTM-AD', framework)
         GPUWrapper.__init__(self, gpu)
         self.len_in = len_in
         self.len_out = len_out
@@ -71,7 +71,7 @@ class LSTMAD(Algorithm, GPUWrapper):
         self._build_model(X.shape[-1], self.batch_size)
 
         self.model.train()
-        split_point = int(0.75*len(X))
+        split_point = int(0.75 * len(X))
         X_train = X.loc[:split_point, :]
         X_train_gaussian = X.loc[split_point:, :]
 
@@ -112,11 +112,11 @@ class LSTMAD(Algorithm, GPUWrapper):
         return input_data, target_data
 
     def _calc_errors(self, predictions, target_data):
-        errors = [predictions.data.numpy()[:, self.len_out - 1:, :, 0]]
+        errors = [predictions.data.cpu().numpy()[:, self.len_out - 1:, :, 0]]
         for l in range(1, self.len_out):
-            errors += [predictions.data.numpy()[:, self.len_out - 1 - l:-l, :, l]]
+            errors += [predictions.data.cpu().numpy()[:, self.len_out - 1 - l:-l, :, l]]
         errors = np.stack(errors, axis=3)
-        errors = target_data.data.numpy()[:, self.len_out - 1:, :, 0][..., np.newaxis] - errors
+        errors = target_data.data.cpu().numpy()[:, self.len_out - 1:, :, 0][..., np.newaxis] - errors
         return errors
 
     def _build_model(self, d, batch_size):
