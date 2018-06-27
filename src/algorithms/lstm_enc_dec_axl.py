@@ -16,8 +16,9 @@ from .cuda_utils import GPUWrapper
 class LSTMED(Algorithm, GPUWrapper):
     def __init__(self, hidden_size: int = 5, sequence_length: int = 30, batch_size: int = 20, num_epochs: int = 10,
                  n_layers: tuple = (1, 1), use_bias: tuple = (True, True), dropout: tuple = (0, 0),
-                 lr: float = 0.1, weight_decay: float = 1e-4, criterion=nn.MSELoss, gpu: int = 0):
-        Algorithm.__init__(self, __name__, 'LSTMED')
+                 lr: float = 0.1, weight_decay: float = 1e-4, criterion=nn.MSELoss,
+                 framework: int = Algorithm.Frameworks.PyTorch, gpu: int = 0):
+        Algorithm.__init__(self, __name__, 'LSTMED', framework)
         GPUWrapper.__init__(self, gpu)
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length

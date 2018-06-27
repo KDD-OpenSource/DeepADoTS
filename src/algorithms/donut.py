@@ -143,8 +143,8 @@ class Donut(Algorithm, GPUWrapper):
     is smaller than mean - std of the reconstruction probabilities for that feature. For each point
     in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
 
-    def __init__(self, num_epochs=256, gpu: int=0):
-        Algorithm.__init__(self, __name__, "Donut")
+    def __init__(self, num_epochs=256, framework=Algorithm.Frameworks.Tensorflow, gpu: int=0):
+        Algorithm.__init__(self, __name__, "Donut", framework)
         GPUWrapper.__init__(self, gpu)
         self.max_epoch = num_epochs
         self.x_dims = 120

@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import traceback
+from textwrap import wrap
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,7 +13,6 @@ from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
 from sklearn.metrics import roc_curve, auc
 from tabulate import tabulate
-from textwrap import wrap
 
 from .config import init_logging
 
@@ -20,7 +20,7 @@ from .config import init_logging
 class Evaluator:
     def __init__(self, datasets: list, detectors: list, output_dir: {str} = None):
         self.datasets = datasets
-        self.detectors = detectors
+        self.detectors = sorted(detectors, key=lambda x: x.framework)
         self.output_dir = output_dir or 'reports/figures/'
         os.makedirs(self.output_dir, exist_ok=True)
         self.results = dict()
