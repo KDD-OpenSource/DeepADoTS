@@ -3,11 +3,11 @@ import os
 import numpy as np
 import pandas as pd
 
+from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
+    run_multivariate_experiment
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoEncoder
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
-from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-                        run_multivariate_experiment
 
 RUNS = 2
 
@@ -17,13 +17,22 @@ def main():
     run_experiments()
 
 
-def run_pipeline():
+def get_detectors():
     if os.environ.get("CIRCLECI", False):
-        datasets = [SyntheticDataGenerator.extreme_1()]
-        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5), DAGMM(num_epochs=2),
-                     LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
+        return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
+                LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        datasets = [
+        return [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40),
+                DAGMM(sequence_length=1), DAGMM(sequence_length=15),
+                DAGMM(sequence_length=1, autoencoder_type=LSTMAutoEncoder),
+                DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
+
+
+def get_pipeline_datasets():
+    if os.environ.get("CIRCLECI", False):
+        return [SyntheticDataGenerator.extreme_1()]
+    else:
+        return [
             SyntheticDataGenerator.extreme_1(),
             SyntheticDataGenerator.variance_1(),
             SyntheticDataGenerator.shift_1(),
@@ -31,10 +40,11 @@ def run_pipeline():
             SyntheticDataGenerator.combined_1(),
             SyntheticDataGenerator.combined_4(),
         ]
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
-                     DAGMM(sequence_length=1), DAGMM(sequence_length=15),
-                     DAGMM(sequence_length=1, autoencoder_type=LSTMAutoEncoder),
-                     DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
+
+
+def run_pipeline():
+    datasets = get_pipeline_datasets()
+    detectors = get_detectors()
 
     evaluator = Evaluator(datasets, detectors)
     # perform multiple pipeline runs for more significant end results
@@ -84,19 +94,11 @@ def evaluate_on_real_world_data_sets():
 
 def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
+    detectors = get_detectors()
     if os.environ.get("CIRCLECI", False):
-        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5),
-                     LSTMED(num_epochs=2), DAGMM(num_epochs=2),
-                     DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
         run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
                                 steps=1)
     else:
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
-                     DAGMM(sequence_length=1),
-                     DAGMM(sequence_length=15),
-                     DAGMM(sequence_length=1, autoencoder_type=LSTMAutoEncoder),
-                     DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
-
         announce_experiment('Pollution')
         run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
                                  steps=steps)
