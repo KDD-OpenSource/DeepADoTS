@@ -315,24 +315,24 @@ class Evaluator:
         self.store_text(content=result, title="latex_table_results", extension="tex")
 
     @staticmethod
-    def translate_var_key(keyName):
-        if keyName == 'pol':
+    def translate_var_key(key_name):
+        if key_name == 'pol':
             return 'Pollution'
-        if keyName == 'mis':
+        if key_name == 'mis':
             return 'Missing'
-        if keyName == 'extremeness':
+        if key_name == 'extremeness':
             return 'Extremeness'
-        if keyName == 'f':
+        if key_name == 'f':
             return 'Multivariate'
         # self.logger('Unexpected dataset name (unknown variable in name)')
         return None
 
     @staticmethod
-    def get_key_and_value(datasetName):
+    def get_key_and_value(dataset_name):
         # Extract var name and value from dataset name
         var_re = re.compile(r'.+\((\w*)=(.*)\)')
         # e.g. 'Syn Extreme Outliers (pol=0.1)'
-        match = var_re.search(datasetName)
+        match = var_re.search(dataset_name)
         if not match:
             # self.logger.warn('Unexpected dataset name (not variable in name)')
             return '', ''
@@ -348,33 +348,33 @@ class Evaluator:
 
     @staticmethod
     def insert_multi_index_yaxis(ax, mi_df):
-        typeTitleOffset = -1.6  # depends on string length of xaxis ticklabels
+        type_title_offset = -1.6  # depends on string length of xaxis ticklabels
 
         datasets = mi_df.index
-        datasetTypes = Evaluator.get_dataset_types(mi_df)  # Returns unique entries keeping original order
+        dataset_types = Evaluator.get_dataset_types(mi_df)  # Returns unique entries keeping original order
 
         ax.set_yticks(np.arange(len(datasets)))
         ax.set_yticklabels([x[1] for x in datasets])
 
-        yAxisTitlePos = 0  # Store at which position we are for plotting the next title
-        for idx, datasetType in enumerate(datasetTypes):
-            sectionFrame = mi_df.iloc[mi_df.index.get_level_values('Type') == datasetType]
+        y_axis_title_pos = 0  # Store at which position we are for plotting the next title
+        for idx, dataset_type in enumerate(dataset_types):
+            section_frame = mi_df.iloc[mi_df.index.get_level_values('Type') == dataset_type]
             # Somehow it's sorted by its occurence (which is what we want here)
-            datasetLevels = sectionFrame.index.remove_unused_levels().levels[1]
-            titlePos = yAxisTitlePos + 0.5 * (len(datasetLevels) - 1)
-            ax.text(typeTitleOffset, titlePos, datasetType, ha="center", va="center", rotation=90,
+            dataset_levels = section_frame.index.remove_unused_levels().levels[1]
+            title_pos = y_axis_title_pos + 0.5 * (len(dataset_levels) - 1)
+            ax.text(type_title_offset, title_pos, dataset_type, ha="center", va="center", rotation=90,
                     fontproperties=FontProperties(weight='bold'))
-            if idx < len(datasetTypes) - 1:
-                sepPos = yAxisTitlePos + (len(datasetLevels) - 0.6)
-                ax.text(-0.5, sepPos, '_'*int(typeTitleOffset*-10), ha="right", va="center")
-            yAxisTitlePos += len(datasetLevels)
+            if idx < len(dataset_types) - 1:
+                sep_pos = y_axis_title_pos + (len(dataset_levels) - 0.6)
+                ax.text(-0.5, sep_pos, '_'*int(type_title_offset*-10), ha="right", va="center")
+            y_axis_title_pos += len(dataset_levels)
 
     @staticmethod
     def to_multi_index_frame(evaluators):
         evaluator = evaluators[0]
         detectors = evaluator.detectors
-        for otherEvaluator in evaluators[1:]:
-            assert evaluator.detectors == otherEvaluator.detectors, 'All evaluators should use the same detectors'
+        for other_evaluator in evaluators[1:]:
+            assert evaluator.detectors == other_evaluator.detectors, 'All evaluators should use the same detectors'
         datasets = [[evaluator.get_key_and_value(str(d)) for d in ev.datasets] for ev in evaluators]
         datasets = [tuple(d) for d in np.concatenate(datasets)]  # Required for MultiIndex.from_tuples
         datasets = pd.MultiIndex.from_tuples(datasets, names=['Type', 'Level'])
@@ -392,7 +392,7 @@ class Evaluator:
         detectors, datasets = mi_df.columns, mi_df.index
 
         fig, ax = plt.subplots(figsize=(len(detectors) + 2, len(datasets)))
-        im = ax.imshow(mi_df, cmap=plt.get_cmap("YlOrRd"))
+        im = ax.imshow(mi_df, cmap=plt.get_cmap("YlOrRd"), vmin=0, vmax=1)
         plt.colorbar(im)
 
         # Show MultiIndex for ordinate
