@@ -1,15 +1,18 @@
-from . import Algorithm
-
 import numpy as np
-from scipy.stats import multivariate_normal
+import pandas as pd
 import torch
+from scipy.stats import multivariate_normal
 from torch.autograd import Variable
+
+from .algorithm import Algorithm
+from .cuda_utils import GPUWrapper
 
 
 class LSTMSequence(torch.nn.Module):
-    def __init__(self, d, len_in=1, len_out=10):
+    def __init__(self, d, batch_size: int, len_in=1, len_out=10):
         super().__init__()
         self.d = d  # input and output feature dimensionality
+        self.batch_size = batch_size
         self.len_in = len_in
         self.len_out = len_out
         self.hidden_size1 = 32
@@ -18,12 +21,18 @@ class LSTMSequence(torch.nn.Module):
         self.lstm2 = torch.nn.LSTMCell(self.hidden_size1, self.hidden_size2)
         self.linear = torch.nn.Linear(self.hidden_size2, d * len_out)
 
+        self.register_buffer('h_t', torch.zeros(self.batch_size, self.hidden_size1))
+        self.register_buffer('c_t', torch.zeros(self.batch_size, self.hidden_size1))
+        self.register_buffer('h_t2', torch.zeros(self.batch_size, self.hidden_size1))
+        self.register_buffer('c_t2', torch.zeros(self.batch_size, self.hidden_size1))
+
     def forward(self, input):
         outputs = []
-        h_t = Variable(torch.zeros(input.size(0), self.hidden_size1).double(), requires_grad=False)
-        c_t = Variable(torch.zeros(input.size(0), self.hidden_size1).double(), requires_grad=False)
-        h_t2 = Variable(torch.zeros(input.size(0), self.hidden_size2).double(), requires_grad=False)
-        c_t2 = Variable(torch.zeros(input.size(0), self.hidden_size2).double(), requires_grad=False)
+        h_t = Variable(self.h_t.double(), requires_grad=False)
+        c_t = Variable(self.c_t.double(), requires_grad=False)
+        h_t2 = Variable(self.h_t2.double(), requires_grad=False)
+        c_t2 = Variable(self.c_t2.double(), requires_grad=False)
+
         for input_t in input.chunk(input.size(1), dim=1):
             h_t, c_t = self.lstm1(input_t.squeeze(dim=1), (h_t, c_t))
             h_t2, c_t2 = self.lstm2(h_t, (h_t2, c_t2))
@@ -34,13 +43,15 @@ class LSTMSequence(torch.nn.Module):
         return outputs.view(input.size(0), input.size(1), self.d, self.len_out)
 
 
-class LSTMAD(Algorithm):
+class LSTMAD(Algorithm, GPUWrapper):
     """ LSTM-AD implementation using PyTorch.
     The interface of the class is sklearn-like.
     """
 
-    def __init__(self, len_in=1, len_out=10, num_epochs=20, lr=0.01, batch_size=128, optimizer=torch.optim.Rprop):
-        super().__init__(__name__, "LSTM-AD")
+    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1, optimizer=torch.optim.Rprop,
+                 framework=Algorithm.Frameworks.PyTorch, gpu: int=0):
+        Algorithm.__init__(self, __name__, 'LSTM-AD', framework)
+        GPUWrapper.__init__(self, gpu)
         self.len_in = len_in
         self.len_out = len_out
 
@@ -50,50 +61,67 @@ class LSTMAD(Algorithm):
 
         self.optimizer_type = optimizer
 
+        self.mean = None
+        self.cov = None
+
         torch.manual_seed(0)
 
     def fit(self, X, _):
-        self._build_model(X.shape[-1])
+        self.batch_size = 1
+        self._build_model(X.shape[-1], self.batch_size)
 
-        X = np.expand_dims(X, axis=0)
-        input_data = Variable(torch.from_numpy(X[:, :-self.len_out, :]), requires_grad=False)
+        self.model.train()
+        split_point = int(0.75 * len(X))
+        X_train = X.loc[:split_point, :]
+        X_train_gaussian = X.loc[split_point:, :]
 
-        target_data = []
-        for l in range(self.len_out - 1):
-            target_data += [X[:, 1+l:-self.len_out+1+l, :]]
-        target_data += [X[:, self.len_out:, :]]
-        target_data = Variable(torch.from_numpy(np.stack(target_data, axis=3)), requires_grad=False)
+        input_data_train, target_data_train = self._input_and_target_data(X_train)
+        self._train_model(input_data_train, target_data_train)
 
-        self._train_model(input_data, target_data)
-
-    def predict(self, X):
-        X = np.expand_dims(X, axis=0)
-        input_data = Variable(torch.from_numpy(X[:, :-self.len_out, :]), requires_grad=False)
-        target_data = []
-        for l in range(self.len_out - 1):
-            target_data += [X[:, 1+l:-self.len_out+1+l, :]]
-        target_data += [X[:, self.len_out:, :]]
-        target_data = Variable(torch.from_numpy(np.stack(target_data, axis=3)), requires_grad=False)
-
-        predictions = self.model(input_data)
-
-        errors = [predictions.data.numpy()[:, self.len_out-1:, :, 0]]
-        for l in range(1, self.len_out):
-            errors += [predictions.data.numpy()[:, self.len_out-1-l:-l, :, l]]
-        errors = np.stack(errors, axis=3)
-        errors = target_data.data.numpy()[:, self.len_out-1:, :, 0][..., np.newaxis] - errors
+        self.model.eval()
+        input_data_gaussian, target_data_gaussian = self._input_and_target_data(X_train_gaussian)
+        predictions_gaussian = self.model(input_data_gaussian)
+        errors = self._calc_errors(predictions_gaussian, target_data_gaussian)
 
         # fit multivariate Gaussian on (validation set) error distribution (via maximum likelihood estimation)
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
-        mean = np.mean(norm, axis=0)
-        cov = np.cov(norm.T)
+        self.mean = np.mean(norm, axis=0)
+        self.cov = np.cov(norm.T)
 
-        scores = -multivariate_normal.logpdf(norm, mean=mean, cov=cov, allow_singular=True)
+    def predict(self, X):
+        self.model.eval()
+        input_data, target_data = self._input_and_target_data(X)
+
+        predictions = self.model(input_data)
+        errors = self._calc_errors(predictions, target_data)
+
+        norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
+        scores = -multivariate_normal.logpdf(norm, mean=self.mean, cov=self.cov, allow_singular=True)
         scores = np.pad(scores, (self.len_in + self.len_out - 1, self.len_out - 1), 'constant', constant_values=np.nan)
         return scores
 
-    def _build_model(self, d):
-        self.model = LSTMSequence(d, len_in=self.len_in, len_out=self.len_out)
+    def _input_and_target_data(self, X: pd.DataFrame):
+        X = np.expand_dims(X, axis=0)
+        input_data = self.to_var(torch.from_numpy(X[:, :-self.len_out, :]), requires_grad=False)
+        target_data = []
+        for l in range(self.len_out - 1):
+            target_data += [X[:, 1 + l:-self.len_out + 1 + l, :]]
+        target_data += [X[:, self.len_out:, :]]
+        target_data = self.to_var(torch.from_numpy(np.stack(target_data, axis=3)), requires_grad=False)
+
+        return input_data, target_data
+
+    def _calc_errors(self, predictions, target_data):
+        errors = [predictions.data.cpu().numpy()[:, self.len_out - 1:, :, 0]]
+        for l in range(1, self.len_out):
+            errors += [predictions.data.cpu().numpy()[:, self.len_out - 1 - l:-l, :, l]]
+        errors = np.stack(errors, axis=3)
+        errors = target_data.data.cpu().numpy()[:, self.len_out - 1:, :, 0][..., np.newaxis] - errors
+        return errors
+
+    def _build_model(self, d, batch_size):
+        self.model = LSTMSequence(d, batch_size, len_in=self.len_in, len_out=self.len_out)
+        self.to_device(self.model)
         self.model.double()
 
         self.loss = torch.nn.MSELoss()
