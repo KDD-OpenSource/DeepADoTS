@@ -49,7 +49,7 @@ class LSTMAD(Algorithm, GPUWrapper):
     """
 
     def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1, optimizer=torch.optim.Rprop,
-                 framework=Algorithm.Frameworks.PyTorch, gpu: int=0):
+                 framework=Algorithm.Frameworks.PyTorch, gpu: int = 0):
         Algorithm.__init__(self, __name__, 'LSTM-AD', framework)
         GPUWrapper.__init__(self, gpu)
         self.len_in = len_in
@@ -96,7 +96,7 @@ class LSTMAD(Algorithm, GPUWrapper):
         errors = self._calc_errors(predictions, target_data)
 
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
-        scores = -multivariate_normal.logpdf(norm, mean=self.mean, cov=self.cov)
+        scores = -multivariate_normal.logpdf(norm, mean=self.mean, cov=self.cov, allow_singular=True)
         scores = np.pad(scores, (self.len_in + self.len_out - 1, self.len_out - 1), 'constant', constant_values=np.nan)
         return scores
 

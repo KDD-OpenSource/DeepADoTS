@@ -133,7 +133,6 @@ class DAGMMModule(nn.Module, GPUWrapper):
         return sample_energy, cov_diag
 
     def loss_function(self, x, x_hat, z, gamma, lambda_energy, lambda_cov_diag):
-
         recon_error = torch.mean((x.view(*x_hat.shape) - x_hat) ** 2)
         phi, mu, cov = self.compute_gmm_params(z, gamma)
         sample_energy, cov_diag = self.compute_energy(z, phi, mu, cov)
@@ -171,6 +170,7 @@ class DAGMM(Algorithm, GPUWrapper):
                                                                                     self.lambda_energy,
                                                                                     self.lambda_cov_diag)
         self.reset_grad()
+        total_loss = torch.clamp(total_loss, max=1e8)  # Extremely high loss can cause NaN gradients
         total_loss.backward()
         torch.nn.utils.clip_grad_norm_(self.dagmm.parameters(), 5)
         self.optimizer.step()
