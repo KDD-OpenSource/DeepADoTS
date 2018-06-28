@@ -45,6 +45,10 @@ def run_pipeline():
     evaluator.create_boxplots_per_algorithm(runs=RUNS, data=results)
     evaluator.create_boxplots_per_dataset(runs=RUNS, data=results)
 
+    # calc mean and std per algorithm
+
+
+
     # average results from multiple pipeline runs
     averaged_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
     evaluator.benchmark_results = averaged_results

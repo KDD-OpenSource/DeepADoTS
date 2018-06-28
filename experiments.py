@@ -62,6 +62,8 @@ def run_experiment_evaluation(detectors=None, seeds=None, steps=5, runs=None, ou
     evaluator.create_boxplots_per_algorithm(runs=runs, data=results)
     evaluator.create_boxplots_per_dataset(runs=runs, data=results)
 
+    # calc mean and std per algorithm
+
     averaged_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
     evaluator.benchmark_results = averaged_results
 
