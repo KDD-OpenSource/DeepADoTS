@@ -49,7 +49,7 @@ class LSTMAD(Algorithm, GPUWrapper):
     """
 
     def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1, optimizer=torch.optim.Rprop,
-                 framework=Algorithm.Frameworks.PyTorch, gpu: int = 0):
+                 framework=Algorithm.Frameworks.PyTorch, gpu: int=0):
         Algorithm.__init__(self, __name__, 'LSTM-AD', framework)
         GPUWrapper.__init__(self, gpu)
         self.len_in = len_in

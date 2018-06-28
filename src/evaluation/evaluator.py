@@ -219,13 +219,14 @@ class Evaluator:
 
     def plot_auroc(self, store=True, title='AUROC'):
         plt.close('all')
-        dataset_names = [ds.name for ds in self.datasets]
+        detector_names = [det.name for det in self.detectors]
         fig = plt.figure(figsize=(7, 7))
-        for det in self.detectors:
-            aurocs = self.benchmark_results[self.benchmark_results['algorithm'] == det.name]['auroc']
-            plt.plot(aurocs.values, label=det.name)
-        plt.xticks(range(len(self.datasets)), dataset_names, rotation=90)
-        plt.legend()
+        for index, ds in enumerate(self.datasets):
+            aurocs = self.benchmark_results[self.benchmark_results['dataset'] == ds.name]['auroc']
+            width = 0.8 / len(self.datasets)
+            plt.bar(np.arange(len(aurocs.values)) + index*width, aurocs.values, width=width, label=ds.name)
+        plt.xticks(range(len(self.detectors)), detector_names, rotation=90)
+        plt.legend(loc=3, framealpha=0.5)
         plt.xlabel('Dataset')
         plt.ylabel('Area under Receiver Operating Characteristic')
         plt.title(title)
