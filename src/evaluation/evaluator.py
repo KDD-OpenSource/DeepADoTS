@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import traceback
+from textwrap import wrap
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,7 +13,6 @@ from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
 from sklearn.metrics import roc_curve, auc
 from tabulate import tabulate
-from textwrap import wrap
 
 from .config import init_logging
 
@@ -20,7 +20,7 @@ from .config import init_logging
 class Evaluator:
     def __init__(self, datasets: list, detectors: list, output_dir: {str} = None):
         self.datasets = datasets
-        self.detectors = detectors
+        self.detectors = sorted(detectors, key=lambda x: x.framework)
         self.output_dir = output_dir or 'reports/figures/'
         os.makedirs(self.output_dir, exist_ok=True)
         self.results = dict()
@@ -219,13 +219,14 @@ class Evaluator:
 
     def plot_auroc(self, store=True, title='AUROC'):
         plt.close('all')
-        dataset_names = [ds.name for ds in self.datasets]
+        detector_names = [det.name for det in self.detectors]
         fig = plt.figure(figsize=(7, 7))
-        for det in self.detectors:
-            aurocs = self.benchmark_results[self.benchmark_results['algorithm'] == det.name]['auroc']
-            plt.plot(aurocs.values, label=det.name)
-        plt.xticks(range(len(self.datasets)), dataset_names, rotation=90)
-        plt.legend()
+        for index, ds in enumerate(self.datasets):
+            aurocs = self.benchmark_results[self.benchmark_results['dataset'] == ds.name]['auroc']
+            width = 0.8 / len(self.datasets)
+            plt.bar(np.arange(len(aurocs.values)) + index*width, aurocs.values, width=width, label=ds.name)
+        plt.xticks(range(len(self.detectors)), detector_names, rotation=90)
+        plt.legend(loc=3, framealpha=0.5)
         plt.xlabel('Dataset')
         plt.ylabel('Area under Receiver Operating Characteristic')
         plt.title(title)
@@ -249,6 +250,7 @@ class Evaluator:
         for det in self.detectors:
             relevant_results[relevant_results["algorithm"] == det.name].boxplot(by="dataset", figsize=(15, 15))
             plt.title(f"AUC grouped by dataset for {det.name} performing {runs} runs")
+            plt.ylim(ymin=0, ymax=1)
             plt.suptitle("")
             plt.tight_layout()
             self.store(plt.gcf(), f"boxplot_auc_for_{det.name}_{runs}_runs")
@@ -259,6 +261,7 @@ class Evaluator:
         for ds in self.datasets:
             relevant_results[relevant_results["dataset"] == ds.name].boxplot(by="algorithm", figsize=(15, 15))
             plt.title(f"AUC grouped by algorithm for {ds.name} peforming {runs} runs")
+            plt.ylim(ymin=0, ymax=1)
             plt.suptitle("")
             plt.tight_layout()
             self.store(plt.gcf(), f"boxplots_auc_for_{ds.name}_{runs}_runs")
@@ -270,6 +273,7 @@ class Evaluator:
             relevant_results[relevant_results["algorithm"] == det.name].plot(x="dataset", kind="bar",
                                                                              figsize=(7, 7))
             plt.title(f"AUC for {det.name} performing {runs} runs")
+            plt.ylim(ymin=0, ymax=1)
             plt.tight_layout()
             self.store(plt.gcf(), f"barchart_auc_for_{det.name}_{runs}_runs")
 
@@ -279,6 +283,7 @@ class Evaluator:
         for ds in self.datasets:
             relevant_results[relevant_results["dataset"] == ds.name].plot(x="algorithm", kind="bar", figsize=(7, 7))
             plt.title(f"AUC on {ds.name} performing {runs} runs")
+            plt.ylim(ymin=0, ymax=1)
             plt.tight_layout()
             self.store(plt.gcf(), f"barchart_auc_for_{ds.name}_{runs}_runs")
 
