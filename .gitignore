@@ -107,9 +107,10 @@ venv.bak/
 .idea/
 
 # SyncThing data
-data/
-reports/data/
-reports/figures/
-reports/logs/
-reports/tables/
-models/
+data/*
+reports/data/*
+reports/figures/*
+reports/logs/*
+reports/tables/*
+models/*
+reports/experiments/*

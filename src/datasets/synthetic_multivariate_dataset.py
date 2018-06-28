@@ -99,9 +99,12 @@ class SyntheticMultivariateDataset(Dataset):
     def insert_features(self, interval_values: np.ndarray, interval_labels: np.ndarray,
                         curve: np.ndarray, create_anomaly: bool):
 
+        anomaly_dim = np.random.randint(0, interval_values.shape[1])
+
         # Insert curve and pause in first dimension (after adding the global noise)
-        interval_values[:len(curve), 0] += self.add_global_noise(curve)
-        interval_values[len(curve):, 0] = self.add_global_noise(interval_values[len(curve):, 0])
+        for i in set(range(interval_values.shape[1])) - {anomaly_dim}:
+            interval_values[:len(curve), i] += self.add_global_noise(curve)
+            interval_values[len(curve):, i] = self.add_global_noise(interval_values[len(curve):, i])
 
         # Get values of anomaly_func and fill missing spots with noise
         # anomaly_func function gets the clean curve values (not noisy)
@@ -109,9 +112,10 @@ class SyntheticMultivariateDataset(Dataset):
         anomaly_values, start, end = self.anomaly_func(curve, create_anomaly, interval_length)
         assert len(anomaly_values) <= interval_length, f'Interval too long: {len(anomaly_values)} > {interval_length}'
 
-        interval_values[:len(anomaly_values), 1] += self.add_global_noise(anomaly_values)
+        interval_values[:len(anomaly_values), anomaly_dim] += self.add_global_noise(anomaly_values)
         # Fill interval up with noisy zero values
-        interval_values[len(anomaly_values):, 1] = self.add_global_noise(interval_values[len(anomaly_values):, 1])
+        interval_values[len(anomaly_values):, anomaly_dim] = self.add_global_noise(
+            interval_values[len(anomaly_values):, anomaly_dim])
 
         # Add anomaly labels with slight padding (dont start with the first interval value).
         # The padding is curve_length / padding_factor
