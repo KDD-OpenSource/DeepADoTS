@@ -1,4 +1,3 @@
-from .algorithm import Algorithm
 from .autoencoder import NNAutoEncoder, LSTMAutoEncoder
 from .dagmm import DAGMM
 from .donut import Donut
@@ -8,7 +7,6 @@ from .lstm_enc_dec_axl import LSTMED
 from .rnn_ebm import RecurrentEBM
 
 __all__ = [
-    'Algorithm',
     'NNAutoEncoder',
     'LSTMAutoEncoder',
     'DAGMM',

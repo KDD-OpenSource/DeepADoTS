@@ -1,8 +1,9 @@
-import time
-import os
-import re
-import sys
 import logging
+import os
+import sys
+
+import re
+import time
 
 # Use: logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL
 LOG_LEVEL = logging.DEBUG
