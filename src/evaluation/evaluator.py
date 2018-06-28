@@ -175,9 +175,10 @@ class Evaluator:
                 ax.legend()
 
         # Avoid overlapping title and axis labels
-        # throws errors
-        # fig.subplots_adjust(top=0.9, hspace=0.4, right=1, left=0)
-        # fig.tight_layout()
+        # tight_layout throws errors if only one detector is available
+        if len(self.detectors) > 1:
+            fig.subplots_adjust(top=0.9, hspace=0.4, right=1, left=0)
+            fig.tight_layout()
         if store:
             self.store(fig, "metrics_by_thresholds")
         return fig
