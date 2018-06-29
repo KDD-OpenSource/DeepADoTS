@@ -175,10 +175,9 @@ class Evaluator:
                 ax.legend()
 
         # Avoid overlapping title and axis labels
-        # tight_layout throws errors if only one detector is available
-        if len(self.detectors) > 1:
-            fig.subplots_adjust(top=0.9, hspace=0.4, right=1, left=0)
-            fig.tight_layout()
+        plt.xlim([0.0, 1.0])
+        fig.subplots_adjust(top=0.9, hspace=0.4, right=1, left=0)
+        fig.tight_layout()
         if store:
             self.store(fig, "metrics_by_thresholds")
         return fig
@@ -237,15 +236,6 @@ class Evaluator:
             self.store(fig, f"auroc")
         return fig
 
-    def print_tables(self):
-        for ds in self.datasets:
-            print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            table = tabulate(self.benchmark_results[self.benchmark_results['dataset'] == ds.name][print_order],
-                             headers='keys', tablefmt='psql')
-            self.logger.info(f"Dataset: {ds.name}\n{table}")
-            self.logger.info(tabulate(self.benchmark_results[self.benchmark_results['dataset'] == ds.name][print_order],
-                                      headers='keys', tablefmt='psql'))
-
     # create boxplot diagrams for auc values for each dataset per algorithm
     def create_boxplots_per_algorithm(self, runs, data):
         relevant_results = data[["algorithm", "dataset", "auroc"]]
@@ -301,12 +291,28 @@ class Evaluator:
             f.write(content)
         self.logger.info(f"Stored {extension} file at {path}")
 
-    def generate_latex(self):
-        benchmarks = self.benchmarks()
+    def print_merged_table_per_dataset(self, results):
+        for ds in self.datasets:
+            table = tabulate(results[results["dataset"] == ds.name], headers="keys", tablefmt="psql")
+            self.logger.info(f"Dataset: {ds.name}\n{table}")
+
+    def generate_latex_for_merged_table_per_dataset(self, results, title=""):
         result = ""
         for ds in self.datasets:
-            print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            content = f'''{ds.name}:\n\n{tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
-                           headers='keys', tablefmt='latex')}\n\n'''
+            content = f'''{ds.name}:\n\n{tabulate(results[results["dataset"] == ds.name],
+                                   headers="keys", tablefmt="latex")}\n\n'''
             result += content
-        self.store_text(content=result, title="latex_table_results", extension="tex")
+        self.store_text(content=result, title=title, extension="tex")
+
+    def print_merged_table_per_algorithm(self, results):
+        for det in self.detectors:
+            table = tabulate(results[results["algorithm"] == det.name], headers="keys", tablefmt="psql")
+            self.logger.info(f"Detector: {det.name}\n{table}")
+
+    def generate_latex_for_merged_table_per_algorithm(self, results, title=""):
+        result = ""
+        for det in self.detectors:
+            content = f'''{det.name}:\n\n{tabulate(results[results["algorithm"] == det.name],
+                                   headers="keys", tablefmt="latex")}\n\n'''
+            result += content
+        self.store_text(content=result, title=title, extension="tex")

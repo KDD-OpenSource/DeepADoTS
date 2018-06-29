@@ -104,6 +104,10 @@ class LSTMED(Algorithm):
     def threshold(self, score):
         return np.nanmean(score) + 2*np.nanstd(score)
 
+    def set_seed(self, seed):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(self.seed)
+
 
 class LSTMEDModule(nn.Module):
     def __init__(self, n_features: int, hidden_size: int, batch_size: int,

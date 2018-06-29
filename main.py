@@ -7,18 +7,20 @@ from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoE
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-                        run_multivariate_experiment
+    run_multivariate_experiment
 
 RUNS = 2
 
 
 def main():
-    # run_pipeline()
-    run_experiments()
+    run_pipeline()
+    # run_experiments()
 
 
 def run_pipeline():
+    print_order = ["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score", "auroc"]
     datasets = None
+
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1(seed=42)]
         detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5), DAGMM(num_epochs=2),
@@ -26,13 +28,12 @@ def run_pipeline():
     else:
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
                      DAGMM(sequence_length=1), DAGMM(sequence_length=15),
-                     DAGMM(sequence_length=1, autoencoder_type=LSTMAutoEncoder),
                      DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
-    # perform multiple pipeline runs for more significant end results
+    # perform multiple pipeline runs for more robust end results
     # Set the random seed manually for reproducibility and more significant results
     # numpy expects a max. 32-bit unsigned integer
-    seeds = np.random.randint(low=0, high=2**32 - 1, size=RUNS, dtype="uint32")
+    seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
     results = pd.DataFrame()
     evaluator = None
 
@@ -45,21 +46,47 @@ def run_pipeline():
     evaluator.create_boxplots_per_algorithm(runs=RUNS, data=results)
     evaluator.create_boxplots_per_dataset(runs=RUNS, data=results)
 
-    # calc mean and std per algorithm
+    # calc std and mean for each algorithm per dataset
+    std_results = results.groupby(["dataset", "algorithm"]).std()
+    # get rid of multi-index
+    std_results = std_results.reset_index()
+    std_results = std_results[print_order]
+    std_results.rename(inplace=True, index=str,
+                       columns={'F0.1-score': 'F0.1-score_std', 'F1-score': 'F1-score_std', 'accuracy': 'accuracy_std',
+                                'auroc': 'auroc_std', 'precision': 'precision_std', 'recall': 'recall_std'})
 
+    avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
+    avg_results = avg_results[print_order]
 
+    avg_results_renamed = avg_results.rename(index=str,
+                                             columns={'F0.1-score': 'F0.1-score_avg', 'F1-score': 'F1-score_avg',
+                                                      'accuracy': 'accuracy_avg',
+                                                      'auroc': 'auroc_avg', 'precision': 'precision_avg',
+                                                      'recall': 'recall_avg'})
+    evaluator.print_merged_table_per_dataset(std_results)
+    evaluator.generate_latex_for_merged_table_per_dataset(std_results,
+                                                          title="latex_table_merged_std_results_per_dataset")
 
-    # average results from multiple pipeline runs
-    averaged_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
-    evaluator.benchmark_results = averaged_results
+    evaluator.print_merged_table_per_dataset(avg_results_renamed)
+    evaluator.generate_latex_for_merged_table_per_dataset(avg_results_renamed,
+                                                          title="latex_table_merged_avg_results_per_dataset")
 
-    evaluator.print_tables()
+    evaluator.print_merged_table_per_algorithm(std_results)
+    evaluator.generate_latex_for_merged_table_per_algorithm(std_results,
+                                                            title="latex_table_merged_std_results_per_algorithm")
+
+    evaluator.print_merged_table_per_algorithm(avg_results_renamed)
+    evaluator.generate_latex_for_merged_table_per_algorithm(avg_results_renamed,
+                                                            title="latex_table_merged_avg_results_per_algorithm")
+
+    # set average results from multiple pipeline runs for evaluation
+    evaluator.benchmark_results = avg_results
+
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
     evaluator.create_bar_charts_per_algorithm(runs=RUNS)
-    evaluator.generate_latex()
 
 
 def evaluate_on_real_world_data_sets(seed):
@@ -124,7 +151,6 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
                      DAGMM(sequence_length=1),
                      DAGMM(sequence_length=15),
-                     DAGMM(sequence_length=1, autoencoder_type=LSTMAutoEncoder),
                      DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
         seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
