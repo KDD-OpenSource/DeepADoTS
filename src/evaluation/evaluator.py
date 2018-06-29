@@ -301,7 +301,7 @@ class Evaluator:
             table = tabulate(results[results["dataset"] == ds.name], headers="keys", tablefmt="psql")
             self.logger.info(f"Dataset: {ds.name}\n{table}")
 
-    def generate_latex_for_merged_table_per_dataset(self, results, title=""):
+    def gen_latex_for_merged_table_per_dataset(self, results, title=""):
         result = ""
         for ds in self.datasets:
             content = f'''{ds.name}:\n\n{tabulate(results[results["dataset"] == ds.name],
@@ -314,7 +314,7 @@ class Evaluator:
             table = tabulate(results[results["algorithm"] == det.name], headers="keys", tablefmt="psql")
             self.logger.info(f"Detector: {det.name}\n{table}")
 
-    def generate_latex_for_merged_table_per_algorithm(self, results, title=""):
+    def gen_latex_for_merged_table_per_algorithm(self, results, title=""):
         result = ""
         for det in self.detectors:
             content = f'''{det.name}:\n\n{tabulate(results[results["algorithm"] == det.name],

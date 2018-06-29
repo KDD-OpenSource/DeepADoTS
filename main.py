@@ -9,12 +9,13 @@ from src.evaluation.evaluator import Evaluator
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
     run_multivariate_experiment
 
+# min number of runs = 2 for std operation
 RUNS = 2
 
 
 def main():
-    run_pipeline()
-    # run_experiments()
+    # run_pipeline()
+    run_experiments()
 
 
 def get_detectors():
@@ -70,20 +71,20 @@ def run_pipeline():
                                                       'auroc': 'auroc_avg', 'precision': 'precision_avg',
                                                       'recall': 'recall_avg'})
     evaluator.print_merged_table_per_dataset(std_results)
-    evaluator.generate_latex_for_merged_table_per_dataset(std_results,
-                                                          title="latex_table_merged_std_results_per_dataset")
+    evaluator.gen_latex_for_merged_table_per_dataset(std_results,
+                                                     title="latex_table_merged_std_results_per_dataset")
 
     evaluator.print_merged_table_per_dataset(avg_results_renamed)
-    evaluator.generate_latex_for_merged_table_per_dataset(avg_results_renamed,
-                                                          title="latex_table_merged_avg_results_per_dataset")
+    evaluator.gen_latex_for_merged_table_per_dataset(avg_results_renamed,
+                                                     title="latex_table_merged_avg_results_per_dataset")
 
     evaluator.print_merged_table_per_algorithm(std_results)
-    evaluator.generate_latex_for_merged_table_per_algorithm(std_results,
-                                                            title="latex_table_merged_std_results_per_algorithm")
+    evaluator.gen_latex_for_merged_table_per_algorithm(std_results,
+                                                       title="latex_table_merged_std_results_per_algorithm")
 
     evaluator.print_merged_table_per_algorithm(avg_results_renamed)
-    evaluator.generate_latex_for_merged_table_per_algorithm(avg_results_renamed,
-                                                            title="latex_table_merged_avg_results_per_algorithm")
+    evaluator.gen_latex_for_merged_table_per_algorithm(avg_results_renamed,
+                                                       title="latex_table_merged_avg_results_per_algorithm")
 
     # set average results from multiple pipeline runs for evaluation
     evaluator.benchmark_results = avg_results
@@ -121,25 +122,22 @@ def evaluate_on_real_world_data_sets(seed):
 
 
 def get_pipeline_datasets(seed):
-    if os.environ.get("CIRCLECI", False):
-        return [SyntheticDataGenerator.extreme_1(seed)]
-    else:
-        return [
-            SyntheticDataGenerator.extreme_1(seed),
-            SyntheticDataGenerator.variance_1(seed),
-            SyntheticDataGenerator.shift_1(seed),
-            SyntheticDataGenerator.trend_1(seed),
-            SyntheticDataGenerator.combined_1(seed),
-            SyntheticDataGenerator.combined_4(seed),
-            SyntheticDataGenerator.variance_1_missing(seed, 0.1),
-            SyntheticDataGenerator.variance_1_missing(seed, 0.3),
-            SyntheticDataGenerator.variance_1_missing(seed, 0.5),
-            SyntheticDataGenerator.variance_1_missing(seed, 0.8),
-            SyntheticDataGenerator.extreme_1_polluted(seed, 0.1),
-            SyntheticDataGenerator.extreme_1_polluted(seed, 0.3),
-            SyntheticDataGenerator.extreme_1_polluted(seed, 0.5),
-            SyntheticDataGenerator.extreme_1_polluted(seed, 0.9)
-        ]
+    return [
+        SyntheticDataGenerator.extreme_1(seed),
+        SyntheticDataGenerator.variance_1(seed),
+        SyntheticDataGenerator.shift_1(seed),
+        SyntheticDataGenerator.trend_1(seed),
+        SyntheticDataGenerator.combined_1(seed),
+        SyntheticDataGenerator.combined_4(seed),
+        SyntheticDataGenerator.variance_1_missing(seed, 0.1),
+        SyntheticDataGenerator.variance_1_missing(seed, 0.3),
+        SyntheticDataGenerator.variance_1_missing(seed, 0.5),
+        SyntheticDataGenerator.variance_1_missing(seed, 0.8),
+        SyntheticDataGenerator.extreme_1_polluted(seed, 0.1),
+        SyntheticDataGenerator.extreme_1_polluted(seed, 0.3),
+        SyntheticDataGenerator.extreme_1_polluted(seed, 0.5),
+        SyntheticDataGenerator.extreme_1_polluted(seed, 0.9)
+    ]
 
 
 def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
@@ -149,13 +147,13 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     if os.environ.get("CIRCLECI", False):
         # Set the random seed manually for reproducibility and more significant results
         # numpy expects a max. 32-bit unsigned integer
-        seed = np.random.randint(low=0, high=2 ** 32 - 1, size=1, dtype="uint32")[0]
+        seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=2, dtype="uint32")
 
-        run_extremes_experiment(detectors, seed, runs=1, outlier_type=outlier_type, output_dir=os.path.join(output_dir,
+        # min number of runs = 2 for std operation
+        run_extremes_experiment(detectors, seeds, runs=2, outlier_type=outlier_type, output_dir=os.path.join(output_dir,
                                 'extremes'), steps=steps)
     else:
         seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
-
         announce_experiment('Pollution')
         run_pollution_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
                                  steps=steps)

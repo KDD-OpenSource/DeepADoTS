@@ -99,7 +99,7 @@ class SyntheticDataGenerator:
 
         dataset.outlier_config['extreme'][0]['value'] = extreme_value
 
-        dataset.name = f'Syn Extreme Outliers (extremeness={extreme_value} seed={seed})'
+        dataset.name = f'Syn Extreme Outliers (extremeness={extreme_value})'
         return dataset
 
     @staticmethod

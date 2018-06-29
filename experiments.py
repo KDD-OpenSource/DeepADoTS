@@ -42,15 +42,19 @@ def run_experiment_evaluation(detectors=None, seeds=None, steps=5, runs=None, ou
         "multivariate": [],
     }
 
-    for seed in seeds:
-        data_dict["extreme"].append([SyntheticDataGenerator.get(f'{outlier_type}_extremeness', seed, extreme)
-                                     for extreme in np.linspace(1, 9, steps)])
-        data_dict["missing"].append([SyntheticDataGenerator.get(f'{outlier_type}_missing', seed, missing)
-                                     for missing in np.linspace(0, 0.9, steps)])
-        data_dict["polluted"].append([SyntheticDataGenerator.get(f'{outlier_type}_polluted', seed, pollution)
-                                      for pollution in np.linspace(0, 0.5, steps)])
-        data_dict["multivariate"].append([MultivariateAnomalyFunction.get_multivariate_dataset(dim_func, seed)
-                                          for dim_func in multivariate_anomaly_functions])
+    for seed in seeds[:runs]:
+        if anomaly_type == "extreme":
+            data_dict["extreme"].append([SyntheticDataGenerator.get(f'{outlier_type}_extremeness', seed, extreme)
+                                         for extreme in np.linspace(1, 9, steps)])
+        elif anomaly_type == "missing":
+            data_dict["missing"].append([SyntheticDataGenerator.get(f'{outlier_type}_missing', seed, missing)
+                                         for missing in np.linspace(0, 0.9, steps)])
+        elif anomaly_type == "polluted":
+            data_dict["polluted"].append([SyntheticDataGenerator.get(f'{outlier_type}_polluted', seed, pollution)
+                                          for pollution in np.linspace(0, 0.5, steps)])
+        elif anomaly_type == "multivariate":
+            data_dict["multivariate"].append([MultivariateAnomalyFunction.get_multivariate_dataset(dim_func, seed)
+                                              for dim_func in multivariate_anomaly_functions])
 
     results = pd.DataFrame()
     evaluator = None
@@ -81,21 +85,22 @@ def run_experiment_evaluation(detectors=None, seeds=None, steps=5, runs=None, ou
                                                       'accuracy': 'accuracy_avg',
                                                       'auroc': 'auroc_avg', 'precision': 'precision_avg',
                                                       'recall': 'recall_avg'})
+
     evaluator.print_merged_table_per_dataset(std_results)
-    evaluator.generate_latex_for_merged_table_per_dataset(std_results,
-                                                          title="latex_table_merged_std_results_per_dataset")
+    evaluator.gen_latex_for_merged_table_per_dataset(std_results,
+                                                     title="latex_merged_std_results__for_{anomaly_type}_anomalies")
 
     evaluator.print_merged_table_per_dataset(avg_results_renamed)
-    evaluator.generate_latex_for_merged_table_per_dataset(avg_results_renamed,
-                                                          title="latex_table_merged_avg_results_per_dataset")
+    evaluator.gen_latex_for_merged_table_per_dataset(avg_results_renamed,
+                                                     title="latex_merged_avg_results_for_{anomaly_type}_anomalies")
 
     evaluator.print_merged_table_per_algorithm(std_results)
-    evaluator.generate_latex_for_merged_table_per_algorithm(std_results,
-                                                            title="latex_table_merged_std_results_per_algorithm")
+    evaluator.gen_latex_for_merged_table_per_algorithm(
+        std_results, title=f"latex_merged_std_results_per_algorithm_for_{anomaly_type}_anomalies")
 
     evaluator.print_merged_table_per_algorithm(avg_results_renamed)
-    evaluator.generate_latex_for_merged_table_per_algorithm(avg_results_renamed,
-                                                            title="latex_table_merged_avg_results_per_algorithm")
+    evaluator.gen_latex_for_merged_table_per_algorithm(
+        avg_results_renamed, title="latex_merged_avg_results_per_algorithm_for_{anomaly_type}_anomalies")
 
     # set average results from multiple pipeline runs for evaluation
     evaluator.benchmark_results = avg_results
