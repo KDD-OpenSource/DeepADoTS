@@ -54,7 +54,7 @@ def run_pipeline():
     evaluator.create_boxplots_per_dataset(runs=RUNS, data=results)
 
     # calc std and mean for each algorithm per dataset
-    std_results = results.groupby(["dataset", "algorithm"]).std()
+    std_results = results.groupby(["dataset", "algorithm"]).std(ddof=0)
     # get rid of multi-index
     std_results = std_results.reset_index()
     std_results = std_results[print_order]

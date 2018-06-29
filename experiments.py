@@ -69,7 +69,7 @@ def run_experiment_evaluation(detectors=None, seeds=None, steps=5, runs=None, ou
     evaluator.create_boxplots_per_dataset(runs=runs, data=results)
 
     # calc std and mean for each algorithm per dataset
-    std_results = results.groupby(["dataset", "algorithm"]).std()
+    std_results = results.groupby(["dataset", "algorithm"]).std(ddof=0)
     # get rid of multi-index
     std_results = std_results.reset_index()
     std_results = std_results[print_order]
