@@ -26,7 +26,8 @@ def run_extremes_experiment(detectors, seeds, runs, outlier_type='extreme_1', ou
 
 
 def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
-    run_experiment_evaluation(detectors=detectors, seeds=seeds, runs=runs, output_dir=output_dir, anomaly_type="multivariate")
+    run_experiment_evaluation(detectors=detectors, seeds=seeds, runs=runs, output_dir=output_dir,
+                              anomaly_type="multivariate")
 
 
 def run_experiment_evaluation(detectors=None, seeds=None, steps=5, runs=None, outlier_type='extreme_1',
@@ -43,13 +44,13 @@ def run_experiment_evaluation(detectors=None, seeds=None, steps=5, runs=None, ou
 
     for seed in seeds:
         data_dict["extreme"].append([SyntheticDataGenerator.get(f'{outlier_type}_extremeness', seed, extreme)
-            for extreme in np.linspace(1, 9, steps)])
+                                     for extreme in np.linspace(1, 9, steps)])
         data_dict["missing"].append([SyntheticDataGenerator.get(f'{outlier_type}_missing', seed, missing)
-            for missing in np.linspace(0, 0.9, steps)])
+                                     for missing in np.linspace(0, 0.9, steps)])
         data_dict["polluted"].append([SyntheticDataGenerator.get(f'{outlier_type}_polluted', seed, pollution)
-            for pollution in np.linspace(0, 0.5, steps)])
+                                      for pollution in np.linspace(0, 0.5, steps)])
         data_dict["multivariate"].append([MultivariateAnomalyFunction.get_multivariate_dataset(dim_func, seed)
-            for dim_func in multivariate_anomaly_functions])
+                                          for dim_func in multivariate_anomaly_functions])
 
     results = pd.DataFrame()
     evaluator = None

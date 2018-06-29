@@ -29,6 +29,8 @@ def run_pipeline():
         detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
                      DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                      DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
+        detectors = [RecurrentEBM(num_epochs=1),
+                     DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder, num_epochs=1)]
 
     # perform multiple pipeline runs for more robust end results
     # Set the random seed manually for reproducibility and more significant results
@@ -87,7 +89,6 @@ def run_pipeline():
     evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
     evaluator.create_bar_charts_per_algorithm(runs=RUNS)
-    evaluator.plot_auroc(title=f"Area under the curve for differing anomalies")
 
 
 def evaluate_on_real_world_data_sets(seed):
