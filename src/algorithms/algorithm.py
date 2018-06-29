@@ -3,9 +3,10 @@ import logging
 
 
 class Algorithm(metaclass=abc.ABCMeta):
-    def __init__(self, module_name, name):
+    def __init__(self, module_name, name, framework):
         self.logger = logging.getLogger(module_name)
         self.name = name
+        self.framework = framework
 
     def __str__(self) -> str:
         return self.name
@@ -46,3 +47,6 @@ class Algorithm(metaclass=abc.ABCMeta):
         :param seed:
         :return:
         """
+
+    class Frameworks:
+        PyTorch, Tensorflow = range(2)

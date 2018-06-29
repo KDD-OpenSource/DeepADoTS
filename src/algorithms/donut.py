@@ -13,6 +13,7 @@ from tfsnippet.utils import (get_default_session_or_error,
 from tqdm import trange
 
 from .algorithm import Algorithm
+from .cuda_utils import GPUWrapper
 
 
 class QuietDonutTrainer(DonutTrainer):
@@ -137,74 +138,77 @@ class QuietDonutTrainer(DonutTrainer):
                     lr *= self._lr_anneal_factor
 
 
-class Donut(Algorithm):
+class Donut(Algorithm, GPUWrapper):
     """For each feature, the anomaly score is set to 1 for a point if its reconstruction probability
     is smaller than mean - std of the reconstruction probabilities for that feature. For each point
     in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
 
-    def __init__(self, num_epochs=256):
-        super().__init__(__name__, "Donut")
+    def __init__(self, num_epochs=256, framework=Algorithm.Frameworks.Tensorflow, gpu: int=0):
+        Algorithm.__init__(self, __name__, "Donut", framework)
+        GPUWrapper.__init__(self, gpu)
         self.max_epoch = num_epochs
         self.x_dims = 120
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
-        # Reset all results from last run to avoid reusing variables
-        self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
-        for col_idx in trange(len(X.columns)):
-            col = X.columns[col_idx]
-            tf_session = tf.Session()
-            timestamps = X.index
-            features = X.loc[:, col].values
-            labels = y
-            timestamps, _, (features, labels) = complete_timestamp(timestamps, (features, labels))
-            missing = np.isnan(features)
-            _, mean, std = standardize_kpi(features, excludes=np.logical_or(labels, missing))
+        with self.tf_device:
+            # Reset all results from last run to avoid reusing variables
+            self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
+            for col_idx in trange(len(X.columns)):
+                col = X.columns[col_idx]
+                tf_session = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+                timestamps = X.index
+                features = X.loc[:, col].values
+                labels = y
+                timestamps, _, (features, labels) = complete_timestamp(timestamps, (features, labels))
+                missing = np.isnan(features)
+                _, mean, std = standardize_kpi(features, excludes=np.logical_or(labels, missing))
 
-            with tf.variable_scope('model') as model_vs:
-                model = DonutModel(
-                    h_for_p_x=Sequential([
-                        K.layers.Dense(100, kernel_regularizer=K.regularizers.l2(0.001),
-                                       activation=tf.nn.relu),
-                        K.layers.Dense(100, kernel_regularizer=K.regularizers.l2(0.001),
-                                       activation=tf.nn.relu),
-                    ]),
-                    h_for_q_z=Sequential([
-                        K.layers.Dense(100, kernel_regularizer=K.regularizers.l2(0.001),
-                                       activation=tf.nn.relu),
-                        K.layers.Dense(100, kernel_regularizer=K.regularizers.l2(0.001),
-                                       activation=tf.nn.relu),
-                    ]),
-                    x_dims=self.x_dims,
-                    z_dims=5,
-                )
+                with tf.variable_scope('model') as model_vs:
+                    model = DonutModel(
+                        h_for_p_x=Sequential([
+                            K.layers.Dense(100, kernel_regularizer=K.regularizers.l2(0.001),
+                                           activation=tf.nn.relu),
+                            K.layers.Dense(100, kernel_regularizer=K.regularizers.l2(0.001),
+                                           activation=tf.nn.relu),
+                        ]),
+                        h_for_q_z=Sequential([
+                            K.layers.Dense(100, kernel_regularizer=K.regularizers.l2(0.001),
+                                           activation=tf.nn.relu),
+                            K.layers.Dense(100, kernel_regularizer=K.regularizers.l2(0.001),
+                                           activation=tf.nn.relu),
+                        ]),
+                        x_dims=self.x_dims,
+                        z_dims=5,
+                    )
 
-            trainer = QuietDonutTrainer(model=model, model_vs=model_vs, max_epoch=self.max_epoch)
-            with tf_session.as_default():
-                trainer.fit(features, labels, missing, mean, std, excludes=np.logical_or(labels, missing))
-            self.means.append(mean)
-            self.stds.append(std)
-            self.tf_sessions.append(tf_session)
-            self.models.append(model)
+                trainer = QuietDonutTrainer(model=model, model_vs=model_vs, max_epoch=self.max_epoch)
+                with tf_session.as_default():
+                    trainer.fit(features, labels, missing, mean, std, excludes=np.logical_or(labels, missing))
+                self.means.append(mean)
+                self.stds.append(std)
+                self.tf_sessions.append(tf_session)
+                self.models.append(model)
 
     def predict(self, X: pd.DataFrame):
         """Since we predict the anomaly scores for each feature independently, we already return a binarized one-
         dimensional anomaly score array."""
-        test_scores = np.zeros_like(X)
-        for col_idx, col in enumerate(X.columns):
-            mean, std, tf_session, model = \
-                self.means[col_idx], self.stds[col_idx], self.tf_sessions[col_idx], self.models[col_idx]
-            test_values, _, _ = standardize_kpi(X.loc[:, col], mean=mean, std=std)
-            test_missing = np.zeros_like(test_values)
-            predictor = DonutPredictor(model)
-            with tf_session.as_default():
-                test_score = predictor.get_score(test_values, test_missing)
-            test_score = np.power(np.e, test_score)  # Convert to reconstruction probability
-            threshold = np.mean(test_score) - np.std(test_score)
-            test_score = np.where(test_score <= threshold, 1, 0)  # Binarize so 1 is an anomaly
-            test_scores[self.x_dims - 1:, col_idx] = test_score
-        aggregated_test_scores = np.amax(test_scores, axis=1)
-        return aggregated_test_scores
+        with self.tf_device:
+            test_scores = np.zeros_like(X)
+            for col_idx, col in enumerate(X.columns):
+                mean, std, tf_session, model = \
+                    self.means[col_idx], self.stds[col_idx], self.tf_sessions[col_idx], self.models[col_idx]
+                test_values, _, _ = standardize_kpi(X.loc[:, col], mean=mean, std=std)
+                test_missing = np.zeros_like(test_values)
+                predictor = DonutPredictor(model)
+                with tf_session.as_default():
+                    test_score = predictor.get_score(test_values, test_missing)
+                test_score = np.power(np.e, test_score)  # Convert to reconstruction probability
+                threshold = np.mean(test_score) - np.std(test_score)
+                test_score = np.where(test_score <= threshold, 1, 0)  # Binarize so 1 is an anomaly
+                test_scores[self.x_dims - 1:, col_idx] = test_score
+            aggregated_test_scores = np.amax(test_scores, axis=1)
+            return aggregated_test_scores
 
     def binarize(self, score, threshold=None):
         return score

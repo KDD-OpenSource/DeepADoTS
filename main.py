@@ -17,20 +17,24 @@ def main():
     # run_experiments()
 
 
+def get_detectors():
+    if os.environ.get("CIRCLECI", False):
+        return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
+                LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
+    else:
+        return [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40),
+                DAGMM(sequence_length=1), DAGMM(sequence_length=15),
+                DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
+
+
 def run_pipeline():
+    detectors = get_detectors()
     print_order = ["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score", "auroc"]
+
     datasets = None
 
     if os.environ.get("CIRCLECI", False):
         datasets = [SyntheticDataGenerator.extreme_1(seed=42)]
-        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5), DAGMM(num_epochs=2),
-                     LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
-    else:
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
-                     DAGMM(sequence_length=1), DAGMM(sequence_length=15),
-                     DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
-        detectors = [RecurrentEBM(num_epochs=1),
-                     DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder, num_epochs=1)]
 
     # perform multiple pipeline runs for more robust end results
     # Set the random seed manually for reproducibility and more significant results
@@ -40,7 +44,7 @@ def run_pipeline():
     evaluator = None
 
     for seed in seeds:
-        evaluator = Evaluator(datasets if datasets else get_datasets(seed), detectors)
+        evaluator = Evaluator(datasets if datasets else get_pipeline_datasets(seed), detectors)
         evaluator.evaluate(seed)
         result = evaluator.benchmarks()
         results = results.append(result, ignore_index=True)
@@ -116,45 +120,40 @@ def evaluate_on_real_world_data_sets(seed):
     print("Donut results: ", pred)
 
 
-def get_datasets(seed):
-    datasets = [
-        SyntheticDataGenerator.extreme_1(seed),
-        SyntheticDataGenerator.variance_1(seed),
-        SyntheticDataGenerator.shift_1(seed),
-        SyntheticDataGenerator.trend_1(seed),
-        SyntheticDataGenerator.combined_1(seed),
-        SyntheticDataGenerator.combined_4(seed),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.1),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.3),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.5),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.8),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.1),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.3),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.5),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.9)
-    ]
-    return datasets
+def get_pipeline_datasets(seed):
+    if os.environ.get("CIRCLECI", False):
+        return [SyntheticDataGenerator.extreme_1(seed)]
+    else:
+        return [
+            SyntheticDataGenerator.extreme_1(seed),
+            SyntheticDataGenerator.variance_1(seed),
+            SyntheticDataGenerator.shift_1(seed),
+            SyntheticDataGenerator.trend_1(seed),
+            SyntheticDataGenerator.combined_1(seed),
+            SyntheticDataGenerator.combined_4(seed),
+            SyntheticDataGenerator.variance_1_missing(seed, 0.1),
+            SyntheticDataGenerator.variance_1_missing(seed, 0.3),
+            SyntheticDataGenerator.variance_1_missing(seed, 0.5),
+            SyntheticDataGenerator.variance_1_missing(seed, 0.8),
+            SyntheticDataGenerator.extreme_1_polluted(seed, 0.1),
+            SyntheticDataGenerator.extreme_1_polluted(seed, 0.3),
+            SyntheticDataGenerator.extreme_1_polluted(seed, 0.5),
+            SyntheticDataGenerator.extreme_1_polluted(seed, 0.9)
+        ]
 
 
 def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
+    detectors = get_detectors()
 
     if os.environ.get("CIRCLECI", False):
         # Set the random seed manually for reproducibility and more significant results
         # numpy expects a max. 32-bit unsigned integer
         seed = np.random.randint(low=0, high=2 ** 32 - 1, size=1, dtype="uint32")[0]
 
-        detectors = [RecurrentEBM(num_epochs=2), LSTMAD(num_epochs=5), Donut(num_epochs=5),
-                     LSTMED(num_epochs=2), DAGMM(num_epochs=2),
-                     DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
-        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
-                                steps=1, seed=seed)
+        run_extremes_experiment(detectors, seed, runs=1, outlier_type=outlier_type, output_dir=os.path.join(output_dir,
+                                'extremes'), steps=steps)
     else:
-        detectors = [RecurrentEBM(num_epochs=15), LSTMAD(), Donut(), LSTMED(num_epochs=40),
-                     DAGMM(sequence_length=1),
-                     DAGMM(sequence_length=15),
-                     DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
-
         seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
 
         announce_experiment('Pollution')
