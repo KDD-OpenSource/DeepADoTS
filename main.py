@@ -87,6 +87,7 @@ def run_pipeline():
     evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
     evaluator.create_bar_charts_per_algorithm(runs=RUNS)
+    evaluator.plot_auroc(title=f"Area under the curve for differing anomalies")
 
 
 def evaluate_on_real_world_data_sets(seed):

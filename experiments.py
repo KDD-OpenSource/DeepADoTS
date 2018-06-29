@@ -32,6 +32,7 @@ def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
 def run_experiment_evaluation(detectors=None, seeds=None, steps=5, runs=None, outlier_type='extreme_1',
                               output_dir=None, anomaly_type=None):
     multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor']
+    print_order = ["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score", "auroc"]
 
     data_dict = {
         "extreme": [],
@@ -62,17 +63,46 @@ def run_experiment_evaluation(detectors=None, seeds=None, steps=5, runs=None, ou
     evaluator.create_boxplots_per_algorithm(runs=runs, data=results)
     evaluator.create_boxplots_per_dataset(runs=runs, data=results)
 
-    # calc mean and std per algorithm
+    # calc std and mean for each algorithm per dataset
+    std_results = results.groupby(["dataset", "algorithm"]).std()
+    # get rid of multi-index
+    std_results = std_results.reset_index()
+    std_results = std_results[print_order]
+    std_results.rename(inplace=True, index=str,
+                       columns={'F0.1-score': 'F0.1-score_std', 'F1-score': 'F1-score_std', 'accuracy': 'accuracy_std',
+                                'auroc': 'auroc_std', 'precision': 'precision_std', 'recall': 'recall_std'})
 
-    averaged_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
-    evaluator.benchmark_results = averaged_results
+    avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
+    avg_results = avg_results[print_order]
 
-    evaluator.print_tables()
+    avg_results_renamed = avg_results.rename(index=str,
+                                             columns={'F0.1-score': 'F0.1-score_avg', 'F1-score': 'F1-score_avg',
+                                                      'accuracy': 'accuracy_avg',
+                                                      'auroc': 'auroc_avg', 'precision': 'precision_avg',
+                                                      'recall': 'recall_avg'})
+    evaluator.print_merged_table_per_dataset(std_results)
+    evaluator.generate_latex_for_merged_table_per_dataset(std_results,
+                                                          title="latex_table_merged_std_results_per_dataset")
+
+    evaluator.print_merged_table_per_dataset(avg_results_renamed)
+    evaluator.generate_latex_for_merged_table_per_dataset(avg_results_renamed,
+                                                          title="latex_table_merged_avg_results_per_dataset")
+
+    evaluator.print_merged_table_per_algorithm(std_results)
+    evaluator.generate_latex_for_merged_table_per_algorithm(std_results,
+                                                            title="latex_table_merged_std_results_per_algorithm")
+
+    evaluator.print_merged_table_per_algorithm(avg_results_renamed)
+    evaluator.generate_latex_for_merged_table_per_algorithm(avg_results_renamed,
+                                                            title="latex_table_merged_avg_results_per_algorithm")
+
+    # set average results from multiple pipeline runs for evaluation
+    evaluator.benchmark_results = avg_results
+
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=runs)
     evaluator.create_bar_charts_per_algorithm(runs=runs)
-    evaluator.generate_latex()
     evaluator.plot_auroc(title=f"Area under the curve for differing {anomaly_type} anomalies")
     return evaluator
