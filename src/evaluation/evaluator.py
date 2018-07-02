@@ -1,10 +1,13 @@
 import logging
 import os
+import re
 import sys
 import traceback
 from textwrap import wrap
 
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
+from matplotlib.font_manager import FontProperties
 import numpy as np
 import pandas as pd
 import progressbar
@@ -287,10 +290,13 @@ class Evaluator:
             plt.tight_layout()
             self.store(plt.gcf(), f"barchart_auc_for_{ds.name}_{runs}_runs")
 
-    def store(self, fig, title, extension="pdf"):
+    def store(self, fig, title, extension="pdf", no_counters=False):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
         _dir = self.output_dir if self.output_dir is not None else "reports/figures/"
-        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        if no_counters:
+            path = os.path.join(_dir, f"{title}-{timestamp}.{extension}")
+        else:
+            path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
         self.logger.info(f"Stored plot at {path}")
 
@@ -312,3 +318,110 @@ class Evaluator:
                            headers='keys', tablefmt='latex')}\n\n'''
             result += content
         self.store_text(content=result, title="latex_table_results", extension="tex")
+
+    @staticmethod
+    def translate_var_key(key_name):
+        if key_name == 'pol':
+            return 'Pollution'
+        if key_name == 'mis':
+            return 'Missing'
+        if key_name == 'extremeness':
+            return 'Extremeness'
+        if key_name == 'f':
+            return 'Multivariate'
+        # self.logger('Unexpected dataset name (unknown variable in name)')
+        return None
+
+    @staticmethod
+    def get_key_and_value(dataset_name):
+        # Extract var name and value from dataset name
+        var_re = re.compile(r'.+\((\w*)=(.*)\)')
+        # e.g. 'Syn Extreme Outliers (pol=0.1)'
+        match = var_re.search(dataset_name)
+        if not match:
+            # self.logger.warn('Unexpected dataset name (not variable in name)')
+            return '', ''
+        var_key = match.group(1)
+        var_value = match.group(2)
+        return Evaluator.translate_var_key(var_key), var_value
+
+    @staticmethod
+    def get_dataset_types(mi_df):
+        types = mi_df.index.get_level_values('Type')
+        indexes = np.unique(types, return_index=True)[1]
+        return [types[index] for index in sorted(indexes)]
+
+    @staticmethod
+    def insert_multi_index_yaxis(ax, mi_df):
+        type_title_offset = -1.6  # depends on string length of xaxis ticklabels
+
+        datasets = mi_df.index
+        dataset_types = Evaluator.get_dataset_types(mi_df)  # Returns unique entries keeping original order
+
+        ax.set_yticks(np.arange(len(datasets)))
+        ax.set_yticklabels([x[1] for x in datasets])
+
+        y_axis_title_pos = 0  # Store at which position we are for plotting the next title
+        for idx, dataset_type in enumerate(dataset_types):
+            section_frame = mi_df.iloc[mi_df.index.get_level_values('Type') == dataset_type]
+            # Somehow it's sorted by its occurence (which is what we want here)
+            dataset_levels = section_frame.index.remove_unused_levels().levels[1]
+            title_pos = y_axis_title_pos + 0.5 * (len(dataset_levels) - 1)
+            ax.text(type_title_offset, title_pos, dataset_type, ha="center", va="center", rotation=90,
+                    fontproperties=FontProperties(weight='bold'))
+            if idx < len(dataset_types) - 1:
+                sep_pos = y_axis_title_pos + (len(dataset_levels) - 0.6)
+                ax.text(-0.5, sep_pos, '_'*int(type_title_offset*-10), ha="right", va="center")
+            y_axis_title_pos += len(dataset_levels)
+
+    @staticmethod
+    def to_multi_index_frame(evaluators):
+        evaluator = evaluators[0]
+        detectors = evaluator.detectors
+        for other_evaluator in evaluators[1:]:
+            assert evaluator.detectors == other_evaluator.detectors, 'All evaluators should use the same detectors'
+        datasets = [[evaluator.get_key_and_value(str(d)) for d in ev.datasets] for ev in evaluators]
+        datasets = [tuple(d) for d in np.concatenate(datasets)]  # Required for MultiIndex.from_tuples
+        datasets = pd.MultiIndex.from_tuples(datasets, names=['Type', 'Level'])
+
+        auroc_matrix = np.concatenate([ev.benchmark_results['auroc'].values.reshape((len(ev.datasets), len(detectors)))
+                                       for ev in evaluators])
+        return pd.DataFrame(auroc_matrix, index=datasets, columns=detectors)
+
+    def get_multi_index_dataframe(self):
+        return Evaluator.to_multi_index_frame([self])
+
+    @staticmethod
+    def plot_heatmap(evaluators, store=True):
+        mi_df = Evaluator.to_multi_index_frame(evaluators)
+        detectors, datasets = mi_df.columns, mi_df.index
+
+        fig, ax = plt.subplots(figsize=(len(detectors) + 2, len(datasets)))
+        im = ax.imshow(mi_df, cmap=plt.get_cmap("YlOrRd"), vmin=0, vmax=1)
+        plt.colorbar(im)
+
+        # Show MultiIndex for ordinate
+        Evaluator.insert_multi_index_yaxis(ax, mi_df)
+
+        # Rotate the tick labels and set their alignment.
+        ax.set_xticks(np.arange(len(detectors)))
+        ax.set_xticklabels(detectors)
+        plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+
+        # Loop over data dimensions and create text annotations.
+        for i in range(len(detectors)):
+            for j in range(len(datasets)):
+                ax.text(i, j, f'{mi_df.iloc[j, i]:.2f}', ha="center", va="center", color="w",
+                        path_effects=[path_effects.withSimplePatchShadow(
+                            offset=(1, -1), shadow_rgbFace="b", alpha=0.9)])
+
+        ax.set_title('AUROC over all datasets and detectors')
+        if store:
+            evaluators[0].store(fig, 'heatmap', no_counters=True)
+        # Prevent bug where x axis ticks are completely outside of bounds (matplotlib/issues/5456)
+        if len(datasets) > 2:
+            fig.tight_layout()
+        return fig
+
+    def plot_single_heatmap(self, store=True):
+        Evaluator.plot_heatmap([self], store)
