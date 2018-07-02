@@ -74,9 +74,11 @@ def run_multivariate_experiment(detectors, output_dir=None):
 
 
 def run_multid_multivariate_experiment(detectors, output_dir=None, steps=2):
-    num_dims = np.linspace(6, 10, steps, dtype=int)
+    num_dims = [250, 500, 1000, 1500]
     datasets = [
-        MultivariateAnomalyFunction.get_multivariate_dataset('doubled', features=dim) for dim in num_dims
+        MultivariateAnomalyFunction.get_multivariate_dataset(
+            'delayed', features=dim,
+            name=f'Synthetic Multivariate {dim}-dimensional delayed Curve Outliers') for dim in num_dims
     ]
     evaluator = Evaluator(datasets, detectors, output_dir)
     evaluator.evaluate()
@@ -86,4 +88,11 @@ def run_multid_multivariate_experiment(detectors, output_dir=None, steps=2):
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
+
+    import time
+    import os
+    import pickle
+    timestamp = int(time.time())
+    pickle.dump(evaluator.results, open(os.path.join(evaluator.output_dir, f'multid_{timestamp}.pkl'), 'wb'))
+
     return evaluator

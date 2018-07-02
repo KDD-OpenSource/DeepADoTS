@@ -13,7 +13,7 @@ RUNS = 2
 
 
 def main():
-    run_pipeline()
+    # run_pipeline()
     run_experiments()
 
 
@@ -22,9 +22,10 @@ def get_detectors():
         return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        return [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40),
+        return [RecurrentEBM(num_epochs=15),
+                # Donut(),
+                LSTMAD(), LSTMED(num_epochs=40),
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
-                DAGMM(sequence_length=1, autoencoder_type=LSTMAutoEncoder),
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
 
@@ -101,22 +102,22 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
                                      steps=1)
         ev.plot_single_heatmap()
     else:
-        announce_experiment('Pollution')
-        ev_pol = run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
-                                          steps=steps)
+        # announce_experiment('Pollution')
+        # ev_pol = run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
+                                            # steps=steps)
 
-        announce_experiment('Missing Values')
-        ev_mis = run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
-                                        steps=steps)
+        # announce_experiment('Missing Values')
+        # ev_mis = run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
+                                        # steps=steps)
 
-        announce_experiment('Outlier height')
-        ev_extr = run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
-                                          steps=steps)
+        # announce_experiment('Outlier height')
+        # ev_extr = run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+                                            # steps=steps)
 
         announce_experiment('Multivariate Datasets')
         ev_mv = run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
 
-        evaluators = [ev_pol, ev_mis, ev_extr, ev_mv]
+        evaluators = [ev_mv]
         Evaluator.plot_heatmap(evaluators)
 
 
