@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-    run_multivariate_experiment
+    run_multivariate_experiment, run_multid_multivariate_experiment
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoEncoder
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
@@ -115,7 +115,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
                                             # steps=steps)
 
         announce_experiment('Multivariate Datasets')
-        ev_mv = run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
+        ev_mv = run_multid_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
 
         evaluators = [ev_mv]
         Evaluator.plot_heatmap(evaluators)
