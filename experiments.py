@@ -8,7 +8,7 @@ from src.datasets import SyntheticDataGenerator, MultivariateAnomalyFunction
 # Validates all algorithms regarding polluted data based on a given outlier type.
 # The pollution of the training data is tested from 0 to 100% (with default steps=5).
 def run_pollution_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
-    run_experiment_evaluation(detectors, seeds, runs, output_dir, "polluted", steps, outlier_type)
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "polluted", steps, outlier_type)
 
 
 # Validates all algorithms regarding missing data based on a given outlier type.
@@ -16,17 +16,17 @@ def run_pollution_experiment(detectors, seeds, runs, outlier_type='extreme_1', o
 # steps=5). By default the missing values are represented as zeros since no algorithm can't handle
 # nan values.
 def run_missing_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
-    run_experiment_evaluation(detectors, seeds, runs, output_dir, "missing", steps, outlier_type)
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "missing", steps, outlier_type)
 
 
 # Validates all algorithms regarding different heights of extreme outliers
 # The extreme values are added to the outlier timestamps everywhere in the dataset distribution.
 def run_extremes_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=10):
-    run_experiment_evaluation(detectors, seeds, runs, output_dir, "extreme", steps, outlier_type)
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "extreme", steps, outlier_type)
 
 
 def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
-    run_experiment_evaluation(detectors=detectors, seeds=seeds, runs=runs, output_dir=output_dir,
+    return run_experiment_evaluation(detectors=detectors, seeds=seeds, runs=runs, output_dir=output_dir,
                               anomaly_type="multivariate")
 
 
