@@ -92,7 +92,8 @@ class LSTMED(Algorithm, GPUWrapper):
             output = self.lstmed(self.to_var(ts))
 
             error = self.criterion(reduce=False)(output, self.to_var(ts.float()))
-            score = -multivariate_normal.logpdf(error.view(1, -1).data.cpu().numpy(), mean=self.mean, cov=self.cov)
+            score = -multivariate_normal.logpdf(error.view(1, -1).data.cpu().numpy(), mean=self.mean, cov=self.cov,
+                                                allow_singular=True)
 
             window_elements = np.arange(idx, idx + self.sequence_length, 1)
             scores[idx % self.sequence_length, window_elements] = score
