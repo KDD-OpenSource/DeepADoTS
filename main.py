@@ -90,6 +90,7 @@ def run_pipeline():
     evaluator.benchmark_results = avg_results
 
     evaluator.plot_threshold_comparison()
+    evaluator.plot_single_heatmap()
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
@@ -150,24 +151,28 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=2, dtype="uint32")
 
         # min number of runs = 2 for std operation
-        run_extremes_experiment(detectors, seeds, runs=2, outlier_type=outlier_type, output_dir=os.path.join(output_dir,
+        ev = run_extremes_experiment(detectors, seeds, runs=2, outlier_type=outlier_type, output_dir=os.path.join(output_dir,
                                 'extremes'), steps=steps)
+        ev.plot_single_heatmap()
     else:
         seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
         announce_experiment('Pollution')
-        run_pollution_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
+        ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
                                  steps=steps)
 
         announce_experiment('Missing Values')
-        run_missing_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
+        ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
                                steps=steps)
 
         announce_experiment('Outlier height')
-        run_extremes_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+        ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
                                 steps=steps)
 
         announce_experiment('Multivariate Datasets')
-        run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
+        ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
+
+        evaluators = [ev_pol, ev_mis, ev_extr, ev_mv]
+        Evaluator.plot_heatmap(evaluators)
 
 
 def announce_experiment(title: str, dashes: int = 70):
