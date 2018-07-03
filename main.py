@@ -19,9 +19,9 @@ def main():
 
 
 def get_detectors():
-    if os.environ.get("CIRCLECI", True):
-        return [RecurrentEBM(num_epochs=2), DAGMM(num_epochs=2)]  # , LSTMAD(num_epochs=5), Donut(num_epochs=5)
-                # LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
+    if os.environ.get("CIRCLECI", False):
+        return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
+                LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
         return [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40),
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
@@ -30,9 +30,8 @@ def get_detectors():
 
 
 def get_pipeline_datasets():
-    if os.environ.get("CIRCLECI", True):
-        return [SyntheticDataGenerator.extreme_1(),
-        SyntheticDataGenerator.variance_1()]
+    if os.environ.get("CIRCLECI", False):
+        return [SyntheticDataGenerator.extreme_1()]
     else:
         return [
             SyntheticDataGenerator.extreme_1(),
