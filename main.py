@@ -72,6 +72,7 @@ def run_pipeline():
     evaluator.create_bar_charts_per_algorithm(runs=RUNS)
     evaluator.generate_latex()
 
+
 def test_stored_result():
     filename = 'run-pipeline-2018-07-03-165029'
     datasets = get_pipeline_datasets()
@@ -81,6 +82,7 @@ def test_stored_result():
 
     evaluator.print_tables()
     evaluator.plot_single_heatmap()
+
 
 def evaluate_on_real_world_data_sets():
     dagmm = DAGMM()
