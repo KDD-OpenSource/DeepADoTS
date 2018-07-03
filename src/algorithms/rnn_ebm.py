@@ -57,10 +57,9 @@ class RecurrentEBM(Algorithm, GPUWrapper):
                                                          feed_dict={self.input_data: X[i:i + 1],
                                                                     self._batch_size: 1})
                 scores.append(reconstruction_err[0])
-                if self.min_energy is not None:
-                    labels.append(reconstruction_err[0] >= self.min_energy)
-            scores = np.array(scores)
-            labels = np.array(labels)
+            scores = np.square(np.array(scores) - np.mean(scores))
+            if self.min_energy is not None:
+                labels = np.where(scores >= self.min_energy)
 
             return (labels, scores) if self.min_energy is not None else scores
 
