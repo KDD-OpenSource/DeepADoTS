@@ -321,11 +321,11 @@ class Evaluator:
             self.logger.info(f"Detector: {det.name}\n{table}")
 
     def gen_latex_for_merged_table_per_algorithm(self, results, title=""):
-        result = ""
+        content = ""
         for det in self.detectors:
-            content = f'''{det.name}:\n\n{tabulate(results[results["algorithm"] == det.name],
+            content += f'''{det.name}:\n\n{tabulate(results[results["algorithm"] == det.name],
                                    headers="keys", tablefmt="latex")}\n\n'''
-        self.store_text(content=result, title=title, extension="tex")
+        self.store_text(content=content, title=title, extension="tex")
 
     @staticmethod
     def translate_var_key(key_name):

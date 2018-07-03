@@ -151,22 +151,26 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=2, dtype="uint32")
 
         # min number of runs = 2 for std operation
-        ev = run_extremes_experiment(detectors, seeds, runs=2, outlier_type=outlier_type, output_dir=os.path.join(output_dir,
-                                'extremes'), steps=steps)
+        ev = run_extremes_experiment(detectors, seeds, runs=2, outlier_type=outlier_type,
+                                     output_dir=os.path.join(output_dir,
+                                                             'extremes'), steps=steps)
         ev.plot_single_heatmap()
     else:
         seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
         announce_experiment('Pollution')
-        ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
-                                 steps=steps)
+        ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type,
+                                          output_dir=os.path.join(output_dir, 'pollution'),
+                                          steps=steps)
 
         announce_experiment('Missing Values')
-        ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
-                               steps=steps)
+        ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type,
+                                        output_dir=os.path.join(output_dir, 'missing'),
+                                        steps=steps)
 
         announce_experiment('Outlier height')
-        ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
-                                steps=steps)
+        ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type,
+                                          output_dir=os.path.join(output_dir, 'extremes'),
+                                          steps=steps)
 
         announce_experiment('Multivariate Datasets')
         ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
