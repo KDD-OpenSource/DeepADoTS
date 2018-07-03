@@ -64,6 +64,7 @@ def run_pipeline():
 
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
+    evaluator.plot_single_heatmap()
     evaluator.plot_scores()
     evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
@@ -97,32 +98,36 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=10):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
     detectors = get_detectors()
     if os.environ.get("CIRCLECI", False):
-        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
-                                steps=1)
+        ev = run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+                                     steps=1)
+        ev.plot_single_heatmap()
     else:
         announce_experiment('Pollution')
-        run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
-                                 steps=steps)
+        ev_pol = run_pollution_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'pollution'),
+                                          steps=steps)
 
         announce_experiment('Missing Values')
-        run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
-                               steps=steps)
-        run_missing_experiment(detectors, 'variance_1', output_dir=os.path.join(output_dir, 'missing'),
-                               steps=steps)
-        run_missing_experiment(detectors, 'trend_1', output_dir=os.path.join(output_dir, 'missing'),
-                               steps=steps)
-        run_missing_experiment(detectors, 'shift_1', output_dir=os.path.join(output_dir, 'missing'),
-                               steps=steps)
+        ev_mis_extr = run_missing_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'missing'),
+                                             steps=steps)
+        ev_mis_var = run_missing_experiment(detectors, 'variance_1', output_dir=os.path.join(output_dir, 'missing'),
+                                            steps=steps)
+        ev_mis_tre = run_missing_experiment(detectors, 'trend_1', output_dir=os.path.join(output_dir, 'missing'),
+                                            steps=steps)
+        ev_mis_shi = run_missing_experiment(detectors, 'shift_1', output_dir=os.path.join(output_dir, 'missing'),
+                                            steps=steps)
 
         announce_experiment('Outlier height')
-        run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
-                                steps=steps)
+        ev_extr = run_extremes_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'extremes'),
+                                          steps=steps)
 
         announce_experiment('Multivariate Datasets')
-        run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
+        ev_mv = run_multivariate_experiment(detectors, output_dir=os.path.join(output_dir, 'multivariate'))
 
-        run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
-                                 steps=20)
+        ev_mv_dim = run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
+                                             steps=20)
+
+        evaluators = [ev_pol, ev_mis_extr, ev_mis_var, ev_mis_tre, ev_mis_shi, ev_extr, ev_mv, ev_mv_dim]
+        Evaluator.plot_heatmap(evaluators)
 
 
 def announce_experiment(title: str, dashes: int = 70):
