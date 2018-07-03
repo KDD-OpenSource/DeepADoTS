@@ -14,13 +14,14 @@ RUNS = 2
 
 def main():
     run_pipeline()
-    run_experiments()
+    # test_stored_result()
+    # run_experiments()
 
 
 def get_detectors():
-    if os.environ.get("CIRCLECI", False):
-        return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
-                LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
+    if os.environ.get("CIRCLECI", True):
+        return [RecurrentEBM(num_epochs=2), DAGMM(num_epochs=2)]  # , LSTMAD(num_epochs=5), Donut(num_epochs=5)
+                # LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
         return [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40),
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
@@ -29,8 +30,9 @@ def get_detectors():
 
 
 def get_pipeline_datasets():
-    if os.environ.get("CIRCLECI", False):
-        return [SyntheticDataGenerator.extreme_1()]
+    if os.environ.get("CIRCLECI", True):
+        return [SyntheticDataGenerator.extreme_1(),
+        SyntheticDataGenerator.variance_1()]
     else:
         return [
             SyntheticDataGenerator.extreme_1(),
@@ -60,6 +62,7 @@ def run_pipeline():
     # average results from multiple pipeline runs
     averaged_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
     evaluator.benchmark_results = averaged_results
+    evaluator.export_results('run-pipeline')
 
     evaluator.print_tables()
     evaluator.plot_threshold_comparison()
@@ -70,6 +73,15 @@ def run_pipeline():
     evaluator.create_bar_charts_per_algorithm(runs=RUNS)
     evaluator.generate_latex()
 
+def test_stored_result():
+    filename = 'run-pipeline-2018-07-03-165029'
+    datasets = get_pipeline_datasets()
+    detectors = get_detectors()
+    evaluator = Evaluator(datasets, detectors)
+    evaluator.import_results(filename)
+
+    evaluator.print_tables()
+    evaluator.plot_single_heatmap()
 
 def evaluate_on_real_world_data_sets():
     dagmm = DAGMM()

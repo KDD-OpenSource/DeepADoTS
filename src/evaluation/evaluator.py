@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import json
 import sys
 import traceback
 from textwrap import wrap
@@ -20,6 +21,13 @@ from tabulate import tabulate
 from .config import init_logging
 
 
+# src: https://stackoverflow.com/questions/4984647/accessing-dict-keys-like-an-attribute
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+
 class Evaluator:
     def __init__(self, datasets: list, detectors: list, output_dir: {str} = None):
         assert np.unique([x.name for x in datasets]).size == len(datasets), 'Some datasets have the same name!'
@@ -31,7 +39,45 @@ class Evaluator:
         self.results = dict()
         init_logging(output_dir or 'reports/logs/')
         self.logger = logging.getLogger(__name__)
+        # Dirty hack: Is set by the main.py to insert results from multiple evaluator runs
         self.benchmark_results = None
+
+    def export_results(self, name):
+        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+        path = os.path.join('reports', 'evaluators', f'{name}-{timestamp}.pkl')
+        self.logger.info(f'Store evaluator results at {path}')
+        if self.benchmark_results is None:
+            self.benchmark_result = pd.DataFrame()
+        save_dict = {
+            'datasets': [x.name for x in self.datasets],
+            'detectors': [x.name for x in self.detectors],
+            'benchmark_results': self.benchmark_results.to_json(),
+            # Not working since keys are tuples (not serializable)
+            # 'results': self.results,
+            'output_dir': self.output_dir,
+            # TODO: After Ajays PR add seeds
+        }
+        with open(path, 'w') as f:
+            json.dump(save_dict, f)
+
+    # Import benchmark_results if this evaluator uses the same detectors and datasets
+    def import_results(self, name):
+        # TODO: self.results are not
+        path = os.path.join('reports', 'evaluators', f'{name}.pkl')
+        logging.getLogger(__name__).info(f'Read evaluator results at {path}')
+        with open(path, 'r') as f:
+            save_dict = json.load(f)
+
+        self.logger.debug(f'Importing detectors {"; ".join(save_dict["detectors"])}')
+        my_detectors = [x.name for x in self.detectors]
+        assert np.array_equal(save_dict['detectors'], my_detectors), 'Detectors should be the same'
+
+        self.logger.debug(f'Importing datasets {"; ".join(save_dict["datasets"])}')
+        my_datasets = [x.name for x in self.datasets]
+        assert np.array_equal(save_dict['datasets'], my_datasets), 'Datasets should be the same'
+
+        self.benchmark_results = pd.read_json(save_dict['benchmark_results'])
+        # self.results = save_dict['results']
 
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
