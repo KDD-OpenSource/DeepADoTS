@@ -27,7 +27,7 @@ def run_extremes_experiment(detectors, seeds, runs, outlier_type='extreme_1', ou
 
 def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
     return run_experiment_evaluation(detectors=detectors, seeds=seeds, runs=runs, output_dir=output_dir,
-                              anomaly_type="multivariate")
+                                     anomaly_type="multivariate")
 
 
 def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
