@@ -79,8 +79,9 @@ class MultivariateAnomalyFunction:
             nonce = np.zeros(end_point)
             return nonce, starting_point, end_point
 
-    # --- NOT anomaly function but helper functions ----------------------------
-
+    """
+        This is a helper function for shrinking an already generated curve.
+    """
     @staticmethod
     def shrink_curve(curve_values, new_length):
         if new_length == len(curve_values):
