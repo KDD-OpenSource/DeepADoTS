@@ -14,7 +14,7 @@ RUNS = 2
 
 
 def main():
-    # run_pipeline()
+    run_pipeline()
     run_experiments()
 
 
