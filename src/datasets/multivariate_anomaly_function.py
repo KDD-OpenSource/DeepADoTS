@@ -64,7 +64,6 @@ class MultivariateAnomalyFunction:
 
     @staticmethod
     def missing(curve_values, anomalous, interval_length):
-        pause_length = interval_length - len(curve_values)
         starting_point = len(curve_values) // 5
         # If the space is too small for the normal curve we're shrinking it (which is not anomalous)
         left_space = interval_length - starting_point
