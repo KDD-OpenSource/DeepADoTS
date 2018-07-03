@@ -42,7 +42,7 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
         "multivariate": [],
     }
 
-    for seed in seeds[:runs]:
+    for seed in seeds:
         if anomaly_type == "extreme":
             data_dict["extreme"].append([SyntheticDataGenerator.get(f'{outlier_type}_extremeness', seed, extreme)
                                          for extreme in np.linspace(1, 9, steps)])
