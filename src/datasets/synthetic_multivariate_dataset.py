@@ -18,7 +18,7 @@ class SyntheticMultivariateDataset(Dataset):
                  random_seed: int = 42,
                  features: int = 2,
                  file_name: str = 'synthetic_mv1.pkl'):
-        super().__init__(name, file_name)
+        super().__init__(f'{name} (f={anomaly_func.__name__})', file_name)
         self.length = length
         self.mean_curve_length = mean_curve_length
         self.mean_curve_amplitude = mean_curve_amplitude
