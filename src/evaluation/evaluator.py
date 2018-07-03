@@ -22,6 +22,8 @@ from .config import init_logging
 
 class Evaluator:
     def __init__(self, datasets: list, detectors: list, output_dir: {str} = None):
+        assert np.unique([x.name for x in datasets]).size == len(datasets), 'Some datasets have the same name!'
+        assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
         self.datasets = datasets
         self.detectors = sorted(detectors, key=lambda x: x.framework)
         self.output_dir = output_dir or 'reports/figures/'
