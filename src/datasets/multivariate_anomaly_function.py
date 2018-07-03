@@ -13,11 +13,12 @@ class MultivariateAnomalyFunction:
     # Get a dataset by passing the method name as string. All following parameters
     # are passed through. Throws AttributeError if attribute was not found.
     @staticmethod
-    def get_multivariate_dataset(method, name=None, *args, **kwargs):
+    def get_multivariate_dataset(method, name=None, group_size=10, *args, **kwargs):
         name = name or f'Synthetic Multivariate {method} Curve Outliers'
         func = getattr(MultivariateAnomalyFunction, method)
         return SyntheticMultivariateDataset(anomaly_func=func,
                                             name=name,
+                                            group_size=group_size,
                                             *args,
                                             **kwargs)
 

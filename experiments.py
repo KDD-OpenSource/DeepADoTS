@@ -77,7 +77,7 @@ def run_multid_multivariate_experiment(detectors, output_dir=None, steps=2):
     num_dims = [250, 500, 1000, 1500]
     datasets = [
         MultivariateAnomalyFunction.get_multivariate_dataset(
-            'delayed', features=dim,
+            'delayed', features=dim, group_size=20,
             name=f'Synthetic Multivariate {dim}-dimensional delayed Curve Outliers') for dim in num_dims
     ]
     evaluator = Evaluator(datasets, detectors, output_dir)

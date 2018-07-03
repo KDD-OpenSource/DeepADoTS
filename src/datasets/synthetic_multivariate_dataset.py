@@ -1,3 +1,4 @@
+import logging
 from typing import Tuple, Callable
 
 import numpy as np
@@ -17,6 +18,7 @@ class SyntheticMultivariateDataset(Dataset):
                  labels_padding: int = 6,
                  random_seed: int = 42,
                  features: int = 2,
+                 group_size: int = None,
                  file_name: str = 'synthetic_mv1.pkl'):
         super().__init__(f'{name} (f={anomaly_func.__name__})', file_name)
         self.length = length
@@ -28,6 +30,10 @@ class SyntheticMultivariateDataset(Dataset):
         self.labels_padding = labels_padding
         self.random_seed = random_seed
         self.features = features
+        self.group_size = self.features if group_size is None else group_size
+        if self.features % self.group_size == 1:  # How many dimensions each correlated group has
+            logging.warn('Group size results in one overhanging univariate group. Generating multivariate'
+                         'anomalies on univariate data is impossible.')
 
     @staticmethod
     def get_noisy_value(x, strength=1):
@@ -62,14 +68,10 @@ class SyntheticMultivariateDataset(Dataset):
     def add_global_noise(self, x):
         return self.get_noisy_value(x, self.global_noise)
 
-    """
-        pollution: Portion of anomalous curves. Because it's not known how many curves there are
-            in the end. It's randomly chosen based on this value. To avoid anomalies set this to zero.
-    """
-    def generate_data(self, pollution=0.5):
-        values = np.zeros((self.length, self.features))
-        xaxis_distances = np.linspace(0, 100, self.features)
-        for index in range(self.features):
+    def generate_correlated_group(self, dimensions, pollution):
+        values = np.zeros((self.length, dimensions))
+        xaxis_distances = np.linspace(0, 100, dimensions)
+        for index in range(dimensions):
             values[:, index].fill(xaxis_distances[index])
         labels = np.zeros(self.length)
         pos = self.create_pause()
@@ -90,6 +92,19 @@ class SyntheticMultivariateDataset(Dataset):
         values[:pos, :] = self.add_global_noise(values[:pos, :])
         return pd.DataFrame(values), pd.Series(labels)
 
+    """
+        pollution: Portion of anomalous curves. Because it's not known how many curves there are
+            in the end. It's randomly chosen based on this value. To avoid anomalies set this to zero.
+    """
+    def generate_data(self, pollution=0.5):
+        value_dfs, label_series = [], []
+        for i in range(0, self.features, self.group_size):
+            values, labels = self.generate_correlated_group(min(self.group_size, self.features-i), pollution=0.5)
+            value_dfs.append(values)
+            label_series.append(labels)
+        labels = pd.Series(np.logical_or.reduce(label_series))
+        values = pd.concat(value_dfs, axis=1, ignore_index=True)
+        return values, labels
     """
         Insert values for curve and following pause over all dimensions.
         interval_values is changed by reference so this function doesn't return anything.
