@@ -14,8 +14,8 @@ RUNS = 2
 
 def main():
     run_pipeline()
+    run_experiments()
     # test_stored_result()
-    # run_experiments()
 
 
 def get_detectors():
