@@ -52,8 +52,8 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
             data_dict["polluted"].append([SyntheticDataGenerator.get(f'{outlier_type}_polluted', seed, pollution)
                                           for pollution in np.linspace(0, 0.5, steps)])
         elif anomaly_type == "multivariate":
-            data_dict["multivariate"].append([MultivariateAnomalyFunction.get_multivariate_dataset(dim_func, seed)
-                                              for dim_func in multivariate_anomaly_functions])
+            data_dict["multivariate"].append([MultivariateAnomalyFunction.get_multivariate_dataset(dim_func,
+                                             random_seed=seed) for dim_func in multivariate_anomaly_functions])
 
     results = pd.DataFrame()
     evaluator = None
