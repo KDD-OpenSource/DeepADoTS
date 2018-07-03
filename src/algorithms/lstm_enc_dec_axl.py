@@ -110,7 +110,7 @@ class LSTMED(Algorithm, GPUWrapper):
 
     def set_seed(self, seed):
         torch.manual_seed(seed)
-        torch.cuda.manual_seed(self.seed)
+        torch.cuda.manual_seed(seed)
 
 
 class LSTMEDModule(nn.Module, GPUWrapper):

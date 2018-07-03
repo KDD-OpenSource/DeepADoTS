@@ -239,4 +239,4 @@ class LSTM_Enc_Dec(Algorithm):
     def set_seed(self, seed):
         self.seed = seed
         torch.manual_seed(seed)
-        torch.cuda.manual_seed(self.seed)
+        torch.cuda.manual_seed(seed)
