@@ -31,6 +31,7 @@ def get_detectors():
 def run_pipeline():
     detectors = get_detectors()
     print_order = ["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score", "auroc"]
+    rename_columns = [col for col in print_order if col not in ['dataset', 'algorithm']]
 
     datasets = None
 
@@ -59,17 +60,14 @@ def run_pipeline():
     std_results = std_results.reset_index()
     std_results = std_results[print_order]
     std_results.rename(inplace=True, index=str,
-                       columns={'F0.1-score': 'F0.1-score_std', 'F1-score': 'F1-score_std', 'accuracy': 'accuracy_std',
-                                'auroc': 'auroc_std', 'precision': 'precision_std', 'recall': 'recall_std'})
+                       columns=dict([(old_col, old_col + '_std') for old_col in rename_columns]))
 
     avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
     avg_results = avg_results[print_order]
 
     avg_results_renamed = avg_results.rename(index=str,
-                                             columns={'F0.1-score': 'F0.1-score_avg', 'F1-score': 'F1-score_avg',
-                                                      'accuracy': 'accuracy_avg',
-                                                      'auroc': 'auroc_avg', 'precision': 'precision_avg',
-                                                      'recall': 'recall_avg'})
+                                             columns=dict([(old_col, old_col + '_avg') for old_col in rename_columns]))
+
     evaluator.print_merged_table_per_dataset(std_results)
     evaluator.gen_latex_for_merged_table_per_dataset(std_results,
                                                      title="latex_table_merged_std_results_per_dataset")
