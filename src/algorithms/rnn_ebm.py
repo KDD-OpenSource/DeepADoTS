@@ -112,14 +112,14 @@ class RecurrentEBM(Algorithm, GPUWrapper):
         self.BH_t = tf.reshape(tf.scan(hidden_bias_recurrence, u_t, tf.zeros([1, self.n_hidden], tf.float32)),
                                [self.n_hidden, self._batch_size])
 
-        self.cost = self._run_ebm(self.input_data, self.W, self.BX_t, self.BH_t)
+        self.cost = self._run_ebm(self.input_data, self.W, self.BX_t, self.BH_t, u_t)
 
         self.tvars = [self.W, self.Wuh, self.Wux, self.Wxu, self.Wuu, self.bu, self.u0, self.bh, self.bx]
         opt_func = tf.train.AdamOptimizer(learning_rate=self.lr)
         grads, _ = tf.clip_by_global_norm(tf.gradients(self.cost, self.tvars), 1)
         self.update = opt_func.apply_gradients(zip(grads, self.tvars))
 
-    def _run_ebm(self, x, W, b_prime, b):
+    def _run_ebm(self, x, W, b_prime, b, u_t):
         """ Runs EBM for time step and returns reconstruction error.
         1-layer implementation, TODO: implement and test deep structure
         """
@@ -127,6 +127,7 @@ class RecurrentEBM(Algorithm, GPUWrapper):
 
         forward = tf.matmul(tf.transpose(W), x) + b
         reconstruction = tf.matmul(W, tf.sigmoid(forward)) + b_prime
+        energy = 0.5 * tf.reduce_sum(tf.square(x - b_prime)) - u_t
         loss = tf.reduce_sum(tf.square(x - reconstruction))
         return loss
 
