@@ -65,12 +65,13 @@ class Evaluator:
         else:
             return threshold[np.argmax(f_score)]
 
-    def evaluate(self):
+    def evaluate(self, seed):
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
             for det in progressbar.progressbar(self.detectors):
-                self.logger.info(f"Training {det.name} on {ds}")
+                self.logger.info(f"Training {det.name} on {ds.name} with seed {seed}")
                 try:
+                    det.set_seed(seed)
                     det.fit(X_train, y_train)
                     score = det.predict(X_test)
                     self.results[(ds.name, det.name)] = score
@@ -153,10 +154,10 @@ class Evaluator:
     def plot_threshold_comparison(self, steps=40, store=True):
         plt.close('all')
         plots_shape = len(self.detectors), len(self.datasets)
-        fig, axes = plt.subplots(*plots_shape, figsize=(len(self.detectors) * 5, len(self.datasets) * 5))
+        fig, axes = plt.subplots(*plots_shape, figsize=(len(self.detectors) * 15, len(self.datasets) * 5))
         # Ensure two dimensions for iteration
         axes = np.array(axes).reshape(*plots_shape).T
-        plt.suptitle("Compare thresholds", fontsize=16)
+        plt.suptitle("Compare thresholds", fontsize=10)
         for ds, axes_row in zip(self.datasets, axes):
             _, _, X_test, y_test = ds.data()
 
@@ -176,9 +177,10 @@ class Evaluator:
                 ax.set_xlabel("Threshold")
                 ax.legend()
 
-        fig.tight_layout()
         # Avoid overlapping title and axis labels
-        fig.subplots_adjust(top=0.9, hspace=0.4)
+        plt.xlim([0.0, 1.0])
+        fig.subplots_adjust(top=0.9, hspace=0.4, right=1, left=0)
+        fig.tight_layout()
         if store:
             self.store(fig, "metrics_by_thresholds")
         return fig
@@ -237,15 +239,6 @@ class Evaluator:
         if store:
             self.store(fig, f"auroc")
         return fig
-
-    def print_tables(self):
-        for ds in self.datasets:
-            print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            table = tabulate(self.benchmark_results[self.benchmark_results['dataset'] == ds.name][print_order],
-                             headers='keys', tablefmt='psql')
-            self.logger.info(f"Dataset: {ds.name}\n{table}")
-            self.logger.info(tabulate(self.benchmark_results[self.benchmark_results['dataset'] == ds.name][print_order],
-                                      headers='keys', tablefmt='psql'))
 
     # create boxplot diagrams for auc values for each dataset per algorithm
     def create_boxplots_per_algorithm(self, runs, data):
@@ -309,15 +302,30 @@ class Evaluator:
             f.write(content)
         self.logger.info(f"Stored {extension} file at {path}")
 
-    def generate_latex(self):
-        benchmarks = self.benchmarks()
+    def print_merged_table_per_dataset(self, results):
+        for ds in self.datasets:
+            table = tabulate(results[results["dataset"] == ds.name], headers="keys", tablefmt="psql")
+            self.logger.info(f"Dataset: {ds.name}\n{table}")
+
+    def gen_latex_for_merged_table_per_dataset(self, results, title=""):
         result = ""
         for ds in self.datasets:
-            print_order = ["algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"]
-            content = f'''{ds.name}:\n\n{tabulate(benchmarks[benchmarks['dataset'] == ds.name][print_order],
-                           headers='keys', tablefmt='latex')}\n\n'''
+            content = f'''{ds.name}:\n\n{tabulate(results[results["dataset"] == ds.name],
+                                   headers="keys", tablefmt="latex")}\n\n'''
             result += content
-        self.store_text(content=result, title="latex_table_results", extension="tex")
+        self.store_text(content=result, title=title, extension="tex")
+
+    def print_merged_table_per_algorithm(self, results):
+        for det in self.detectors:
+            table = tabulate(results[results["algorithm"] == det.name], headers="keys", tablefmt="psql")
+            self.logger.info(f"Detector: {det.name}\n{table}")
+
+    def gen_latex_for_merged_table_per_algorithm(self, results, title=""):
+        content = ""
+        for det in self.detectors:
+            content += f'''{det.name}:\n\n{tabulate(results[results["algorithm"] == det.name],
+                                   headers="keys", tablefmt="latex")}\n\n'''
+        self.store_text(content=content, title=title, extension="tex")
 
     @staticmethod
     def translate_var_key(key_name):

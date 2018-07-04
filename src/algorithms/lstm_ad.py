@@ -64,8 +64,6 @@ class LSTMAD(Algorithm, GPUWrapper):
         self.mean = None
         self.cov = None
 
-        torch.manual_seed(0)
-
     def fit(self, X, _):
         X.dropna(inplace=True)
         self.batch_size = 1
@@ -153,3 +151,7 @@ class LSTMAD(Algorithm, GPUWrapper):
 
     def threshold(self, score):
         return np.nanmean(score) + 1.5 * np.nanstd(score)
+
+    def set_seed(self, seed):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)

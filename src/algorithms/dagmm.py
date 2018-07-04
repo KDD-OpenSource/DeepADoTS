@@ -270,3 +270,7 @@ class DAGMM(Algorithm, GPUWrapper):
             else:
                 return np.zeros_like(y)
         return np.where(y > threshold, 1, 0)
+
+    def set_seed(self, seed):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)

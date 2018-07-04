@@ -41,5 +41,12 @@ class Algorithm(metaclass=abc.ABCMeta):
         :return threshold:
         """
 
+    @abc.abstractmethod
+    def set_seed(self, seed):
+        """
+        :param seed:
+        :return:
+        """
+
     class Frameworks:
         PyTorch, Tensorflow = range(2)
