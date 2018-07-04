@@ -97,7 +97,7 @@ class DAGMMModule(nn.Module, GPUWrapper):
         cov_inverse = []
         det_cov = []
         cov_diag = 0
-        eps = sys.float_info.epsilon
+        eps = 1e-12
         for i in range(k):
             # K x D x D
             cov_k = cov[i] + self.to_var(torch.eye(d) * eps)
@@ -105,12 +105,14 @@ class DAGMMModule(nn.Module, GPUWrapper):
             eigvals = np.linalg.eigvals(cov_k.data.cpu().numpy() * (2 * np.pi))
             if np.min(eigvals) < 0:
                 logging.warning(f'Determinant was negative! Clipping Eigenvalues to 0+epsilon from {np.min(eigvals)}')
+            if (eigvals / 2*np.pi == 0).any():
+                logging.warning(f'An Eigenvalue is zero! Calculating pseudo inverse.')
                 pinv = np.linalg.pinv(cov_k.data.numpy())
                 cov_inverse.append(Variable(torch.from_numpy(pinv)).unsqueeze(0))
             else:
                 cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
 
-            determinant = np.prod(np.clip(eigvals, a_min=eps, a_max=None))
+            determinant = np.prod(np.clip(eigvals, a_min=sys.float_info.epsilon, a_max=None))
             det_cov.append(determinant)
 
             cov_diag = cov_diag + torch.sum(1 / cov_k.diag())
