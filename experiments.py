@@ -58,7 +58,7 @@ def run_extremes_experiment(detectors, outlier_type='extreme_1', output_dir=None
 
 
 def run_multivariate_experiment(detectors, output_dir=None):
-    anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor']
+    anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
     datasets = [
         MultivariateAnomalyFunction.get_multivariate_dataset(dim_func) for dim_func in anomaly_functions
     ]

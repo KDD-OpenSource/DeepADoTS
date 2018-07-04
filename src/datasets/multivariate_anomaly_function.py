@@ -63,7 +63,7 @@ class MultivariateAnomalyFunction:
             return np.concatenate([nonce, curve_values]), len(nonce), len(nonce) + len(curve_values)
 
     @staticmethod
-    def missing(curve_values, anomalous, interval_length):
+    def delayed_missing(curve_values, anomalous, interval_length):
         starting_point = len(curve_values) // 5
         # If the space is too small for the normal curve we're shrinking it (which is not anomalous)
         left_space = interval_length - starting_point
