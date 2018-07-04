@@ -159,3 +159,6 @@ class RecurrentEBM(Algorithm, GPUWrapper):
 
     def threshold(self, score):
         return np.nanmean(score) + 2 * np.nanstd(score)
+
+    def set_seed(self, seed):
+        tf.set_random_seed(seed)
