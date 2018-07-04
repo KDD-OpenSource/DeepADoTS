@@ -49,6 +49,8 @@ class DAGMMModule(nn.Module, GPUWrapper):
 
         # Concatenate latent representation, cosine similarity and relative Euclidean distance between x and dec(enc(x))
         z = torch.cat([enc, rec_euclidean.unsqueeze(-1), rec_cosine.unsqueeze(-1)], dim=1)
+
+
         gamma = self.estimation(z)
 
         return enc, dec, z, gamma
@@ -97,16 +99,20 @@ class DAGMMModule(nn.Module, GPUWrapper):
         cov_inverse = []
         det_cov = []
         cov_diag = 0
-        eps = 1e-12
+        eps = sys.float_info.epsilon
         for i in range(k):
             # K x D x D
             cov_k = cov[i] + self.to_var(torch.eye(d) * eps)
-            cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
 
             eigvals = np.linalg.eigvals(cov_k.data.cpu().numpy() * (2 * np.pi))
             if np.min(eigvals) < 0:
                 logging.warning(f'Determinant was negative! Clipping Eigenvalues to 0+epsilon from {np.min(eigvals)}')
-            determinant = np.prod(np.clip(eigvals, a_min=sys.float_info.epsilon, a_max=None))
+                pinv = np.linalg.pinv(cov_k.data.numpy())
+                cov_inverse.append(Variable(torch.from_numpy(pinv)).unsqueeze(0))
+            else:
+                cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
+
+            determinant = np.prod(np.clip(eigvals, a_min=eps, a_max=None))
             det_cov.append(determinant)
 
             cov_diag = cov_diag + torch.sum(1 / cov_k.diag())
