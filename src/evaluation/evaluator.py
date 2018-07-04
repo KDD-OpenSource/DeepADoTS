@@ -62,7 +62,7 @@ class Evaluator:
 
     # Import benchmark_results if this evaluator uses the same detectors and datasets
     def import_results(self, name):
-        # TODO: self.results are not
+        # TODO: self.results are not available because they are overwritten by each run
         path = os.path.join('reports', 'evaluators', f'{name}.pkl')
         logging.getLogger(__name__).info(f'Read evaluator results at {path}')
         with open(path, 'r') as f:
