@@ -96,10 +96,11 @@ class SyntheticMultivariateDataset(Dataset):
         pollution: Portion of anomalous curves. Because it's not known how many curves there are
             in the end. It's randomly chosen based on this value. To avoid anomalies set this to zero.
     """
-    def generate_data(self, pollution=0.5):
+    def generate_data(self, pollution):
         value_dfs, label_series = [], []
         for i in range(0, self.features, self.group_size):
-            values, labels = self.generate_correlated_group(min(self.group_size, self.features-i), pollution=0.5)
+            values, labels = self.generate_correlated_group(min(self.group_size, self.features-i),
+                                                            pollution=pollution * self.group_size / self.features)
             value_dfs.append(values)
             label_series.append(labels)
         labels = pd.Series(np.logical_or.reduce(label_series))
