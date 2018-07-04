@@ -21,13 +21,6 @@ from tabulate import tabulate
 from .config import init_logging
 
 
-# src: https://stackoverflow.com/questions/4984647/accessing-dict-keys-like-an-attribute
-class AttrDict(dict):
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
-
-
 class Evaluator:
     def __init__(self, datasets: list, detectors: list, output_dir: {str} = None):
         assert np.unique([x.name for x in datasets]).size == len(datasets), 'Some datasets have the same name!'
