@@ -242,7 +242,7 @@ class DAGMM(Algorithm, GPUWrapper):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
         given data."""
         self.dagmm.eval()
-        X = X.dropna()
+        X.fillna(0, inplace=True)
         data = X.values
         multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=multi_points, batch_size=1, shuffle=False)
