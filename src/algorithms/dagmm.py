@@ -49,8 +49,6 @@ class DAGMMModule(nn.Module, GPUWrapper):
 
         # Concatenate latent representation, cosine similarity and relative Euclidean distance between x and dec(enc(x))
         z = torch.cat([enc, rec_euclidean.unsqueeze(-1), rec_cosine.unsqueeze(-1)], dim=1)
-
-
         gamma = self.estimation(z)
 
         return enc, dec, z, gamma
