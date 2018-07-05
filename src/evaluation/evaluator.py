@@ -27,8 +27,7 @@ class Evaluator:
         assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
         self.datasets = datasets
         self.detectors = sorted(detectors, key=lambda x: x.framework)
-        self.output_dir = output_dir or 'reports/figures/'
-        os.makedirs(self.output_dir, exist_ok=True)
+        self.output_dir = output_dir or 'reports'
         self.results = dict()
         init_logging(output_dir or 'reports/logs/')
         self.logger = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ class Evaluator:
         self.benchmark_results = benchmark_result
 
     def export_results(self, name):
-        output_dir = self.output_dir or 'reports/evaluators/'
+        output_dir = os.path.join(self.output_dir, 'evaluators')
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
         path = os.path.join(output_dir, f'{name}-{timestamp}.pkl')
         self.logger.info(f'Store evaluator results at {os.path.abspath(path)}')
@@ -63,7 +62,7 @@ class Evaluator:
     # Import benchmark_results if this evaluator uses the same detectors and datasets
     # self.results are not available because they are overwritten by each run
     def import_results(self, name):
-        output_dir = self.output_dir or 'reports/evaluators/'
+        output_dir = os.path.join(self.output_dir, 'evaluators')
         path = os.path.join(output_dir, f'{name}.pkl')
         self.logger.info(f'Read evaluator results at {os.path.abspath(path)}')
         with open(path, 'r') as f:
@@ -311,7 +310,7 @@ class Evaluator:
 
     def store(self, fig, title, extension="pdf", no_counters=False):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        _dir = self.output_dir if self.output_dir is not None else "reports/figures/"
+        _dir = os.path.join(self.output_dir, 'figures')
         if no_counters:
             path = os.path.join(_dir, f"{title}-{timestamp}.{extension}")
         else:
@@ -321,7 +320,7 @@ class Evaluator:
 
     def store_text(self, content, title, extension="txt"):
         timestamp = int(time.time())
-        _dir = "reports/tables/"
+        _dir = os.path.join(self.output_dir, 'tables')
         path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as f:
