@@ -498,3 +498,43 @@ class Evaluator:
         dataset_names = results[results['algorithm'] == self.detectors[0].name].sort_index()['dataset']
         plt.xticks(range(len(dataset_names)), dataset_names, rotation=45, ha='right')
         return fig
+
+    @staticmethod
+    def get_printable_runs_results(results):
+        print_order = ["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score", "auroc"]
+        rename_columns = [col for col in print_order if col not in ['dataset', 'algorithm']]
+
+        # calc std and mean for each algorithm per dataset
+        std_results = results.groupby(["dataset", "algorithm"]).std(ddof=0)
+        # get rid of multi-index
+        std_results = std_results.reset_index()
+        std_results = std_results[print_order]
+        std_results.rename(inplace=True, index=str,
+                           columns=dict([(old_col, old_col + '_std') for old_col in rename_columns]))
+
+        avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
+        avg_results = avg_results[print_order]
+
+        avg_results_renamed = avg_results.rename(index=str,
+                                                 columns=dict([(old_col, old_col + '_avg') for old_col in rename_columns]))
+        return (std_results, avg_results, avg_results_renamed)
+
+
+    def gen_merged_tables(self, results):
+        std_results, avg_results, avg_results_renamed = Evaluator.get_printable_runs_results(results)
+
+        self.print_merged_table_per_dataset(std_results)
+        self.gen_latex_for_merged_table_per_dataset(std_results,
+                                                    title="latex_table_merged_std_results_per_dataset")
+
+        self.print_merged_table_per_dataset(avg_results_renamed)
+        self.gen_latex_for_merged_table_per_dataset(avg_results_renamed,
+                                                    title="latex_table_merged_avg_results_per_dataset")
+
+        self.print_merged_table_per_algorithm(std_results)
+        self.gen_latex_for_merged_table_per_algorithm(std_results,
+                                                      title="latex_table_merged_std_results_per_algorithm")
+
+        self.print_merged_table_per_algorithm(avg_results_renamed)
+        self.gen_latex_for_merged_table_per_algorithm(avg_results_renamed,
+                                                      title="latex_table_merged_avg_results_per_algorithm")

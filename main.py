@@ -10,7 +10,7 @@ from experiments import run_pollution_experiment, run_missing_experiment, run_ex
     run_multivariate_experiment
 
 # min number of runs = 2 for std operation
-RUNS = 2
+RUNS = 2 if os.environ.get("CIRCLECI", False) else 2
 
 
 def main():
@@ -29,15 +29,31 @@ def get_detectors():
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
 
-def run_pipeline():
-    detectors = get_detectors()
-    print_order = ["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score", "auroc"]
-    rename_columns = [col for col in print_order if col not in ['dataset', 'algorithm']]
-
-    datasets = None
-
+def get_pipeline_datasets(seed):
     if os.environ.get("CIRCLECI", False):
-        datasets = [SyntheticDataGenerator.extreme_1(seed=42)]
+        return [SyntheticDataGenerator.extreme_1(seed=42)]
+    else:
+        return [
+            SyntheticDataGenerator.extreme_1(seed),
+            SyntheticDataGenerator.variance_1(seed),
+            SyntheticDataGenerator.shift_1(seed),
+            SyntheticDataGenerator.trend_1(seed),
+            SyntheticDataGenerator.combined_1(seed),
+            SyntheticDataGenerator.combined_4(seed),
+            SyntheticDataGenerator.variance_1_missing(seed, 0.1),
+            SyntheticDataGenerator.variance_1_missing(seed, 0.3),
+            SyntheticDataGenerator.variance_1_missing(seed, 0.5),
+            SyntheticDataGenerator.variance_1_missing(seed, 0.8),
+            SyntheticDataGenerator.extreme_1_polluted(seed, 0.1),
+            SyntheticDataGenerator.extreme_1_polluted(seed, 0.3),
+            SyntheticDataGenerator.extreme_1_polluted(seed, 0.5),
+            SyntheticDataGenerator.extreme_1_polluted(seed, 0.9)
+        ]
+
+
+def run_pipeline():
+    datasets = get_pipeline_datasets(seed)
+    detectors = get_detectors()
 
     # perform multiple pipeline runs for more robust end results
     # Set the random seed manually for reproducibility and more significant results
@@ -47,7 +63,7 @@ def run_pipeline():
     evaluator = None
 
     for seed in seeds:
-        evaluator = Evaluator(datasets if datasets else get_pipeline_datasets(seed), detectors, seed=seed)
+        evaluator = Evaluator(datasets, detectors, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
         results = results.append(result, ignore_index=True)
@@ -55,37 +71,10 @@ def run_pipeline():
     evaluator.create_boxplots_per_algorithm(runs=RUNS, data=results)
     evaluator.create_boxplots_per_dataset(runs=RUNS, data=results)
 
-    # calc std and mean for each algorithm per dataset
-    std_results = results.groupby(["dataset", "algorithm"]).std(ddof=0)
-    # get rid of multi-index
-    std_results = std_results.reset_index()
-    std_results = std_results[print_order]
-    std_results.rename(inplace=True, index=str,
-                       columns=dict([(old_col, old_col + '_std') for old_col in rename_columns]))
-
-    avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
-    avg_results = avg_results[print_order]
-
-    avg_results_renamed = avg_results.rename(index=str,
-                                             columns=dict([(old_col, old_col + '_avg') for old_col in rename_columns]))
-
-    evaluator.print_merged_table_per_dataset(std_results)
-    evaluator.gen_latex_for_merged_table_per_dataset(std_results,
-                                                     title="latex_table_merged_std_results_per_dataset")
-
-    evaluator.print_merged_table_per_dataset(avg_results_renamed)
-    evaluator.gen_latex_for_merged_table_per_dataset(avg_results_renamed,
-                                                     title="latex_table_merged_avg_results_per_dataset")
-
-    evaluator.print_merged_table_per_algorithm(std_results)
-    evaluator.gen_latex_for_merged_table_per_algorithm(std_results,
-                                                       title="latex_table_merged_std_results_per_algorithm")
-
-    evaluator.print_merged_table_per_algorithm(avg_results_renamed)
-    evaluator.gen_latex_for_merged_table_per_algorithm(avg_results_renamed,
-                                                       title="latex_table_merged_avg_results_per_algorithm")
+    evaluator.gen_merged_tables(results)
 
     # set average results from multiple pipeline runs for evaluation
+    avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
     evaluator.benchmark_results = avg_results
     evaluator.export_results('run-pipeline')
 
@@ -131,25 +120,6 @@ def evaluate_on_real_world_data_sets(seed):
     donut.fit(X_train, y_train)
     pred = donut.predict(X_test)
     print("Donut results: ", pred)
-
-
-def get_pipeline_datasets(seed):
-    return [
-        SyntheticDataGenerator.extreme_1(seed),
-        SyntheticDataGenerator.variance_1(seed),
-        SyntheticDataGenerator.shift_1(seed),
-        SyntheticDataGenerator.trend_1(seed),
-        SyntheticDataGenerator.combined_1(seed),
-        SyntheticDataGenerator.combined_4(seed),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.1),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.3),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.5),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.8),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.1),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.3),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.5),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.9)
-    ]
 
 
 def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
