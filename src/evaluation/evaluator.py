@@ -65,7 +65,7 @@ class Evaluator:
     def import_results(self, name):
         output_dir = self.output_dir or 'reports/evaluators/'
         path = os.path.join(output_dir, f'{name}.pkl')
-        logging.getLogger(__name__).info(f'Read evaluator results at {os.path.abspath(path)}')
+        self.logger.info(f'Read evaluator results at {os.path.abspath(path)}')
         with open(path, 'r') as f:
             save_dict = json.load(f)
 
@@ -274,21 +274,16 @@ class Evaluator:
 
     def plot_auroc(self, store=True, title='AUROC'):
         plt.close('all')
-        detector_names = [det.name for det in self.detectors]
-        fig = plt.figure(figsize=(7, 7))
-        for index, ds in enumerate(self.datasets):
-            aurocs = self.benchmark_results[self.benchmark_results['dataset'] == ds.name]['auroc']
-            width = 0.8 / len(self.datasets)
-            plt.bar(np.arange(len(aurocs.values)) + index*width, aurocs.values, width=width, label=ds.name)
-        plt.xticks(range(len(self.detectors)), detector_names, rotation=90)
+        self.benchmark_results[['dataset', 'algorithm', 'auroc']].pivot(
+            index='algorithm', columns='dataset', values='auroc').plot(kind='bar')
         plt.legend(loc=3, framealpha=0.5)
-        plt.xlabel('Dataset')
-        plt.ylabel('Area under Receiver Operating Characteristic')
+        plt.xticks(rotation=20)
+        plt.ylabel('AUC', rotation='horizontal', labelpad=20)
         plt.title(title)
-        fig.tight_layout()
+        plt.ylim(ymin=0, ymax=1)
+        plt.tight_layout()
         if store:
-            self.store(fig, f"auroc")
-        return fig
+            self.store(plt.gcf(), 'auroc')
 
     # create boxplot diagrams for auc values for each algorithm/dataset per algorithm/dataset
     def create_boxplots(self, runs, data, detectorwise=True):
@@ -412,7 +407,7 @@ class Evaluator:
                     fontproperties=FontProperties(weight='bold'))
             if idx < len(dataset_types) - 1:
                 sep_pos = y_axis_title_pos + (len(dataset_levels) - 0.6)
-                ax.text(-0.5, sep_pos, '_'*int(type_title_offset*-10), ha="right", va="center")
+                ax.text(-0.5, sep_pos, '_' * int(type_title_offset * -10), ha="right", va="center")
             y_axis_title_pos += len(dataset_levels)
 
     @staticmethod

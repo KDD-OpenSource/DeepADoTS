@@ -47,7 +47,7 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds):
 
 
 def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
-    multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor']
+    multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
 
     datasets = list(get_datasets_for_multiple_runs(anomaly_type, seeds))
     results = pd.DataFrame()
@@ -57,6 +57,9 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
         evaluator = Evaluator(datasets[index], detectors, output_dir, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
+        evaluator.plot_roc_curves()
+        evaluator.plot_threshold_comparison()
+        evaluator.plot_scores()
         results = results.append(result, ignore_index=True)
 
     # set average results from multiple pipeline runs for evaluation

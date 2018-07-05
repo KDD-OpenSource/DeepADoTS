@@ -34,7 +34,7 @@ def get_detectors():
 
 def get_pipeline_datasets(seed):
     if os.environ.get("CIRCLECI", False):
-        return [SyntheticDataGenerator.extreme_1(seed=42)]
+        return [SyntheticDataGenerator.extreme_1(seed)]
     else:
         return [
             SyntheticDataGenerator.extreme_1(seed),
@@ -64,11 +64,17 @@ def run_pipeline():
     results = pd.DataFrame()
     evaluator = None
 
+    # Use same datasets for all CI runs (saves execution time)
+    datasets = get_pipeline_datasets(42) if os.environ.get('CIRCLECI', False) else None
+
     for seed in seeds:
-        datasets = get_pipeline_datasets(seed)
+        datasets = datasets or get_pipeline_datasets(seed)
         evaluator = Evaluator(datasets, detectors, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
+        evaluator.plot_roc_curves()
+        evaluator.plot_threshold_comparison()
+        evaluator.plot_scores()
         results = results.append(result, ignore_index=True)
 
     # Set average results from multiple pipeline runs for evaluation
@@ -121,19 +127,16 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         ev_extr.plot_single_heatmap()
         return
     announce_experiment('Pollution')
-    ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type,
-                                      output_dir=os.path.join(output_dir, 'pollution'),
-                                      steps=steps)
+    ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type, steps=steps,
+                                      output_dir=os.path.join(output_dir, 'pollution'))
 
     announce_experiment('Missing Values')
-    ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type,
-                                    output_dir=os.path.join(output_dir, 'missing'),
-                                    steps=steps)
+    ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type, steps=steps
+                                    output_dir=os.path.join(output_dir, 'missing'))
 
 
     announce_experiment('Multivariate Datasets')
-    ev_mv = run_multivariate_experiment(detectors, seeds, RUNS,
-                                        output_dir=os.path.join(output_dir, 'multivariate'))
+    ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
     evaluators = [ev_pol, ev_mis, ev_extr, ev_mv]
     Evaluator.plot_heatmap(evaluators)
