@@ -31,6 +31,8 @@ def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
 
 
 def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
+    multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
+    
     for seed in seeds:
         if anomaly_type == "extreme":
             yield [SyntheticDataGenerator.get(f'{outlier_type}_extremeness', seed, extreme)
@@ -47,8 +49,6 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
 
 
 def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
-    multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
-
     datasets = list(get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type))
     results = pd.DataFrame()
     evaluator = None

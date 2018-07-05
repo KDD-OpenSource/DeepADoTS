@@ -17,7 +17,7 @@ RUNS = 2 if os.environ.get("CIRCLECI", False) else 2
 
 
 def main():
-    run_pipeline()
+    # run_pipeline()
     run_experiments()
     # test_stored_result()
 
