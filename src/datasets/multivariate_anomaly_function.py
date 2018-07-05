@@ -22,7 +22,6 @@ class MultivariateAnomalyFunction:
                                             *args,
                                             **kwargs)
 
-
     @staticmethod
     def doubled(curve_values, anomalous, _):
         factor = 4 if anomalous else 2
