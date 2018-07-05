@@ -310,18 +310,19 @@ class Evaluator:
 
     def store(self, fig, title, extension="pdf", no_counters=False):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        _dir = os.path.join(self.output_dir, 'figures')
+        output_dir = os.path.join(self.output_dir, 'figures')
+        os.makedirs(output_dir, exist_ok=True)
         if no_counters:
-            path = os.path.join(_dir, f"{title}-{timestamp}.{extension}")
+            path = os.path.join(output_dir, f"{title}-{timestamp}.{extension}")
         else:
-            path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+            path = os.path.join(output_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         fig.savefig(path)
         self.logger.info(f"Stored plot at {path}")
 
     def store_text(self, content, title, extension="txt"):
         timestamp = int(time.time())
-        _dir = os.path.join(self.output_dir, 'tables')
-        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        output_dir = os.path.join(self.output_dir, 'tables')
+        path = os.path.join(output_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as f:
             f.write(content)

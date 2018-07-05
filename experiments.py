@@ -30,26 +30,26 @@ def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
                                      anomaly_type="multivariate")
 
 
-def get_datasets_for_multiple_runs(anomaly_type, seeds):
+def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
     for seed in seeds:
         if anomaly_type == "extreme":
             yield [SyntheticDataGenerator.get(f'{outlier_type}_extremeness', seed, extreme)
-                   for extreme in np.linspace(1, 9, steps)])
+                   for extreme in np.linspace(1, 9, steps)]
         elif anomaly_type == "missing":
             yield [SyntheticDataGenerator.get(f'{outlier_type}_missing', seed, missing)
-                   for missing in np.linspace(0, 0.9, steps)])
+                   for missing in np.linspace(0, 0.9, steps)]
         elif anomaly_type == "polluted":
             yield [SyntheticDataGenerator.get(f'{outlier_type}_polluted', seed, pollution)
-                   for pollution in np.linspace(0, 0.5, steps)])
+                   for pollution in np.linspace(0, 0.5, steps)]
         elif anomaly_type == "multivariate":
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(dim_func, random_seed=seed)
-                   for dim_func in multivariate_anomaly_functions])
+                   for dim_func in multivariate_anomaly_functions]
 
 
 def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
     multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
 
-    datasets = list(get_datasets_for_multiple_runs(anomaly_type, seeds))
+    datasets = list(get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type))
     results = pd.DataFrame()
     evaluator = None
 

@@ -132,7 +132,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
                                       output_dir=os.path.join(output_dir, 'pollution'))
 
     announce_experiment('Missing Values')
-    ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type, steps=steps
+    ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type, steps=steps,
                                     output_dir=os.path.join(output_dir, 'missing'))
 
 
