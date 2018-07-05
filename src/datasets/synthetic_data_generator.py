@@ -38,12 +38,13 @@ class SyntheticDataGenerator:
         return func(*args, **kwargs)
 
     @staticmethod
-    def extreme_1(seed, n=1):
+    def extreme_1(seed, n=1, k=1):
         np.random.seed(seed)
+        if k is None:
+            k = -(-n//2)
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        k = 1
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -104,10 +105,11 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def shift_1(seed, n=1):
+    def shift_1(seed, n=1, k=1):
+        if k is None:
+            k = -(-n//2)
         length = 3000
         train_split = 0.7
-        k = 1
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -154,10 +156,11 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def variance_1(seed, n=1):
+    def variance_1(seed, n=1, k=1):
+        if k is None:
+            k = -(-n//2)
         length = 3000
         train_split = 0.7
-        k = 1
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -205,10 +208,11 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def trend_1(seed, n=1):
+    def trend_1(seed, n=1, k=1):
+        if k is None:
+            k = -(-n//2)
         length = 3000
         train_split = 0.7
-        k = 1
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -255,11 +259,12 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def combined_1(seed, n=1):
+    def combined_1(seed, n=1, k=1):
+        if k is None:
+            k = -(-n//2)
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        k = 1
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -301,11 +306,12 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def combined_4(seed, n=4):
+    def combined_4(seed, n=4, k=4):
+        if k is None:
+            k = -(-n//2)
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        k = 1
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -351,11 +357,12 @@ class SyntheticDataGenerator:
 
 # for accurate high-dimensional multivariate datasets (>2) rather use synthetic_multivariate_dataset.py
     @staticmethod
-    def mv_extreme_1(seed, n=2):
+    def mv_extreme_1(seed, n=2, k=2):
+        if k is None:
+            k = n
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        k = 2
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -426,10 +433,11 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_shift_1(seed, n=2):
+    def mv_shift_1(seed, n=2, k=2):
+        if k is None:
+            k = n
         length = 3000
         train_split = 0.7
-        k = 2
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -478,10 +486,11 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_variance_1(seed, n=2):
+    def mv_variance_1(seed, n=2, k=2):
+        if k is None:
+            k = n
         length = 3000
         train_split = 0.7
-        k = 2
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -518,10 +527,11 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_trend_1(seed, n=2):
+    def mv_trend_1(seed, n=2, k=2):
+        if k is None:
+            k = n
         length = 3000
         train_split = 0.7
-        k = 2
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -554,11 +564,12 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_xor_extreme_1(seed, n=2):
+    def mv_xor_extreme_1(seed, n=2, k=2):
+        if k is None:
+            k = n
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        k = 2
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -629,11 +640,12 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def behavior_sine_1(seed, cycle_length=200, n=1):
+    def behavior_sine_1(seed, cycle_length=200, n=1, k=1):
+        if k is None:
+            k = -(-n//2)
         """Test seasonality (long term frequency)"""
         length = 3000
         train_split = 0.7
-        k = 1
         shift_config = {}
         behavior = sine_generator
         behavior_config = {'cycle_duration': cycle_length, 'amplitude': 0.1}
