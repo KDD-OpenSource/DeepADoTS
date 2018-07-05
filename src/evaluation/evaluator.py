@@ -37,9 +37,10 @@ class Evaluator:
         # Last passed seed value in evaluate()
         self.seed = seed
 
-    def export_results(self, name, prefix='.'):
+    def export_results(self, name):
+        output_dir = self.output_dir or 'reports/evaluators/'
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        path = os.path.join(prefix, 'reports', 'evaluators', f'{name}-{timestamp}.pkl')
+        path = os.path.join(output_dir, f'{name}-{timestamp}.pkl')
         self.logger.info(f'Store evaluator results at {os.path.abspath(path)}')
         if self.benchmark_results is None:
             self.benchmark_result = pd.DataFrame()
@@ -57,9 +58,10 @@ class Evaluator:
         return path
 
     # Import benchmark_results if this evaluator uses the same detectors and datasets
-    def import_results(self, name, prefix='.'):
-        # self.results are not available because they are overwritten by each run
-        path = os.path.join(prefix, 'reports', 'evaluators', f'{name}.pkl')
+    # self.results are not available because they are overwritten by each run
+    def import_results(self, name):
+        output_dir = self.output_dir or 'reports/evaluators/'
+        path = os.path.join(output_dir, f'{name}.pkl')
         logging.getLogger(__name__).info(f'Read evaluator results at {os.path.abspath(path)}')
         with open(path, 'r') as f:
             save_dict = json.load(f)
