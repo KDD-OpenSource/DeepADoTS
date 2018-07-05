@@ -39,6 +39,7 @@ class SyntheticDataGenerator:
 
     @staticmethod
     def extreme_1(seed, n=1):
+        np.random.seed(seed)
         # train begins at 2100
         length = 3000
         train_split = 0.7
@@ -52,9 +53,8 @@ class SyntheticDataGenerator:
         timestamps = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,), (2361,), (2369,),
                       (2428,), (2510,), (2512,), (2538,), (2567,), (2589,), (2695,), (2819,),
                       (2892,), (2940,), (2952,), (2970,)]
-        np.random.seed(seed)
+
         outlier_dim = np.random.choice(n, len(timestamps), replace=True)
-        np.random.seed(None)
 
         outlier_assignment = dict()
         for i in range(len(outlier_dim)):
@@ -80,12 +80,11 @@ class SyntheticDataGenerator:
     @staticmethod
     def extreme_1_polluted(seed, pollution_percentage=0.2, n=1):
         """Full pollution -> All anomalies from test set are in train set"""
+        np.random.seed(seed)
         dataset = SyntheticDataGenerator.extreme_1(seed, n)
 
         train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(seed)
         indices = np.random.choice(train_length, int(pollution_percentage * train_length), replace=False)
-        np.random.seed(seed)
         pollution_config = {
             'extreme': [
                 {
@@ -150,12 +149,11 @@ class SyntheticDataGenerator:
 
     @staticmethod
     def shift_1_polluted(seed, pollution_percentage=0.2, n=1):
+        np.random.seed(seed)
         dataset = SyntheticDataGenerator.shift_1(seed, n)
 
         train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(seed)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        np.random.seed(seed)
         pollution_config = {
             'shift': [
                 {
@@ -201,12 +199,11 @@ class SyntheticDataGenerator:
 
     @staticmethod
     def variance_1_polluted(seed, pollution_percentage=0.2, n=1):
+        np.random.seed(seed)
         dataset = SyntheticDataGenerator.variance_1(seed, n)
 
         train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(seed)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        np.random.seed(seed)
         pollution_config = {
             'variance': [
                 {
@@ -251,12 +248,11 @@ class SyntheticDataGenerator:
 
     @staticmethod
     def trend_1_polluted(seed, pollution_percentage=0.2, n=1):
+        np.random.seed(seed)
         dataset = SyntheticDataGenerator.trend_1(seed, n)
 
         train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(seed)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        np.random.seed(seed)
         pollution_config = {
             'trend': [
                 {
