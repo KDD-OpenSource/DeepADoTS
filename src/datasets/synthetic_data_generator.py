@@ -52,7 +52,7 @@ class SyntheticDataGenerator:
         timestamps = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,), (2361,), (2369,),
                       (2428,), (2510,), (2512,), (2538,), (2567,), (2589,), (2695,), (2819,),
                       (2892,), (2940,), (2952,), (2970,)]
-        np.random.seed(123)
+        np.random.seed(seed)
         outlier_dim = np.random.choice(n, len(timestamps), replace=True)
         np.random.seed(None)
 
