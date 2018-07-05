@@ -31,7 +31,7 @@ def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
 
 
 def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
-    multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor']
+    multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
     print_order = ["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score", "auroc"]
     rename_columns = [col for col in print_order if col not in ['dataset', 'algorithm']]
 
