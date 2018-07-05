@@ -15,7 +15,7 @@ class SyntheticMultivariateDataset(Dataset):
                  mean_curve_amplitude: int = 1,  # By default varies between -0.5 and 1.5
                  pause_range: Tuple[int, int] = (5, 75),  # min and max value for this a pause
                  labels_padding: int = 6,
-                 random_seed: int = 42,
+                 random_seed: int = None,
                  features: int = 2,
                  file_name: str = 'synthetic_mv1.pkl'):
         super().__init__(f'{name} (f={anomaly_func.__name__})', file_name)

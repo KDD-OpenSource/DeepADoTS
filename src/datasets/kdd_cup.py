@@ -5,10 +5,11 @@ from .real_dataset import RealDataset
 
 
 class KDDCup(RealDataset):
-    def __init__(self):
+    def __init__(self, seed):
         super().__init__(
             name="KDD Cup '99", raw_path="kddcup-data_10_percent_corrected.txt", file_name="kdd_cup.npz"
         )
+        self.seed = seed
 
     def load(self):
         (a, b), (c, d) = self.get_data_dagmm()
@@ -25,7 +26,7 @@ class KDDCup(RealDataset):
         :return: (X_train, y_train), (X_test, y_test)
         """
         data = np.load(self.processed_path)
-        np.random.seed(seed=None)
+        np.random.seed(seed=self.seed)
 
         labels = data["kdd"][:, -1]
         features = data["kdd"][:, :-1]
