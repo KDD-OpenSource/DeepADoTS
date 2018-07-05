@@ -160,7 +160,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
                                           output_dir=os.path.join(output_dir, 'pollution'),
                                           steps=steps)
 
-        '''announce_experiment('Missing Values')
+        announce_experiment('Missing Values')
         ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type,
                                         output_dir=os.path.join(output_dir, 'missing'),
                                         steps=steps)
@@ -173,8 +173,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         announce_experiment('Multivariate Datasets')
         ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
-        evaluators = [ev_pol, ev_mis, ev_extr, ev_mv]'''
-        evaluators = [ev_pol]
+        evaluators = [ev_pol, ev_mis, ev_extr, ev_mv]
         Evaluator.plot_heatmap(evaluators)
 
 
