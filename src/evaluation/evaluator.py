@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import json
 import sys
 import traceback
 from textwrap import wrap
@@ -21,7 +22,9 @@ from .config import init_logging
 
 
 class Evaluator:
-    def __init__(self, datasets: list, detectors: list, output_dir: {str} = None):
+    def __init__(self, datasets: list, detectors: list, output_dir: {str} = None, seed: int = 42):
+        assert np.unique([x.name for x in datasets]).size == len(datasets), 'Some datasets have the same name!'
+        assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
         self.datasets = datasets
         self.detectors = sorted(detectors, key=lambda x: x.framework)
         self.output_dir = output_dir or 'reports/figures/'
@@ -29,7 +32,48 @@ class Evaluator:
         self.results = dict()
         init_logging(output_dir or 'reports/logs/')
         self.logger = logging.getLogger(__name__)
+        # Dirty hack: Is set by the main.py to insert results from multiple evaluator runs
         self.benchmark_results = None
+        # Last passed seed value in evaluate()
+        self.seed = seed
+
+    def export_results(self, name):
+        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+        path = os.path.join('reports', 'evaluators', f'{name}-{timestamp}.pkl')
+        self.logger.info(f'Store evaluator results at {path}')
+        if self.benchmark_results is None:
+            self.benchmark_result = pd.DataFrame()
+        save_dict = {
+            'datasets': [x.name for x in self.datasets],
+            'detectors': [x.name for x in self.detectors],
+            'benchmark_results': self.benchmark_results.to_json(),
+            # Not working since keys are tuples (not serializable)
+            # 'results': self.results,
+            'output_dir': self.output_dir,
+            'seed': int(self.seed),
+        }
+        with open(path, 'w') as f:
+            json.dump(save_dict, f)
+
+    # Import benchmark_results if this evaluator uses the same detectors and datasets
+    def import_results(self, name):
+        # self.results are not available because they are overwritten by each run
+        path = os.path.join('reports', 'evaluators', f'{name}.pkl')
+        logging.getLogger(__name__).info(f'Read evaluator results at {path}')
+        with open(path, 'r') as f:
+            save_dict = json.load(f)
+
+        self.logger.debug(f'Importing detectors {"; ".join(save_dict["detectors"])}')
+        my_detectors = [x.name for x in self.detectors]
+        assert np.array_equal(save_dict['detectors'], my_detectors), 'Detectors should be the same'
+
+        self.logger.debug(f'Importing datasets {"; ".join(save_dict["datasets"])}')
+        my_datasets = [x.name for x in self.datasets]
+        assert np.array_equal(save_dict['datasets'], my_datasets), 'Datasets should be the same'
+
+        self.benchmark_results = pd.read_json(save_dict['benchmark_results'])
+        self.seed = save_dict['seed']
+        # self.results = save_dict['results']
 
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
@@ -65,13 +109,13 @@ class Evaluator:
         else:
             return threshold[np.argmax(f_score)]
 
-    def evaluate(self, seed):
+    def evaluate(self):
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
             for det in progressbar.progressbar(self.detectors):
-                self.logger.info(f"Training {det.name} on {ds.name} with seed {seed}")
+                self.logger.info(f"Training {det.name} on {ds.name} with seed {self.seed}")
                 try:
-                    det.set_seed(seed)
+                    det.set_seed(self.seed)
                     det.fit(X_train.copy(), y_train.copy())
                     score = det.predict(X_test.copy())
                     self.results[(ds.name, det.name)] = score
