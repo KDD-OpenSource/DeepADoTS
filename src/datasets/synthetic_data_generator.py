@@ -38,7 +38,7 @@ class SyntheticDataGenerator:
         return func(*args, **kwargs)
 
     @staticmethod
-    def extreme_1():
+    def extreme_1(seed):
         # train begins at 2100
         length = 3000
         train_split = 0.7
@@ -62,7 +62,7 @@ class SyntheticDataGenerator:
             ]
         }
         pollution_config = {}
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name='Synthetic Extreme Outliers', file_name='extreme1.pkl', length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
@@ -71,14 +71,14 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def extreme_1_polluted(pollution_percentage=0.2):
+    def extreme_1_polluted(seed, pollution_percentage=0.2):
         """Full pollution -> All anomalies from test set are in train set"""
-        dataset = SyntheticDataGenerator.extreme_1()
+        dataset = SyntheticDataGenerator.extreme_1(seed)
 
         train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(123)
+        np.random.seed(seed)
         indices = np.random.choice(train_length, int(pollution_percentage * train_length), replace=False)
-        np.random.seed(None)
+        np.random.seed(seed)
         pollution_config = {
             'extreme': [
                 {
@@ -93,9 +93,9 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def extreme_1_extremeness(extreme_value=10):
+    def extreme_1_extremeness(seed, extreme_value=10):
         """Full pollution -> All anomalies from test set are in train set"""
-        dataset = SyntheticDataGenerator.extreme_1()
+        dataset = SyntheticDataGenerator.extreme_1(seed)
 
         dataset.outlier_config['extreme'][0]['value'] = extreme_value
 
@@ -103,15 +103,15 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def extreme_1_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.extreme_1()
+    def extreme_1_missing(seed, missing_percentage=0.1):
+        dataset = SyntheticDataGenerator.extreme_1(seed)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Extreme Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def shift_1():
+    def shift_1(seed):
         length = 3000
         train_split = 0.7
         n = 1
@@ -126,7 +126,7 @@ class SyntheticDataGenerator:
             ]}],
         }
         pollution_config = {}
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name='Synthetic Shift Outliers', file_name='shift1.pkl', length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
@@ -135,21 +135,21 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def shift_1_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.shift_1()
+    def shift_1_missing(seed, missing_percentage=0.1):
+        dataset = SyntheticDataGenerator.shift_1(seed)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Shift Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def shift_1_polluted(pollution_percentage=0.2):
-        dataset = SyntheticDataGenerator.shift_1()
+    def shift_1_polluted(seed, pollution_percentage=0.2):
+        dataset = SyntheticDataGenerator.shift_1(seed)
 
         train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(123)
+        np.random.seed(seed)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        np.random.seed(None)
+        np.random.seed(seed)
         pollution_config = {
             'shift': [
                 {
@@ -164,7 +164,7 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def variance_1():
+    def variance_1(seed):
         length = 3000
         train_split = 0.7
         n = 1
@@ -177,7 +177,7 @@ class SyntheticDataGenerator:
             'variance': [{'n': 0, 'timestamps': [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]}],
         }
         pollution_config = {}
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name='Synthetic Variance Outliers', file_name='variance1.pkl', length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
@@ -186,21 +186,21 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def variance_1_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.variance_1()
+    def variance_1_missing(seed, missing_percentage=0.1):
+        dataset = SyntheticDataGenerator.variance_1(seed)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Variance Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def variance_1_polluted(pollution_percentage=0.2):
-        dataset = SyntheticDataGenerator.variance_1()
+    def variance_1_polluted(seed, pollution_percentage=0.2):
+        dataset = SyntheticDataGenerator.variance_1(seed)
 
         train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(123)
+        np.random.seed(seed)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        np.random.seed(None)
+        np.random.seed(seed)
         pollution_config = {
             'variance': [
                 {
@@ -215,7 +215,7 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def trend_1():
+    def trend_1(seed):
         length = 3000
         train_split = 0.7
         n = 1
@@ -228,7 +228,7 @@ class SyntheticDataGenerator:
             'trend': [{'n': 0, 'timestamps': [(2200, 2400), (2450, 2480), (2500, 2550), (2700, 2950)]}],
         }
         pollution_config = {}
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name='Synthetic Trend Outliers', file_name='trend1.pkl', length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
@@ -237,21 +237,21 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def trend_1_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.trend_1()
+    def trend_1_missing(seed, missing_percentage=0.1):
+        dataset = SyntheticDataGenerator.trend_1(seed)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Trend Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def trend_1_polluted(pollution_percentage=0.2):
-        dataset = SyntheticDataGenerator.trend_1()
+    def trend_1_polluted(seed, pollution_percentage=0.2):
+        dataset = SyntheticDataGenerator.trend_1(seed)
 
         train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(123)
+        np.random.seed(seed)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        np.random.seed(None)
+        np.random.seed(seed)
         pollution_config = {
             'trend': [
                 {
@@ -266,7 +266,7 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def combined_1():
+    def combined_1(seed):
         # train begins at 2100
         length = 3000
         train_split = 0.7
@@ -295,7 +295,7 @@ class SyntheticDataGenerator:
             'trend': [{'n': 0, 'timestamps': [(2200, 2400), (2550, 2420), (2500, 2550), (2800, 2950)]}]
         }
         pollution_config = {}
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name='Synthetic Combined Outliers', file_name='combined1.pkl', length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
@@ -304,15 +304,15 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def combined_1_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.combined_1()
+    def combined_1_missing(seed, missing_percentage=0.1):
+        dataset = SyntheticDataGenerator.combined_1(seed)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Combined Outliers (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def combined_4():
+    def combined_4(seed):
         # train begins at 2100
         length = 3000
         train_split = 0.7
@@ -341,7 +341,7 @@ class SyntheticDataGenerator:
             'trend': [{'n': 3, 'timestamps': [(2200, 2400), (2550, 2420), (2500, 2550), (2800, 2950)]}]
         }
         pollution_config = {}
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name='Synthetic Combined Outliers 4-dimensional', file_name='combined4.pkl',
                                 length=length, n=n, k=k,
@@ -351,15 +351,15 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def combined_4_missing(missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.combined_4()
+    def combined_4_missing(seed, missing_percentage=0.1):
+        dataset = SyntheticDataGenerator.combined_4(seed)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Combined Outliers 4D (mis={missing_percentage})'
         return dataset
 
     @staticmethod
-    def mv_extreme_1():
+    def mv_extreme_1(seed):
         # train begins at 2100
         length = 3000
         train_split = 0.7
@@ -424,7 +424,7 @@ class SyntheticDataGenerator:
                 }
             ]
         }
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name="Synthetic Multivariate Extreme Outliers", file_name="mv_extreme1.pkl",
                                 length=length, n=n, k=k,
@@ -435,7 +435,7 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_shift_1():
+    def mv_shift_1(seed):
         length = 3000
         train_split = 0.7
         n = 2
@@ -477,7 +477,7 @@ class SyntheticDataGenerator:
                 }
             ]
         }
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name="Synthetic Multivariate Shift Outliers", file_name="mv_shift1.pkl",
                                 length=length, n=n, k=k,
@@ -488,7 +488,7 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_variance_1():
+    def mv_variance_1(seed):
         length = 3000
         train_split = 0.7
         n = 2
@@ -518,7 +518,7 @@ class SyntheticDataGenerator:
                 }
             ]
         }
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name="Synthetic Multivariate Variance Outliers", file_name="mv_variance1.pkl",
                                 length=length, n=n, k=k,
@@ -529,7 +529,7 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_trend_1():
+    def mv_trend_1(seed):
         length = 3000
         train_split = 0.7
         n = 2
@@ -555,7 +555,7 @@ class SyntheticDataGenerator:
                 }
             ]
         }
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name="Synthetic Multivariate Trend Outliers", file_name="mv_trend1.pkl",
                                 length=length, n=n, k=k,
@@ -566,7 +566,7 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_xor_extreme_1():
+    def mv_xor_extreme_1(seed):
         # train begins at 2100
         length = 3000
         train_split = 0.7
@@ -631,7 +631,7 @@ class SyntheticDataGenerator:
                 }
             ]
         }
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name="Synthetic Multivariate XOR Extreme Outliers", file_name="mv_xor_extreme1.pkl",
                                 length=length, n=n, k=k,
@@ -642,7 +642,7 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def behavior_sine_1(cycle_length=200):
+    def behavior_sine_1(seed, cycle_length=200):
         """Test seasonality (long term frequency)"""
         length = 3000
         train_split = 0.7
@@ -654,7 +654,7 @@ class SyntheticDataGenerator:
         baseline_config = {}
         outlier_config = {}
         pollution_config = {}
-        random_state = 42
+        random_state = seed
 
         return SyntheticDataset(name='Synthetic Seasonal Outliers', file_name='sine1.pkl', length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,

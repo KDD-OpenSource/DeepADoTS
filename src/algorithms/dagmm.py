@@ -101,11 +101,17 @@ class DAGMMModule(nn.Module, GPUWrapper):
         for i in range(k):
             # K x D x D
             cov_k = cov[i] + self.to_var(torch.eye(d) * eps)
-            cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
 
             eigvals = np.linalg.eigvals(cov_k.data.cpu().numpy() * (2 * np.pi))
             if np.min(eigvals) < 0:
                 logging.warning(f'Determinant was negative! Clipping Eigenvalues to 0+epsilon from {np.min(eigvals)}')
+            if (eigvals / 2*np.pi == 0).any():
+                logging.warning(f'An Eigenvalue is zero! Calculating pseudo inverse.')
+                pinv = np.linalg.pinv(cov_k.data.numpy())
+                cov_inverse.append(Variable(torch.from_numpy(pinv)).unsqueeze(0))
+            else:
+                cov_inverse.append(torch.inverse(cov_k).unsqueeze(0))
+
             determinant = np.prod(np.clip(eigvals, a_min=sys.float_info.epsilon, a_max=None))
             det_cov.append(determinant)
 
@@ -181,7 +187,7 @@ class DAGMM(Algorithm, GPUWrapper):
     def fit(self, X: pd.DataFrame, _):
         """Learn the mixture probability, mean and covariance for each component k.
         Store the computed energy based on the training data and the aforementioned parameters."""
-        X = X.dropna()
+        X.fillna(0, inplace=True)
         data = X.values
         # Each point is a flattened window and thus has as many features as sequence_length * features
         multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
@@ -238,7 +244,7 @@ class DAGMM(Algorithm, GPUWrapper):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
         given data."""
         self.dagmm.eval()
-        X = X.dropna()
+        X.fillna(0, inplace=True)
         data = X.values
         multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=multi_points, batch_size=1, shuffle=False)
@@ -266,3 +272,7 @@ class DAGMM(Algorithm, GPUWrapper):
             else:
                 return np.zeros_like(y)
         return np.where(y > threshold, 1, 0)
+
+    def set_seed(self, seed):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
