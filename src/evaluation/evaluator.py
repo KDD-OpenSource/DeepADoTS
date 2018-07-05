@@ -376,7 +376,7 @@ class Evaluator:
         match = var_re.search(dataset_name)
         if not match:
             # self.logger.warn('Unexpected dataset name (not variable in name)')
-            return '', ''
+            return '-', dataset_name
         var_key = match.group(1)
         var_value = match.group(2)
         return Evaluator.translate_var_key(var_key), var_value
@@ -393,6 +393,7 @@ class Evaluator:
 
         datasets = mi_df.index
         dataset_types = Evaluator.get_dataset_types(mi_df)  # Returns unique entries keeping original order
+        logging.getLogger(__name__).debug('Plotting heatmap for groups {" ".join(dataset_types)}')
 
         ax.set_yticks(np.arange(len(datasets)))
         ax.set_yticklabels([x[1] for x in datasets])

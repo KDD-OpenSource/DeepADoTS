@@ -10,7 +10,7 @@ from experiments import run_pollution_experiment, run_missing_experiment, run_ex
     run_multivariate_experiment, announce_experiment
 
 # min number of runs = 2 for std operation
-RUNS = 2 if os.environ.get("CIRCLECI", False) else 2
+RUNS = 10 if os.environ.get("CIRCLECI", False) else 2
 
 # Add this line if you want to shortly test the pipeline & experiments
 # os.environ["CIRCLECI"] = "True"
@@ -27,7 +27,7 @@ def get_detectors():
         return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        return [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40),
+        return [RecurrentEBM(num_epochs=15), Donut(), LSTMED(num_epochs=40),  # , LSTMAD()
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
