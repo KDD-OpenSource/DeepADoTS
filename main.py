@@ -49,6 +49,7 @@ def run_pipeline():
         evaluator = Evaluator(datasets if datasets else get_pipeline_datasets(seed), detectors)
         evaluator.evaluate(seed)
         result = evaluator.benchmarks()
+        evaluator.plot_roc_curves()
         results = results.append(result, ignore_index=True)
 
     evaluator.create_boxplots_per_algorithm(runs=RUNS, data=results)
@@ -90,7 +91,6 @@ def run_pipeline():
     evaluator.plot_threshold_comparison()
     evaluator.plot_single_heatmap()
     evaluator.plot_scores()
-    evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
     evaluator.create_bar_charts_per_algorithm(runs=RUNS)
 
@@ -160,7 +160,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
                                           output_dir=os.path.join(output_dir, 'pollution'),
                                           steps=steps)
 
-        announce_experiment('Missing Values')
+        '''announce_experiment('Missing Values')
         ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type,
                                         output_dir=os.path.join(output_dir, 'missing'),
                                         steps=steps)
@@ -173,7 +173,8 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         announce_experiment('Multivariate Datasets')
         ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
-        evaluators = [ev_pol, ev_mis, ev_extr, ev_mv]
+        evaluators = [ev_pol, ev_mis, ev_extr, ev_mv]'''
+        evaluators = [ev_pol]
         Evaluator.plot_heatmap(evaluators)
 
 
