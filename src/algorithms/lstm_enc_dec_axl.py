@@ -39,7 +39,7 @@ class LSTMED(Algorithm, GPUWrapper):
         self.cov = None
 
     def fit(self, X: pd.DataFrame, _):
-        X = X.dropna()
+        X.fillna(0, inplace=True)
         data = X.values
 
         sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
@@ -79,7 +79,7 @@ class LSTMED(Algorithm, GPUWrapper):
     def predict(self, X: pd.DataFrame):
         prediction_batch_size = 1
 
-        X = X.dropna()
+        X.fillna(0, inplace=True)
         data = X.values
         sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=sequences, batch_size=prediction_batch_size, shuffle=False, drop_last=False)
@@ -108,6 +108,10 @@ class LSTMED(Algorithm, GPUWrapper):
 
     def threshold(self, score):
         return np.nanmean(score) + 2 * np.nanstd(score)
+
+    def set_seed(self, seed):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
 
 
 class LSTMEDModule(nn.Module, GPUWrapper):
