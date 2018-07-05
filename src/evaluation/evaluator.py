@@ -225,7 +225,7 @@ class Evaluator:
     def plot_auroc(self, store=True, title='AUROC'):
         plt.close('all')
         self.benchmark_results[['dataset', 'algorithm', 'auroc']].pivot(
-            index='algorithm', columns="dataset", values='auroc').plot(kind='bar')
+            index='algorithm', columns='dataset', values='auroc').plot(kind='bar')
         plt.legend(loc=3, framealpha=0.5)
         plt.xticks(rotation=20)
         plt.ylabel('AUC', rotation='horizontal', labelpad=20)
@@ -233,7 +233,7 @@ class Evaluator:
         plt.ylim(ymin=0, ymax=1)
         plt.tight_layout()
         if store:
-            self.store(plt.gcf(), f'auroc')
+            self.store(plt.gcf(), 'auroc')
 
     # create boxplot diagrams for auc values for each dataset per algorithm
     def create_boxplots_per_algorithm(self, runs, data):
