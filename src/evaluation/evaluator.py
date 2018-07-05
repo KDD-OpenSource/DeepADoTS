@@ -37,10 +37,10 @@ class Evaluator:
         # Last passed seed value in evaluate()
         self.seed = seed
 
-    def export_results(self, name):
+    def export_results(self, name, prefix='.'):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        path = os.path.join('reports', 'evaluators', f'{name}-{timestamp}.pkl')
-        self.logger.info(f'Store evaluator results at {path}')
+        path = os.path.join(prefix, 'reports', 'evaluators', f'{name}-{timestamp}.pkl')
+        self.logger.info(f'Store evaluator results at {os.path.abspath(path)}')
         if self.benchmark_results is None:
             self.benchmark_result = pd.DataFrame()
         save_dict = {
@@ -56,10 +56,10 @@ class Evaluator:
             json.dump(save_dict, f)
 
     # Import benchmark_results if this evaluator uses the same detectors and datasets
-    def import_results(self, name):
+    def import_results(self, name, prefix='.'):
         # self.results are not available because they are overwritten by each run
-        path = os.path.join('reports', 'evaluators', f'{name}.pkl')
-        logging.getLogger(__name__).info(f'Read evaluator results at {path}')
+        path = os.path.join(prefix, 'reports', 'evaluators', f'{name}.pkl')
+        logging.getLogger(__name__).info(f'Read evaluator results at {os.path.abspath(path)}')
         with open(path, 'r') as f:
             save_dict = json.load(f)
 
@@ -477,3 +477,21 @@ class Evaluator:
 
     def plot_single_heatmap(self, store=True):
         Evaluator.plot_heatmap([self], store)
+
+    def plot_experiment_comparison(self, title):
+        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        ax.set_title(title)
+
+        results = self.benchmark_results
+        for det in self.detectors:
+            det_results = results[results['algorithm'] == det.name].sort_index()
+            ax.plot(det_results['auroc'].values, label=det.name)
+
+        ax.legend()
+        ax.set_ylim((0, 1))
+        ax.set_xlabel('Dataset')
+        ax.set_ylabel('AUROC')
+
+        dataset_names = results[results['algorithm'] == self.detectors[0].name].sort_index()['dataset']
+        plt.xticks(range(len(dataset_names)), dataset_names, rotation=45, ha='right')
+        return fig
