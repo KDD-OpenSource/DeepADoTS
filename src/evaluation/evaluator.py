@@ -41,6 +41,7 @@ class Evaluator:
 
     def export_results(self, name):
         output_dir = os.path.join(self.output_dir, 'evaluators')
+        os.makedirs(output_dir, exist_ok=True)
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
         path = os.path.join(output_dir, f'{name}-{timestamp}.pkl')
         self.logger.info(f'Store evaluator results at {os.path.abspath(path)}')
