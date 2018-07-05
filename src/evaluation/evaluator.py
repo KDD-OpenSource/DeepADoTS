@@ -54,6 +54,7 @@ class Evaluator:
         }
         with open(path, 'w') as f:
             json.dump(save_dict, f)
+        return path
 
     # Import benchmark_results if this evaluator uses the same detectors and datasets
     def import_results(self, name, prefix='.'):
