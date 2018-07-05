@@ -60,7 +60,7 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
     evaluator = None
 
     for index, seed in enumerate(seeds):
-        evaluator = Evaluator(data_dict[anomaly_type][index], detectors, output_dir, seed)
+        evaluator = Evaluator(data_dict[anomaly_type][index], detectors, output_dir, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
         results = results.append(result, ignore_index=True)

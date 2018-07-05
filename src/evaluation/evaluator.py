@@ -50,7 +50,7 @@ class Evaluator:
             # Not working since keys are tuples (not serializable)
             # 'results': self.results,
             'output_dir': self.output_dir,
-            'seed': self.seed,
+            'seed': int(self.seed),
         }
         with open(path, 'w') as f:
             json.dump(save_dict, f)

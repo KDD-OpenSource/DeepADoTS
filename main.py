@@ -47,7 +47,7 @@ def run_pipeline():
     evaluator = None
 
     for seed in seeds:
-        evaluator = Evaluator(datasets if datasets else get_pipeline_datasets(seed), detectors, seed)
+        evaluator = Evaluator(datasets if datasets else get_pipeline_datasets(seed), detectors, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
         results = results.append(result, ignore_index=True)
