@@ -54,18 +54,9 @@ class SyntheticDataGenerator:
                       (2428,), (2510,), (2512,), (2538,), (2567,), (2589,), (2695,), (2819,),
                       (2892,), (2940,), (2952,), (2970,)]
 
-        outlier_dim = np.random.choice(n, len(timestamps), replace=True)
-
-        outlier_assignment = dict()
-        for i in range(len(outlier_dim)):
-            if outlier_dim[i] in outlier_assignment:
-                outlier_assignment[outlier_dim[i]].append(timestamps[i])
-            else:
-                outlier_assignment[outlier_dim[i]] = []
-        extreme_outlier_config = []
-        for dim, ts in outlier_assignment.items():
-            extreme_outlier_config.append(dict({'n': dim, 'timestamps': ts}))
-        outlier_config = {'extreme': extreme_outlier_config}
+        dim = np.random.choice(n, len(timestamps))
+        outlier_config = {'extreme':
+                          [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
 
         pollution_config = {}
         random_state = seed
@@ -85,14 +76,10 @@ class SyntheticDataGenerator:
 
         train_length = int(dataset.train_split * dataset.length)
         indices = np.random.choice(train_length, int(pollution_percentage * train_length), replace=False)
-        pollution_config = {
-            'extreme': [
-                {
-                    'n': 0,
-                    'timestamps': [(i,) for i in indices]
-                }
-            ]
-        }
+        timestamps = [(i,) for i in indices]
+        dim = np.random.choice(n, len(timestamps))
+        pollution_config = {'extreme': [{'n': i, 'timestamps':
+                                         [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
         dataset.pollution_config = pollution_config
 
         dataset.name = f'Syn Extreme Outliers (pol={pollution_percentage})'
@@ -125,11 +112,14 @@ class SyntheticDataGenerator:
         behavior = None
         behavior_config = {}
         baseline_config = {}
-        outlier_config = {
-            'shift': [{'n': 0, 'timestamps': [
-                (2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)
-            ]}],
-        }
+
+        # outliers randomly distributed over all dimensions
+        timestamps = [(2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)]
+
+        dim = np.random.choice(n, len(timestamps))
+        outlier_config = {'shift':
+                          [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+
         pollution_config = {}
         random_state = seed
 
@@ -154,14 +144,10 @@ class SyntheticDataGenerator:
 
         train_length = int(dataset.train_split * dataset.length)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        pollution_config = {
-            'shift': [
-                {
-                    'n': 0,
-                    'timestamps': [(i, j) for i, j in zip(indices[::2], indices[1::2])]
-                }
-            ]
-        }
+        timestamps = [(i, j) for i, j in zip(indices[::2], indices[1::2])]
+        dim = np.random.choice(n, len(timestamps))
+        pollution_config = {'shift': [{'n': i, 'timestamps':
+                                       [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
         dataset.pollution_config = pollution_config
 
         dataset.name = f'Syn Shift Outliers (pol={pollution_percentage})'
@@ -176,9 +162,14 @@ class SyntheticDataGenerator:
         behavior = None
         behavior_config = {}
         baseline_config = {}
-        outlier_config = {
-            'variance': [{'n': 0, 'timestamps': [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]}],
-        }
+
+        # outliers randomly distributed over all dimensions
+        timestamps = [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]
+
+        dim = np.random.choice(n, len(timestamps))
+        outlier_config = {'variance':
+                          [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+
         pollution_config = {}
         random_state = seed
 
@@ -204,14 +195,10 @@ class SyntheticDataGenerator:
 
         train_length = int(dataset.train_split * dataset.length)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        pollution_config = {
-            'variance': [
-                {
-                    'n': 0,
-                    'timestamps': [(i, j) for i, j in zip(indices[::2], indices[1::2])]
-                }
-            ]
-        }
+        timestamps = [(i, j) for i, j in zip(indices[::2], indices[1::2])]
+        dim = np.random.choice(n, len(timestamps))
+        pollution_config = {'variance': [{'n': i, 'timestamps':
+                                          [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
         dataset.pollution_config = pollution_config
 
         dataset.name = f'Syn Variance Outliers (pol={pollution_percentage})'
@@ -226,9 +213,14 @@ class SyntheticDataGenerator:
         behavior = None
         behavior_config = {}
         baseline_config = {}
-        outlier_config = {
-            'trend': [{'n': 0, 'timestamps': [(2200, 2400), (2450, 2480), (2500, 2550), (2700, 2950)]}],
-        }
+
+        # outliers randomly distributed over all dimensions
+        timestamps = [(2200, 2400), (2450, 2480), (2500, 2550), (2700, 2950)]
+
+        dim = np.random.choice(n, len(timestamps))
+        outlier_config = {'trend':
+                          [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+
         pollution_config = {}
         random_state = seed
 
@@ -253,14 +245,10 @@ class SyntheticDataGenerator:
 
         train_length = int(dataset.train_split * dataset.length)
         indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        pollution_config = {
-            'trend': [
-                {
-                    'n': 0,
-                    'timestamps': [(i, j) for i, j in zip(indices[::2], indices[1::2])]
-                }
-            ]
-        }
+        timestamps = [(i, j) for i, j in zip(indices[::2], indices[1::2])]
+        dim = np.random.choice(n, len(timestamps))
+        pollution_config = {'trend': [{'n': i, 'timestamps':
+                                       [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
         dataset.pollution_config = pollution_config
 
         dataset.name = f'Syn Trend Outliers (pol={pollution_percentage})'
@@ -276,24 +264,25 @@ class SyntheticDataGenerator:
         behavior = None
         behavior_config = {}
         baseline_config = {}
-        outlier_config = {
-            'extreme': [
-                {
-                    'n': 0,
-                    'timestamps': [
-                        (2192,), (2212,), (2258,), (2262,), (2319,), (2343,),
-                        (2361,), (2369,), (2428,), (2510,), (2512,), (2538,),
-                        (2567,), (2589,), (2695,), (2819,), (2892,), (2940,),
-                        (2952,), (2970,)
-                    ]
-                }
-            ],
-            'shift': [{'n': 0, 'timestamps': [
-                (2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)
-            ]}],
-            'variance': [{'n': 0, 'timestamps': [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]}],
-            'trend': [{'n': 0, 'timestamps': [(2200, 2400), (2550, 2420), (2500, 2550), (2800, 2950)]}]
-        }
+        timestamps_ext = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,),
+                          (2361,), (2369,), (2428,), (2510,), (2512,), (2538,),
+                          (2567,), (2589,), (2695,), (2819,), (2892,), (2940,),
+                          (2952,), (2970,)]
+        dim_ext = np.random.choice(n, len(timestamps_ext))
+        timestamps_shi = [(2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)]
+        dim_shi = np.random.choice(n, len(timestamps_shi))
+        timestamps_var = [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]
+        dim_var = np.random.choice(n, len(timestamps_var))
+        timestamps_tre = [(2200, 2400), (2550, 2420), (2500, 2550), (2800, 2950)]
+        dim_tre = np.random.choice(n, len(timestamps_tre))
+        outlier_config = {'extreme': [{'n': i, 'timestamps':
+                                       [ts for d, ts in zip(dim_ext, timestamps_ext) if d == i]} for i in range(n)],
+                          'shift': [{'n': i, 'timestamps':
+                                     [ts for d, ts in zip(dim_shi, timestamps_shi) if d == i]} for i in range(n)],
+                          'variance': [{'n': i, 'timestamps':
+                                        [ts for d, ts in zip(dim_var, timestamps_var) if d == i]} for i in range(n)],
+                          'trend': [{'n': i, 'timestamps':
+                                     [ts for d, ts in zip(dim_tre, timestamps_tre) if d == i]} for i in range(n)]}
         pollution_config = {}
         random_state = seed
 
@@ -321,24 +310,27 @@ class SyntheticDataGenerator:
         behavior = None
         behavior_config = {}
         baseline_config = {}
-        outlier_config = {
-            'extreme': [
-                {
-                    'n': 0,
-                    'timestamps': [
-                        (2192,), (2212,), (2258,), (2262,), (2319,), (2343,),
-                        (2361,), (2369,), (2428,), (2510,), (2512,), (2538,),
-                        (2567,), (2589,), (2695,), (2819,), (2892,), (2940,),
-                        (2952,), (2970,)
-                    ]
-                }
-            ],
-            'shift': [{'n': 1, 'timestamps': [
-                (2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)
-            ]}],
-            'variance': [{'n': 2, 'timestamps': [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]}],
-            'trend': [{'n': 3, 'timestamps': [(2200, 2400), (2550, 2420), (2500, 2550), (2800, 2950)]}]
-        }
+
+        outl_chunks = [n[i:i + 4] for i in range(0, len(n), 4)]
+        timestamps_ext = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,),
+                          (2361,), (2369,), (2428,), (2510,), (2512,), (2538,),
+                          (2567,), (2589,), (2695,), (2819,), (2892,), (2940,),
+                          (2952,), (2970,)]
+        dim_ext = np.random.choice(outl_chunks[0], len(timestamps_ext))
+        timestamps_shi = [(2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)]
+        dim_shi = np.random.choice(outl_chunks[1], len(timestamps_shi))
+        timestamps_var = [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]
+        dim_var = np.random.choice(outl_chunks[2], len(timestamps_var))
+        timestamps_tre = [(2200, 2400), (2550, 2420), (2500, 2550), (2800, 2950)]
+        dim_tre = np.random.choice(outl_chunks[3], len(timestamps_tre))
+        outlier_config = {'extreme': [{'n': i, 'timestamps':
+                                       [ts for d, ts in zip(dim_ext, timestamps_ext) if d == i]} for i in range(n)],
+                          'shift': [{'n': i, 'timestamps':
+                                     [ts for d, ts in zip(dim_shi, timestamps_shi) if d == i]} for i in range(n)],
+                          'variance': [{'n': i, 'timestamps':
+                                        [ts for d, ts in zip(dim_var, timestamps_var) if d == i]} for i in range(n)],
+                          'trend': [{'n': i, 'timestamps':
+                                     [ts for d, ts in zip(dim_tre, timestamps_tre) if d == i]} for i in range(n)]}
         pollution_config = {}
         random_state = seed
 
@@ -357,6 +349,7 @@ class SyntheticDataGenerator:
         dataset.name = f'Syn Combined Outliers 4D (mis={missing_percentage})'
         return dataset
 
+# for accurate high-dimensional multivariate datasets (>2) rather use synthetic_multivariate_dataset.py
     @staticmethod
     def mv_extreme_1(seed, n=2):
         # train begins at 2100
