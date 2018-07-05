@@ -63,6 +63,7 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
         evaluator = Evaluator(data_dict[anomaly_type][index], detectors, output_dir)
         evaluator.evaluate(seed)
         result = evaluator.benchmarks()
+        evaluator.plot_roc_curves()
         results = results.append(result, ignore_index=True)
 
     evaluator.create_boxplots_per_algorithm(runs=runs, data=results)
@@ -103,7 +104,6 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
 
     evaluator.plot_threshold_comparison()
     evaluator.plot_scores()
-    evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=runs)
     evaluator.create_bar_charts_per_algorithm(runs=runs)
     evaluator.plot_auroc(title=f"Area under the curve for differing {anomaly_type} anomalies")

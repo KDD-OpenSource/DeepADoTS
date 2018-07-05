@@ -222,7 +222,7 @@ class Evaluator:
             figures.append(fig)
         return figures
 
-    def plot_auroc(self, store=True, title='AUROC'):  # fix labels
+    def plot_auroc(self, store=True, title='AUROC'):
         plt.close('all')
         self.benchmark_results[["dataset", "algorithm", "auroc"]].pivot(
             index='algorithm', columns="dataset", values="auroc").plot(kind="bar")
