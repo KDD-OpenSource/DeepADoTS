@@ -292,6 +292,7 @@ class Evaluator:
         relevant_results = data[["algorithm", "dataset", "auroc"]]
         for det_or_ds in (self.detectors if detectorwise else self.datasets):
             relevant_results[relevant_results[target] == det_or_ds.name].boxplot(by=grouped_by, figsize=(15, 15))
+            plt.suptitle("")  # boxplot() adds a suptitle
             plt.title(f"AUC grouped by {grouped_by} for {det_or_ds.name} over {runs} runs")
             plt.ylim(ymin=0, ymax=1)
             plt.tight_layout()
@@ -304,6 +305,7 @@ class Evaluator:
         relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
         for det_or_ds in (self.detectors if detectorwise else self.datasets):
             relevant_results[relevant_results[target] == det_or_ds.name].plot(x=target, kind="bar", figsize=(7, 7))
+            plt.suptitle("")  # boxplot() adds a suptitle
             plt.title(f"AUC for {target} {det_or_ds.name} over {runs} runs")
             plt.ylim(ymin=0, ymax=1)
             plt.tight_layout()
