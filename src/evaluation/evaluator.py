@@ -304,7 +304,7 @@ class Evaluator:
         grouped_by = 'dataset' if detectorwise else 'algorithm'
         relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
         for det_or_ds in (self.detectors if detectorwise else self.datasets):
-            relevant_results[relevant_results[target] == det_or_ds.name].plot(x=target, kind="bar", figsize=(7, 7))
+            relevant_results[relevant_results[target] == det_or_ds.name].plot(x=grouped_by, kind="bar", figsize=(7, 7))
             plt.suptitle("")  # boxplot() adds a suptitle
             plt.title(f"AUC for {target} {det_or_ds.name} over {runs} runs")
             plt.ylim(ymin=0, ymax=1)
@@ -315,10 +315,8 @@ class Evaluator:
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
         output_dir = os.path.join(self.output_dir, 'figures')
         os.makedirs(output_dir, exist_ok=True)
-        if no_counters:
-            path = os.path.join(output_dir, f"{title}-{timestamp}.{extension}")
-        else:
-            path = os.path.join(output_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        counters_str = '' if no_counters else f'-{len(self.detectors)}-{len(self.datasets)}'
+        path = os.path.join(output_dir, f"{title}-{timestamp}{counters_str}.{extension}")
         fig.savefig(path)
         self.logger.info(f"Stored plot at {path}")
 
@@ -500,10 +498,9 @@ class Evaluator:
         avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
         avg_results = avg_results[print_order]
 
-        avg_results_renamed = avg_results.rename(index=str,
-                                                 columns=dict([(old_col, old_col + '_avg') for old_col in rename_columns]))
+        avg_results_renamed = avg_results.rename(
+            index=str, columns=dict([(old_col, old_col + '_avg') for old_col in rename_columns]))
         return (std_results, avg_results, avg_results_renamed)
-
 
     def gen_merged_tables(self, results, title_suffix=None):
         title_suffix = f'_{title_suffix}' if title_suffix else ''

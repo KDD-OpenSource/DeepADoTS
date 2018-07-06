@@ -32,7 +32,7 @@ def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
 
 def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
     multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
-    
+
     for seed in seeds:
         if anomaly_type == "extreme":
             yield [SyntheticDataGenerator.get(f'{outlier_type}_extremeness', seed, extreme)
@@ -71,7 +71,6 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
     evaluator.create_boxplots(runs=runs, data=results, detectorwise=True)
     evaluator.create_boxplots(runs=runs, data=results, detectorwise=False)
     evaluator.gen_merged_tables(results, f"for_{anomaly_type}")
-
 
     # Plots using "self.benchmark_results" -> using the averaged results
     evaluator.create_bar_charts(runs=runs, detectorwise=True)

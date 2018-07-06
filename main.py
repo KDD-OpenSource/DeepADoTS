@@ -134,7 +134,6 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type, steps=steps,
                                     output_dir=os.path.join(output_dir, 'missing'))
 
-
     announce_experiment('Multivariate Datasets')
     ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
