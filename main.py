@@ -9,11 +9,11 @@ from src.evaluation.evaluator import Evaluator
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
     run_multivariate_experiment, announce_experiment
 
-# min number of runs = 2 for std operation
-RUNS = 10 if os.environ.get("CIRCLECI", False) else 2
-
 # Add this line if you want to shortly test the pipeline & experiments
 # os.environ["CIRCLECI"] = "True"
+
+# min number of runs = 2 for std operation
+RUNS = 1 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
@@ -27,7 +27,7 @@ def get_detectors():
         return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        return [RecurrentEBM(num_epochs=15), LSTMED(num_epochs=40),  # , LSTMAD(), Donut()
+        return [RecurrentEBM(num_epochs=15), LSTMED(num_epochs=40), LSTMAD(), Donut(),
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
@@ -43,14 +43,6 @@ def get_pipeline_datasets(seed):
             SyntheticDataGenerator.trend_1(seed),
             SyntheticDataGenerator.combined_1(seed),
             SyntheticDataGenerator.combined_4(seed),
-            SyntheticDataGenerator.variance_1_missing(seed, 0.1),
-            SyntheticDataGenerator.variance_1_missing(seed, 0.3),
-            SyntheticDataGenerator.variance_1_missing(seed, 0.5),
-            SyntheticDataGenerator.variance_1_missing(seed, 0.8),
-            # SyntheticDataGenerator.extreme_1_polluted(seed, 0.1),
-            # SyntheticDataGenerator.extreme_1_polluted(seed, 0.3),
-            # SyntheticDataGenerator.extreme_1_polluted(seed, 0.5),
-            # SyntheticDataGenerator.extreme_1_polluted(seed, 0.9)
         ]
 
 

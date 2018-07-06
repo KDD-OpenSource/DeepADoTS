@@ -313,16 +313,16 @@ class Evaluator:
 
     def store(self, fig, title, extension="pdf", no_counters=False):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        output_dir = os.path.join(self.output_dir, 'figures')
+        output_dir = os.path.join(self.output_dir, 'figures', f'seed-{self.seed}')
         os.makedirs(output_dir, exist_ok=True)
         counters_str = '' if no_counters else f'-{len(self.detectors)}-{len(self.datasets)}'
-        path = os.path.join(output_dir, f"{title}-{timestamp}{counters_str}.{extension}")
+        path = os.path.join(output_dir, f"{title}{counters_str}-{timestamp}.{extension}")
         fig.savefig(path)
         self.logger.info(f"Stored plot at {path}")
 
     def store_text(self, content, title, extension="txt"):
         timestamp = int(time.time())
-        output_dir = os.path.join(self.output_dir, 'tables')
+        output_dir = os.path.join(self.output_dir, 'tables', f'seed-{self.seed}')
         path = os.path.join(output_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as f:
@@ -488,7 +488,7 @@ class Evaluator:
         rename_columns = [col for col in print_order if col not in ['dataset', 'algorithm']]
 
         # calc std and mean for each algorithm per dataset
-        std_results = results.groupby(["dataset", "algorithm"]).std(ddof=0)
+        std_results = results.groupby(["dataset", "algorithm"]).std(ddof=0).fillna(0)
         # get rid of multi-index
         std_results = std_results.reset_index()
         std_results = std_results[print_order]
