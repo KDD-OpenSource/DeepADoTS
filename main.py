@@ -16,6 +16,7 @@ RUNS = 2
 def main():
     # run_pipeline()
     run_experiments()
+    # test_stored_result()
 
 
 def get_detectors():
@@ -48,9 +49,12 @@ def run_pipeline():
     evaluator = None
 
     for seed in seeds:
-        evaluator = Evaluator(datasets if datasets else get_pipeline_datasets(seed), detectors)
-        evaluator.evaluate(seed)
+        evaluator = Evaluator(datasets if datasets else get_pipeline_datasets(seed), detectors, seed=seed)
+        evaluator.evaluate()
         result = evaluator.benchmarks()
+        evaluator.plot_roc_curves()
+        evaluator.plot_threshold_comparison()
+        evaluator.plot_scores()
         results = results.append(result, ignore_index=True)
 
     evaluator.create_boxplots_per_algorithm(runs=RUNS, data=results)
@@ -88,13 +92,22 @@ def run_pipeline():
 
     # set average results from multiple pipeline runs for evaluation
     evaluator.benchmark_results = avg_results
+    evaluator.export_results('run-pipeline')
 
-    evaluator.plot_threshold_comparison()
     evaluator.plot_single_heatmap()
-    evaluator.plot_scores()
-    evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
     evaluator.create_bar_charts_per_algorithm(runs=RUNS)
+
+
+def test_stored_result():
+    filename = 'run-pipeline-2018-07-03-165029'
+    datasets = get_pipeline_datasets()
+    detectors = get_detectors()
+    evaluator = Evaluator(datasets, detectors)
+    evaluator.import_results(filename)
+
+    evaluator.print_tables()
+    evaluator.plot_single_heatmap()
 
 
 def evaluate_on_real_world_data_sets(seed):

@@ -54,17 +54,43 @@ class MultivariateAnomalyFunction:
 
     @staticmethod
     def xor(curve_values, anomalous, interval_length):
-        orig_amplitude = max(abs(curve_values))
-        orig_amplitude *= np.sign(curve_values.mean())
         pause_length = interval_length - len(curve_values)
         if not anomalous:
             # No curve during the other curve in the 1st dimension
             nonce = np.zeros(len(curve_values))
             # Insert a curve with the same amplitude during the pause of the 1st dimension
-            new_curve = SyntheticMultivariateDataset.get_curve(pause_length, orig_amplitude)
+            new_curve = MultivariateAnomalyFunction.shrink_curve(curve_values, pause_length)
             return np.concatenate([nonce, new_curve]), -1, -1
         else:
             # Anomaly: curves overlap (at the same time or at least half overlapping)
             max_pause = min(len(curve_values) // 2, pause_length)
             nonce = np.zeros(np.random.randint(max_pause))
             return np.concatenate([nonce, curve_values]), len(nonce), len(nonce) + len(curve_values)
+
+    @staticmethod
+    def delayed_missing(curve_values, anomalous, interval_length):
+        starting_point = len(curve_values) // 5
+        # If the space is too small for the normal curve we're shrinking it (which is not anomalous)
+        left_space = interval_length - starting_point
+        new_curve_length = min(left_space, len(curve_values))
+        if not anomalous:
+            # The curve in the second dimension occurs a few timestamps later
+            nonce = np.zeros(starting_point)
+            new_curve = MultivariateAnomalyFunction.shrink_curve(curve_values, new_curve_length)
+            values = np.concatenate([nonce, new_curve])
+            return values, -1, -1
+        else:
+            end_point = starting_point + new_curve_length
+            nonce = np.zeros(end_point)
+            return nonce, starting_point, end_point
+
+    """
+        This is a helper function for shrinking an already generated curve.
+    """
+    @staticmethod
+    def shrink_curve(curve_values, new_length):
+        if new_length == len(curve_values):
+            return curve_values
+        orig_amplitude = max(abs(curve_values))
+        orig_amplitude *= np.sign(curve_values.mean())
+        return SyntheticMultivariateDataset.get_curve(new_length, orig_amplitude)
