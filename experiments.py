@@ -29,16 +29,15 @@ def run_extremes_experiment(detectors, seeds, runs, outlier_type='extreme_1', ou
 
 
 def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
-    return run_experiment_evaluation(detectors=detectors, seeds=seeds, runs=runs, output_dir=output_dir,
-                                     anomaly_type="multivariate")
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multivariate")
 
 
 def run_multid_multivariate_experiment(detectors, seeds, runs, output_dir=None, steps=2):
-    return run_experiment_evaluation(detectors=detectors, seeds=seeds, runs=runs, output_dir=output_dir,
-                                     anomaly_type="multid_multivariate", steps)
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multid_multivariate", steps)
 
 
-def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1', multivariate_type='delayed'):
+def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5,
+                              outlier_type='extreme_1', multivariate_type='delayed'):
     multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
     print_order = ["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score", "auroc"]
     rename_columns = [col for col in print_order if col not in ['dataset', 'algorithm']]
@@ -68,7 +67,8 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
             num_dims = [250, 500, 1000, 1500]
             data_dict["multid_multivariate"].append([MultivariateAnomalyFunction.get_multivariate_dataset(
                 multivariate_type, random_seed=seed, features=dim, group_size=20,
-                name=f'Synthetic Multivariate {dim}-dimensional {multivariate_type} Curve Outliers') for dim in num_dims])
+                name=f'Synthetic Multivariate {dim}-dimensional {multivariate_type} Curve Outliers')
+                                                     for dim in num_dims])
 
     results = pd.DataFrame()
     evaluator = None

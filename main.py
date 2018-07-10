@@ -189,8 +189,9 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
         announce_experiment('High-Dimensional Multivariate Datasets')
-        ev_mv_hd = run_multid_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'highdim_multivariate'))
-        
+        ev_mv_hd = run_multid_multivariate_experiment(detectors, seeds, RUNS,
+                                                      os.path.join(output_dir, 'highdim_multivariate'), steps)
+
         evaluators = [ev_pol, ev_mis, ev_extr, ev_mv, ev_mv_hd]
         Evaluator.plot_heatmap(evaluators)
 
