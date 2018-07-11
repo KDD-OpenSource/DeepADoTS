@@ -100,7 +100,6 @@ class SyntheticMultivariateDataset(Dataset):
         # Insert curve and pause in first dimension (after adding the global noise)
         interval_values[:len(curve), 0] = self.add_global_noise(curve)
         interval_values[len(curve):, 0] = self.add_global_noise(interval_values[len(curve):, 0])
-
         # Get values of anomaly_func and fill missing spots with noise
         # anomaly_func function gets the clean curve values (not noisy)
         interval_length = interval_values.shape[0]

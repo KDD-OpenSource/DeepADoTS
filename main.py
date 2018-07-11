@@ -50,6 +50,9 @@ def run_pipeline():
         evaluator = Evaluator(datasets if datasets else get_pipeline_datasets(seed), detectors, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
+        evaluator.plot_roc_curves()
+        evaluator.plot_threshold_comparison()
+        evaluator.plot_scores()
         results = results.append(result, ignore_index=True)
 
     evaluator.create_boxplots_per_algorithm(runs=RUNS, data=results)
@@ -89,10 +92,7 @@ def run_pipeline():
     evaluator.benchmark_results = avg_results
     evaluator.export_results('run-pipeline')
 
-    evaluator.plot_threshold_comparison()
     evaluator.plot_single_heatmap()
-    evaluator.plot_scores()
-    evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=RUNS)
     evaluator.create_bar_charts_per_algorithm(runs=RUNS)
 

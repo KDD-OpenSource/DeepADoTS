@@ -31,7 +31,7 @@ def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
 
 
 def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
-    multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor']
+    multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
     print_order = ["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score", "auroc"]
     rename_columns = [col for col in print_order if col not in ['dataset', 'algorithm']]
 
@@ -63,6 +63,9 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
         evaluator = Evaluator(data_dict[anomaly_type][index], detectors, output_dir, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
+        evaluator.plot_roc_curves()
+        evaluator.plot_threshold_comparison()
+        evaluator.plot_scores()
         results = results.append(result, ignore_index=True)
 
     evaluator.create_boxplots_per_algorithm(runs=runs, data=results)
@@ -101,9 +104,6 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
     # set average results from multiple pipeline runs for evaluation
     evaluator.benchmark_results = avg_results
 
-    evaluator.plot_threshold_comparison()
-    evaluator.plot_scores()
-    evaluator.plot_roc_curves()
     evaluator.create_bar_charts_per_dataset(runs=runs)
     evaluator.create_bar_charts_per_algorithm(runs=runs)
     evaluator.plot_auroc(title=f"Area under the curve for differing {anomaly_type} anomalies")
