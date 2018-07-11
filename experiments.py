@@ -83,8 +83,10 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
         results = results.append(result, ignore_index=True)
 
     timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-    path = os.path.join(evaluator.output_dir, f'{anomaly_type}-{timestamp}.pkl')
-    pickle.dump(evaluator.results, open(path, 'wb'))
+    result_path = os.path.join(evaluator.output_dir, f'{anomaly_type}-{timestamp}.pkl')
+    seed_path = os.path.join(evaluator.output_dir, f'{seed}-{timestamp}.pkl')
+    pickle.dump(results, open(result_path, 'wb'))
+    pickle.dump(seed, open(seed_path, 'wb'))
 
     evaluator.create_boxplots_per_algorithm(runs=runs, data=results)
     evaluator.create_boxplots_per_dataset(runs=runs, data=results)
