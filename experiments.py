@@ -55,6 +55,7 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
             yield [SyntheticDataGenerator.get(f'{outlier_type}', seed, num_dim)
                    for num_dim in np.linspace(100, 1500, steps, dtype=int)]
 
+
 def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
     datasets = list(get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type))
     results = pd.DataFrame()
