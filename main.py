@@ -11,11 +11,11 @@ from experiments import run_pollution_experiment, run_missing_experiment, run_ex
 
 
 # min number of runs = 2 for std operation
-RUNS = 2
+RUNS = 5
 
 
 def main():
-    run_pipeline()
+    #run_pipeline()
     run_experiments()
     # test_stored_result()
 
@@ -25,8 +25,10 @@ def get_detectors():
         return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        return [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40),
+        '''return [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40),
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
+                DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]'''
+        return [DAGMM(sequence_length=15),
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
 
@@ -177,7 +179,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
         announce_experiment('Missing Values')
         ev_mis_extr = run_missing_experiment(detectors, seeds, RUNS, outlier_type,
                                              output_dir=os.path.join(output_dir, 'missing'), steps=steps)
-        ev_mis_var = run_missing_experiment(detectors, seeds, RUNS, 'variance_1',
+        '''ev_mis_var = run_missing_experiment(detectors, seeds, RUNS, 'variance_1',
                                             output_dir=os.path.join(output_dir, 'missing'), steps=steps)
         ev_mis_tre = run_missing_experiment(detectors, seeds, RUNS, 'trend_1',
                                             output_dir=os.path.join(output_dir, 'missing'), steps=steps)
@@ -194,9 +196,10 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
 
         announce_experiment('High-dimensional normal outliers')
         ev_mv_dim = run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
-                                             steps=20)
+                                             steps=20)'''
 
-        evaluators = [ev_pol, ev_mis_extr, ev_mis_var, ev_mis_tre, ev_mis_shi, ev_extr, ev_mv, ev_mv_dim]
+        #evaluators = [ev_pol, ev_mis_extr, ev_mis_var, ev_mis_tre, ev_mis_shi, ev_extr, ev_mv, ev_mv_dim]
+        evaluators = [ev_pol, ev_mis_extr]
         Evaluator.plot_heatmap(evaluators)
 
 

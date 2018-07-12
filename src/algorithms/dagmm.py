@@ -11,7 +11,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 from .algorithm import Algorithm
-from .autoencoder import NNAutoEncoder
+from .autoencoder import NNAutoEncoder, LSTMAutoEncoder
 from .cuda_utils import GPUWrapper
 
 
@@ -250,12 +250,15 @@ class DAGMM(Algorithm, GPUWrapper):
             test_energy[idx % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
 
         test_energy = np.nanmedian(test_energy, axis=0)
-        combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
+        if (self.autoencoder_type == LSTMAutoEncoder) or (self.sequence_length > 1):
+            test_energy = np.square(np.array(test_energy) - np.mean(test_energy))
+
+        combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
         self._threshold = np.nanpercentile(combined_energy, self.normal_percentile)
         return test_energy
 
-    def threshold(self, score):
+    '''def threshold(self, score):
         return self._threshold
 
     def binarize(self, y, threshold=None):
@@ -264,7 +267,15 @@ class DAGMM(Algorithm, GPUWrapper):
                 threshold = self._threshold
             else:
                 return np.zeros_like(y)
-        return np.where(y > threshold, 1, 0)
+        return np.where(y > threshold, 1, 0)'''
+
+    def binarize(self, score, threshold=None):
+        if threshold is None:
+            threshold = self.threshold(score)
+        return np.where(score >= threshold, 1, 0)
+
+    def threshold(self, score):
+        return np.nanmean(score) + 2 * np.nanstd(score)
 
     def set_seed(self, seed):
         torch.manual_seed(seed)
