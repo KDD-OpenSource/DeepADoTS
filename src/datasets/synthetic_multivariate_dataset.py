@@ -17,16 +17,19 @@ class SyntheticMultivariateDataset(Dataset):
                  labels_padding: int = 6,
                  random_seed: int = None,
                  features: int = 2,
+                 test_pollution: float = 0.5,
+                 global_noise: float = 0.1,  # Noise added to all dimensions over the whole timeseries
                  file_name: str = 'synthetic_mv1.pkl'):
         super().__init__(f'{name} (f={anomaly_func.__name__})', file_name)
         self.length = length
         self.mean_curve_length = mean_curve_length
         self.mean_curve_amplitude = mean_curve_amplitude
-        self.global_noise = 0.1  # Noise added to all dimensions over the whole timeseries
+        self.global_noise = global_noise
         self.anomaly_func = anomaly_func
         self.pause_range = pause_range
         self.labels_padding = labels_padding
         self.random_seed = random_seed
+        self.test_pollution = test_pollution
         self.features = features
 
     @staticmethod
@@ -120,5 +123,5 @@ class SyntheticMultivariateDataset(Dataset):
     def load(self):
         np.random.seed(self.random_seed)
         X_train, y_train = self.generate_data(pollution=0)
-        X_test, y_test = self.generate_data(pollution=0.5)
+        X_test, y_test = self.generate_data(pollution=self.test_pollution)
         self._data = X_train, y_train, X_test, y_test
