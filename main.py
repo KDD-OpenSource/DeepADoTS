@@ -11,7 +11,7 @@ from experiments import run_pollution_experiment, run_missing_experiment, run_ex
 
 
 # min number of runs = 2 for std operation
-RUNS = 2
+RUNS = 5
 
 
 def main():
