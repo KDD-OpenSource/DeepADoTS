@@ -53,7 +53,7 @@ class SyntheticDataset(Dataset):
                     if len(ts) == 1:  # tuple length 1
                         timestamps.append(int(*ts))
                     else:
-                        timestamps.extend(list(ts))
+                        timestamps.extend(range(ts[0], ts[1]))
 
         y = np.zeros(self.length)
         y[timestamps] = 1
