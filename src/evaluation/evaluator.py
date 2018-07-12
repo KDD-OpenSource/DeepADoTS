@@ -27,8 +27,7 @@ class Evaluator:
         assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
         self.datasets = datasets
         self.detectors = sorted(detectors, key=lambda x: x.framework)
-        self.output_dir = output_dir or 'reports/figures/'
-        os.makedirs(self.output_dir, exist_ok=True)
+        self.output_dir = output_dir or 'reports'
         self.results = dict()
         init_logging(output_dir or 'reports/logs/')
         self.logger = logging.getLogger(__name__)
@@ -37,10 +36,15 @@ class Evaluator:
         # Last passed seed value in evaluate()
         self.seed = seed
 
+    def set_benchmark_results(self, benchmark_result):
+        self.benchmark_results = benchmark_result
+
     def export_results(self, name):
+        output_dir = os.path.join(self.output_dir, 'evaluators')
+        os.makedirs(output_dir, exist_ok=True)
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        path = os.path.join('reports', 'evaluators', f'{name}-{timestamp}.pkl')
-        self.logger.info(f'Store evaluator results at {path}')
+        path = os.path.join(output_dir, f'{name}-{timestamp}.pkl')
+        self.logger.info(f'Store evaluator results at {os.path.abspath(path)}')
         if self.benchmark_results is None:
             self.benchmark_result = pd.DataFrame()
         save_dict = {
@@ -54,12 +58,14 @@ class Evaluator:
         }
         with open(path, 'w') as f:
             json.dump(save_dict, f)
+        return path
 
     # Import benchmark_results if this evaluator uses the same detectors and datasets
+    # self.results are not available because they are overwritten by each run
     def import_results(self, name):
-        # self.results are not available because they are overwritten by each run
-        path = os.path.join('reports', 'evaluators', f'{name}.pkl')
-        logging.getLogger(__name__).info(f'Read evaluator results at {path}')
+        output_dir = os.path.join(self.output_dir, 'evaluators')
+        path = os.path.join(output_dir, f'{name}.pkl')
+        self.logger.info(f'Read evaluator results at {os.path.abspath(path)}')
         with open(path, 'r') as f:
             save_dict = json.load(f)
 
@@ -279,63 +285,45 @@ class Evaluator:
         if store:
             self.store(plt.gcf(), 'auroc')
 
-    # create boxplot diagrams for auc values for each dataset per algorithm
-    def create_boxplots_per_algorithm(self, runs, data):
+    # create boxplot diagrams for auc values for each algorithm/dataset per algorithm/dataset
+    def create_boxplots(self, runs, data, detectorwise=True):
+        target = 'algorithm' if detectorwise else 'dataset'
+        grouped_by = 'dataset' if detectorwise else 'algorithm'
         relevant_results = data[["algorithm", "dataset", "auroc"]]
-        for det in self.detectors:
-            relevant_results[relevant_results["algorithm"] == det.name].boxplot(by="dataset", figsize=(15, 15))
-            plt.title(f"AUC grouped by dataset for {det.name} performing {runs} runs")
+        for det_or_ds in (self.detectors if detectorwise else self.datasets):
+            relevant_results[relevant_results[target] == det_or_ds.name].boxplot(by=grouped_by, figsize=(15, 15))
+            plt.suptitle("")  # boxplot() adds a suptitle
+            plt.title(f"AUC grouped by {grouped_by} for {det_or_ds.name} over {runs} runs")
             plt.ylim(ymin=0, ymax=1)
-            plt.suptitle("")
             plt.tight_layout()
-            self.store(plt.gcf(), f"boxplot_auc_for_{det.name}_{runs}_runs")
+            self.store(plt.gcf(), f"boxplot_auc_for_{det_or_ds.name}_{runs}_runs")
 
-    # create boxplot diagrams for auc values for each algorithm per dataset
-    def create_boxplots_per_dataset(self, runs, data):
-        relevant_results = data[["algorithm", "dataset", "auroc"]]
-        for ds in self.datasets:
-            relevant_results[relevant_results["dataset"] == ds.name].boxplot(by="algorithm", figsize=(15, 15))
-            plt.title(f"AUC grouped by algorithm for {ds.name} peforming {runs} runs")
-            plt.ylim(ymin=0, ymax=1)
-            plt.suptitle("")
-            plt.tight_layout()
-            self.store(plt.gcf(), f"boxplots_auc_for_{ds.name}_{runs}_runs")
-
-    # create bar charts for averaged pipeline results per algorithm
-    def create_bar_charts_per_algorithm(self, runs):
+    # create bar charts for averaged pipeline results per algorithm/dataset
+    def create_bar_charts(self, runs, detectorwise=True):
+        target = 'algorithm' if detectorwise else 'dataset'
+        grouped_by = 'dataset' if detectorwise else 'algorithm'
         relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
-        for det in self.detectors:
-            relevant_results[relevant_results["algorithm"] == det.name].plot(x="dataset", kind="bar",
-                                                                             figsize=(7, 7))
-            plt.title(f"AUC for {det.name} performing {runs} runs")
+        for det_or_ds in (self.detectors if detectorwise else self.datasets):
+            relevant_results[relevant_results[target] == det_or_ds.name].plot(x=grouped_by, kind="bar", figsize=(7, 7))
+            plt.suptitle("")  # boxplot() adds a suptitle
+            plt.title(f"AUC for {target} {det_or_ds.name} over {runs} runs")
             plt.ylim(ymin=0, ymax=1)
             plt.tight_layout()
-            self.store(plt.gcf(), f"barchart_auc_for_{det.name}_{runs}_runs")
-
-    # create bar charts for averaged pipeline results per dataset
-    def create_bar_charts_per_dataset(self, runs):
-        relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
-        for ds in self.datasets:
-            relevant_results[relevant_results["dataset"] == ds.name].plot(x="algorithm", kind="bar", figsize=(7, 7))
-            plt.title(f"AUC on {ds.name} performing {runs} runs")
-            plt.ylim(ymin=0, ymax=1)
-            plt.tight_layout()
-            self.store(plt.gcf(), f"barchart_auc_for_{ds.name}_{runs}_runs")
+            self.store(plt.gcf(), f"barchart_auc_for_{det_or_ds.name}_{runs}_runs")
 
     def store(self, fig, title, extension="pdf", no_counters=False):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        _dir = self.output_dir if self.output_dir is not None else "reports/figures/"
-        if no_counters:
-            path = os.path.join(_dir, f"{title}-{timestamp}.{extension}")
-        else:
-            path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        output_dir = os.path.join(self.output_dir, 'figures', f'seed-{self.seed}')
+        os.makedirs(output_dir, exist_ok=True)
+        counters_str = '' if no_counters else f'-{len(self.detectors)}-{len(self.datasets)}'
+        path = os.path.join(output_dir, f"{title}{counters_str}-{timestamp}.{extension}")
         fig.savefig(path)
         self.logger.info(f"Stored plot at {path}")
 
     def store_text(self, content, title, extension="txt"):
         timestamp = int(time.time())
-        _dir = "reports/tables/"
-        path = os.path.join(_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        output_dir = os.path.join(self.output_dir, 'tables', f'seed-{self.seed}')
+        path = os.path.join(output_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as f:
             f.write(content)
@@ -346,7 +334,8 @@ class Evaluator:
             table = tabulate(results[results["dataset"] == ds.name], headers="keys", tablefmt="psql")
             self.logger.info(f"Dataset: {ds.name}\n{table}")
 
-    def gen_latex_for_merged_table_per_dataset(self, results, title=""):
+    def gen_merged_latex_per_dataset(self, results, title_suffix=None):
+        title = f'latex_merged{f"_{title_suffix}" if title_suffix else ""}'
         result = ""
         for ds in self.datasets:
             content = f'''{ds.name}:\n\n{tabulate(results[results["dataset"] == ds.name],
@@ -359,7 +348,8 @@ class Evaluator:
             table = tabulate(results[results["algorithm"] == det.name], headers="keys", tablefmt="psql")
             self.logger.info(f"Detector: {det.name}\n{table}")
 
-    def gen_latex_for_merged_table_per_algorithm(self, results, title=""):
+    def gen_merged_latex_per_algorithm(self, results, title_suffix=None):
+        title = f'latex_merged{f"_{title_suffix}" if title_suffix else ""}'
         content = ""
         for det in self.detectors:
             content += f'''{det.name}:\n\n{tabulate(results[results["algorithm"] == det.name],
@@ -387,7 +377,7 @@ class Evaluator:
         match = var_re.search(dataset_name)
         if not match:
             # self.logger.warn('Unexpected dataset name (not variable in name)')
-            return '', ''
+            return '-', dataset_name
         var_key = match.group(1)
         var_value = match.group(2)
         return Evaluator.translate_var_key(var_key), var_value
@@ -404,6 +394,7 @@ class Evaluator:
 
         datasets = mi_df.index
         dataset_types = Evaluator.get_dataset_types(mi_df)  # Returns unique entries keeping original order
+        logging.getLogger(__name__).debug('Plotting heatmap for groups {" ".join(dataset_types)}')
 
         ax.set_yticks(np.arange(len(datasets)))
         ax.set_yticklabels([x[1] for x in datasets])
@@ -472,3 +463,59 @@ class Evaluator:
 
     def plot_single_heatmap(self, store=True):
         Evaluator.plot_heatmap([self], store)
+
+    def plot_experiment_comparison(self, title):
+        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        ax.set_title(title)
+
+        results = self.benchmark_results
+        for det in self.detectors:
+            det_results = results[results['algorithm'] == det.name].sort_index()
+            ax.plot(det_results['auroc'].values, label=det.name)
+
+        ax.legend()
+        ax.set_ylim((0, 1))
+        ax.set_xlabel('Dataset')
+        ax.set_ylabel('AUROC')
+
+        dataset_names = results[results['algorithm'] == self.detectors[0].name].sort_index()['dataset']
+        plt.xticks(range(len(dataset_names)), dataset_names, rotation=45, ha='right')
+        return fig
+
+    @staticmethod
+    def get_printable_runs_results(results):
+        print_order = ["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score", "auroc"]
+        rename_columns = [col for col in print_order if col not in ['dataset', 'algorithm']]
+
+        # calc std and mean for each algorithm per dataset
+        std_results = results.groupby(["dataset", "algorithm"]).std(ddof=0).fillna(0)
+        # get rid of multi-index
+        std_results = std_results.reset_index()
+        std_results = std_results[print_order]
+        std_results.rename(inplace=True, index=str,
+                           columns=dict([(old_col, old_col + '_std') for old_col in rename_columns]))
+
+        avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
+        avg_results = avg_results[print_order]
+
+        avg_results_renamed = avg_results.rename(
+            index=str, columns=dict([(old_col, old_col + '_avg') for old_col in rename_columns]))
+        return (std_results, avg_results, avg_results_renamed)
+
+    def gen_merged_tables(self, results, title_suffix=None):
+        title_suffix = f'_{title_suffix}' if title_suffix else ''
+        std_results, avg_results, avg_results_renamed = Evaluator.get_printable_runs_results(results)
+
+        ds_title_suffix = f'per_dataset{title_suffix}'
+        self.print_merged_table_per_dataset(std_results)
+        self.gen_merged_latex_per_dataset(std_results, f'std_{ds_title_suffix}')
+
+        self.print_merged_table_per_dataset(avg_results_renamed)
+        self.gen_merged_latex_per_dataset(avg_results_renamed, f'avg_{ds_title_suffix}')
+
+        det_title_suffix = f'per_algorithm{title_suffix}'
+        self.print_merged_table_per_algorithm(std_results)
+        self.gen_merged_latex_per_algorithm(std_results, f'std_{det_title_suffix}')
+
+        self.print_merged_table_per_algorithm(avg_results_renamed)
+        self.gen_merged_latex_per_algorithm(avg_results_renamed, f'avg_{det_title_suffix}')
