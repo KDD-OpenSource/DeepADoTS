@@ -13,7 +13,7 @@ from experiments import run_pollution_experiment, run_missing_experiment, run_ex
 # os.environ["CIRCLECI"] = "True"
 
 # min number of runs = 2 for std operation
-RUNS = 2 if os.environ.get("CIRCLECI", False) else 10
+RUNS = 2 if os.environ.get("CIRCLECI", False) else 5
 
 
 def main():
@@ -112,14 +112,14 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     # numpy expects a max. 32-bit unsigned integer
     seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
 
-    announce_experiment('Outlier Height')
+    '''announce_experiment('Outlier Height')
     ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type,
                                       output_dir=os.path.join(output_dir, 'extremes'),
                                       steps=steps)
     # CI: Keep the execution fast so stop after one experiment
     if os.environ.get("CIRCLECI", False):
         ev_extr.plot_single_heatmap()
-        return
+        return'''
     announce_experiment('Pollution')
     ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type, steps=steps,
                                       output_dir=os.path.join(output_dir, 'pollution'))
