@@ -204,17 +204,18 @@ class Donut(Algorithm, GPUWrapper):
                 with tf_session.as_default():
                     test_score = predictor.get_score(test_values, test_missing)
                 test_score = np.power(np.e, test_score)  # Convert to reconstruction probability
-                threshold = np.mean(test_score) - np.std(test_score)
-                test_score = np.where(test_score <= threshold, 1, 0)  # Binarize so 1 is an anomaly
+                test_score = np.square(np.array(test_score) - np.mean(test_score))
                 test_scores[self.x_dims - 1:, col_idx] = test_score
             aggregated_test_scores = np.amax(test_scores, axis=1)
             return aggregated_test_scores
 
     def binarize(self, score, threshold=None):
-        return score
+        if threshold is None:
+            threshold = self.threshold(score)
+        return np.where(score >= threshold, 1, 0)
 
     def threshold(self, score):
-        return 0
+        return np.nanmean(score) + 2 * np.nanstd(score)
 
     def set_seed(self, seed):
         tf.set_random_seed(seed)
