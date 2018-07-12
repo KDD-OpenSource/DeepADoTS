@@ -22,6 +22,11 @@ def run_missing_experiment(detectors, seeds, runs, outlier_type='extreme_1', out
     return run_experiment_evaluation(detectors, seeds, runs, output_dir, "missing", steps, outlier_type)
 
 
+# high-dimensional experiment on normal outlier types
+def run_multi_dim_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim", steps, outlier_type)
+
+
 # Validates all algorithms regarding different heights of extreme outliers
 # The extreme values are added to the outlier timestamps everywhere in the dataset distribution.
 def run_extremes_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=10):
@@ -32,8 +37,8 @@ def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
     return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multivariate")
 
 
-def run_multid_multivariate_experiment(detectors, seeds, runs, output_dir=None, steps=2):
-    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multid_multivariate", steps)
+def run_multi_dim_multivariate_experiment(detectors, seeds, runs, output_dir=None, steps=2):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim_multivariate", steps)
 
 
 def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5,
@@ -47,7 +52,8 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
         "missing": [],
         "polluted": [],
         "multivariate": [],
-        "multid_multivariate": []
+        "multi_dim_multivariate": [],
+        "multi_dim": []
     }
 
     for seed in seeds:
@@ -63,12 +69,15 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
         elif anomaly_type == "multivariate":
             data_dict["multivariate"].append([MultivariateAnomalyFunction.get_multivariate_dataset(dim_func,
                                              random_seed=seed) for dim_func in multivariate_anomaly_functions])
-        elif anomaly_type == "multid_multivariate":
+        elif anomaly_type == "multi_dim_multivariate":
             num_dims = [250, 500, 1000, 1500]
             data_dict["multid_multivariate"].append([MultivariateAnomalyFunction.get_multivariate_dataset(
                 multivariate_type, random_seed=seed, features=dim, group_size=20,
                 name=f'Synthetic Multivariate {dim}-dimensional {multivariate_type} Curve Outliers')
                                                      for dim in num_dims])
+        elif anomaly_type == "multi_dim":
+            data_dict["multi_dim"].append([SyntheticDataGenerator.get(f'{outlier_type}', seed, num_dim)
+                                           for num_dim in np.linspace(100, 1500, steps, dtype=int)])
 
     results = pd.DataFrame()
     evaluator = None

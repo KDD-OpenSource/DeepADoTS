@@ -1,10 +1,10 @@
-FROM nvidia/cuda:9.0-cudnn7-runtime-ubuntu16.04
+FROM ubuntu:16.04
 
 ARG USERNAME=docker
 
 RUN apt-get update && \
   # We need add-apt-repository
-  apt-get install -y --no-install-recommends software-properties-common && \
+  apt-get install -y --no-install-recommends software-properties-common htop curl && \
   # We need Python3.6
   add-apt-repository ppa:jonathonf/python-3.6 -y && \
   apt-get update && \
@@ -16,15 +16,15 @@ RUN apt-get update && \
 ADD requirements.txt /repo/requirements.txt
 
 RUN python3.6 -m pip --no-cache-dir install -r /repo/requirements.txt
-RUN python3.6 -m pip --no-cache-dir install tensorflow-gpu
+RUN python3.6 -m pip --no-cache-dir install tensorflow
 
 RUN mkdir -p /root/.config/matplotlib
 RUN echo "backend : Agg" > /root/.config/matplotlib/matplotlibrc
 
-ENV CUDA_HOME=/usr/local/cuda
-ENV CUDA_ROOT=$CUDA_HOME
-ENV PATH=$PATH:$CUDA_ROOT/bin:$HOME/bin
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDA_ROOT/lib64
+#ENV CUDA_HOME=/usr/local/cuda
+#ENV CUDA_ROOT=$CUDA_HOME
+#ENV PATH=$PATH:$CUDA_ROOT/bin:$HOME/bin
+#ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CUDA_ROOT/lib64
 
 ADD . /repo
 
