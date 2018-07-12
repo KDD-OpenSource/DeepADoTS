@@ -7,11 +7,7 @@ from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoE
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-<<<<<<< HEAD
-    run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment
-=======
-    run_multivariate_experiment, run_multi_dim_experiment, announce_experiment
->>>>>>> master
+    run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
 
 # Add this line if you want to shortly test the pipeline & experiments
 # os.environ["CIRCLECI"] = "True"
@@ -31,13 +27,7 @@ def get_detectors():
         return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-<<<<<<< HEAD
-        return [RecurrentEBM(num_epochs=15),
-                Donut(),
-                LSTMAD(), LSTMED(num_epochs=40),
-=======
         return [RecurrentEBM(num_epochs=15), LSTMED(num_epochs=40), LSTMAD(), Donut(),
->>>>>>> master
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
@@ -140,10 +130,14 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
     announce_experiment('High-dimensional normal outliers')
-    ev_mv_dim = run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
-                                         steps=20)
+    ev_dim = run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
+                                      steps=20)
 
-    evaluators = [ev_pol, ev_mis, ev_extr, ev_mv, ev_mv_dim]
+    announce_experiment('High-dimensional normal outliers')
+    ev_mv_dim = run_multi_dim_multivariate_experiment(detectors, seeds, RUNS,
+                                                      output_dir=os.path.join(output_dir, 'multi_dim_mv'), steps=20)
+
+    evaluators = [ev_pol, ev_mis, ev_extr, ev_mv, ev_dim, ev_mv_dim]
     Evaluator.plot_heatmap(evaluators)
 
 
@@ -172,87 +166,5 @@ def evaluate_on_real_world_data_sets(seed):
     print("Donut results: ", pred)
 
 
-<<<<<<< HEAD
-def get_pipeline_datasets(seed):
-    return [
-        SyntheticDataGenerator.extreme_1(seed),
-        SyntheticDataGenerator.variance_1(seed),
-        SyntheticDataGenerator.shift_1(seed),
-        SyntheticDataGenerator.trend_1(seed),
-        SyntheticDataGenerator.combined_1(seed),
-        SyntheticDataGenerator.combined_4(seed),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.1),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.3),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.5),
-        SyntheticDataGenerator.variance_1_missing(seed, 0.8),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.1),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.3),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.5),
-        SyntheticDataGenerator.extreme_1_polluted(seed, 0.9)
-    ]
-
-
-def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
-    output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
-    detectors = get_detectors()
-
-    if os.environ.get("CIRCLECI", False):
-        # Set the random seed manually for reproducibility and more significant results
-        # numpy expects a max. 32-bit unsigned integer
-        seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=2, dtype="uint32")
-
-        # min number of runs = 2 for std operation
-        ev = run_extremes_experiment(detectors, seeds, runs=2, outlier_type=outlier_type,
-                                     output_dir=os.path.join(output_dir,
-                                                             'extremes'), steps=steps)
-        ev.plot_single_heatmap()
-    else:
-        seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
-        announce_experiment('Pollution')
-        ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type,
-                                          output_dir=os.path.join(output_dir, 'pollution'),
-                                          steps=steps)
-
-        announce_experiment('Missing Values')
-        ev_mis_extr = run_missing_experiment(detectors, seeds, RUNS, outlier_type,
-                                             output_dir=os.path.join(output_dir, 'missing'), steps=steps)
-        ev_mis_var = run_missing_experiment(detectors, seeds, RUNS, 'variance_1',
-                                            output_dir=os.path.join(output_dir, 'missing'), steps=steps)
-        ev_mis_tre = run_missing_experiment(detectors, seeds, RUNS, 'trend_1',
-                                            output_dir=os.path.join(output_dir, 'missing'), steps=steps)
-        ev_mis_shi = run_missing_experiment(detectors, seeds, RUNS, 'shift_1',
-                                            output_dir=os.path.join(output_dir, 'missing'), steps=steps)
-
-        announce_experiment('Outlier height')
-        ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type,
-                                          output_dir=os.path.join(output_dir, 'extremes'),
-                                          steps=steps)
-
-        announce_experiment('Multivariate Datasets')
-        ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
-
-        announce_experiment('High-Dimensional Multivariate Datasets')
-        ev_mv_hd = run_multid_multivariate_experiment(detectors, seeds, RUNS,
-                                                      os.path.join(output_dir, 'highdim_multivariate'), steps)
-
-        announce_experiment('High-Dimensional normal outliers')
-        ev_mv_dim = run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
-                                             steps=20)
-
-        evaluators = [ev_pol, ev_mis_extr, ev_mis_var, ev_mis_tre, ev_mis_shi, ev_extr, ev_mv, ev_mv_hd, ev_mv_dim]
-        Evaluator.plot_heatmap(evaluators)
-
-
-def announce_experiment(title: str, dashes: int = 70):
-    print(f'\n###{"-"*dashes}###')
-    message = f'Experiment: {title}'
-    before = (dashes - len(message)) // 2
-    after = dashes - len(message) - before
-    print(f'###{"-"*before}{message}{"-"*after}###')
-    print(f'###{"-"*dashes}###\n')
-
-
-=======
->>>>>>> master
 if __name__ == '__main__':
     main()

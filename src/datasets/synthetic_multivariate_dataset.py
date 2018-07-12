@@ -18,6 +18,7 @@ class SyntheticMultivariateDataset(Dataset):
                  labels_padding: int = 6,
                  random_seed: int = None,
                  features: int = 2,
+                 group_size: int = None,
                  test_pollution: float = 0.5,
                  global_noise: float = 0.1,  # Noise added to all dimensions over the whole timeseries
                  file_name: str = 'synthetic_mv1.pkl'):
