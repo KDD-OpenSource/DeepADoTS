@@ -74,10 +74,10 @@ class SyntheticDataGenerator:
         """Full pollution -> All anomalies from test set are in train set"""
         np.random.seed(seed)
         dataset = SyntheticDataGenerator.extreme_1(seed, n)
+        pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
-        windows = np.arange(int(dataset.train_split * dataset.length), dataset.length - WINDOW_SIZE, WINDOW_SIZE)
-        timestamps = [(w, w+WINDOW_SIZE) for w in np.random.choice(
-            windows, int(pollution_percentage * len(windows)), replace=False)]
+        train_size = int(dataset.length * dataset.train_split)
+        timestamps = [(t,) for t in np.random.randint(0, train_size, int(pollution_percentage * train_size))]
 
         dim = np.random.choice(n, len(timestamps))
         pollution_config = {'extreme': [{'n': i, 'timestamps':
@@ -146,7 +146,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.shift_1(seed, n, anomaly_percentage=anomaly_percentage)
         pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
-        windows = np.arange(int(dataset.train_split * dataset.length), dataset.length - WINDOW_SIZE, WINDOW_SIZE)
+        windows = np.arange(0, int(dataset.train_split * dataset.length) - WINDOW_SIZE, WINDOW_SIZE)
         timestamps = [(w, w+WINDOW_SIZE) for w in np.random.choice(
             windows, int(pollution_percentage * len(windows)), replace=False)]
 
@@ -210,7 +210,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.variance_1(seed, n)
         pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
-        windows = np.arange(int(dataset.train_split * dataset.length), dataset.length - WINDOW_SIZE, WINDOW_SIZE)
+        windows = np.arange(0, int(dataset.train_split * dataset.length) - WINDOW_SIZE, WINDOW_SIZE)
         timestamps = [(w, w+WINDOW_SIZE) for w in np.random.choice(
             windows, int(pollution_percentage * len(windows)), replace=False)]
 
@@ -272,7 +272,7 @@ class SyntheticDataGenerator:
         dataset = SyntheticDataGenerator.trend_1(seed, n)
         pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
-        windows = np.arange(int(dataset.train_split * dataset.length), dataset.length - WINDOW_SIZE, WINDOW_SIZE)
+        windows = np.arange(0, int(dataset.train_split * dataset.length) - WINDOW_SIZE, WINDOW_SIZE)
         timestamps = [(w, w+WINDOW_SIZE) for w in np.random.choice(
             windows, int(pollution_percentage * len(windows)), replace=False)]
 
