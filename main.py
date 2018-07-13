@@ -18,8 +18,7 @@ RUNS = 1 if os.environ.get("CIRCLECI", False) else 10
 
 def main():
     run_pipeline()
-    for outlier_type in ['extreme_1', 'shift_1', 'variance_1', 'trend_1']:
-        run_experiments(outlier_type)
+    run_experiments()
     # test_stored_result()
 
 
