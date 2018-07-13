@@ -115,7 +115,7 @@ def run_experiments(output_dir=None, steps=5):
         announce_experiment('Outlier Height')
         ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type,
                                           output_dir=os.path.join(output_dir, 'extremes'),
-                                          steps=steps)
+                                          steps=10)
         # CI: Keep the execution fast so stop after one experiment
         if os.environ.get("CIRCLECI", False):
             ev_extr.plot_single_heatmap()
