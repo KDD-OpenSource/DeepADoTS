@@ -58,12 +58,12 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(dim_func, random_seed=seed)
                    for dim_func in multivariate_anomaly_functions]
         elif anomaly_type == "multi_dim_multivariate":
-            group_sizes = [1, 20]
+            group_sizes = [None, 20]
             num_dims = [250, 500, 1000, 1500]
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(
                         mv_outlier_type, random_seed=seed, features=dim, group_size=gsize,
                         name=f'Synthetic Multivariate {dim}-dimensional {outlier_type} '
-                        'Curve Outliers with {gsize} per group'
+                        f'Curve Outliers with {gsize if gsize is not None else dim} per group'
                     )
                    for dim, mv_outlier_type, gsize in product(num_dims, multivariate_anomaly_functions, group_sizes)]
         elif anomaly_type == "multi_dim":
