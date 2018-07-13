@@ -1,3 +1,5 @@
+from itertools import product
+
 import numpy as np
 import pandas as pd
 
@@ -57,10 +59,10 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
                    for dim_func in multivariate_anomaly_functions]
         elif anomaly_type == "multi_dim_multivariate":
             num_dims = [250, 500, 1000, 1500]
-            yield [MultivariateAnomalyFunction.get_multivariate_dataset(outlier_type, random_seed=seed,
+            yield [MultivariateAnomalyFunction.get_multivariate_dataset(mv_outlier_type, random_seed=seed,
                                                                         features=dim, group_size=20,
                    name=f'Synthetic Multivariate {dim}-dimensional {outlier_type} Curve Outliers')
-                   for dim in num_dims]
+                   for dim, mv_outlier_type in product(num_dims, multivariate_anomaly_functions)]
         elif anomaly_type == "multi_dim":
             yield [SyntheticDataGenerator.get(f'{outlier_type}', seed, num_dim)
                    for num_dim in np.linspace(100, 1500, steps, dtype=int)]
