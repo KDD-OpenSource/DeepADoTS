@@ -137,9 +137,9 @@ def run_experiments(output_dir=None, steps=5):
     ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
     output_dir = output_dir or os.path.join('reports/experiments', 'multidim_mv')
-    announce_experiment('High-dimensional normal outliers')
+    announce_experiment('High-dimensional multivariate outliers')
     ev_mv_dim = run_multi_dim_multivariate_experiment(detectors, seeds, RUNS,
-                                                      output_dir=os.path.join(output_dir, 'multi_dim_mv'), steps=20)
+                                                      output_dir=os.path.join(output_dir, 'multi_dim_mv'))
 
     evaluators = [ev_pol, ev_mis, ev_extr, ev_mv, ev_dim, ev_mv_dim]
     Evaluator.plot_heatmap(evaluators)
