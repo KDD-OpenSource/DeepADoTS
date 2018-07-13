@@ -92,7 +92,7 @@ class SyntheticDataGenerator:
         """Full pollution -> All anomalies from test set are in train set"""
         dataset = SyntheticDataGenerator.extreme_1(seed, n)
 
-        dataset.outlier_config['extreme'][0]['value'] = extreme_value
+        dataset.outlier_config['extreme'][0]['factor'] = extreme_value
 
         dataset.name = f'Syn Extreme Outliers (extremeness={extreme_value})'
         return dataset
@@ -159,6 +159,16 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
+    def shift_1_extremeness(seed, extreme_value=10, n=1):
+        """Full pollution -> All anomalies from test set are in train set"""
+        dataset = SyntheticDataGenerator.shift_1(seed, n)
+
+        dataset.outlier_config['shift'][0]['factor'] = extreme_value
+
+        dataset.name = f'Syn Shift Outliers (extremeness={extreme_value})'
+        return dataset
+
+    @staticmethod
     def variance_1(seed, n=1, k=1, anomaly_percentage=0.2):
         length = 3000
         train_split = 0.7
@@ -213,6 +223,16 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
+    def variance_1_extremeness(seed, extreme_value=10, n=1):
+        """Full pollution -> All anomalies from test set are in train set"""
+        dataset = SyntheticDataGenerator.variance_1(seed, n)
+
+        dataset.outlier_config['variance'][0]['factor'] = extreme_value
+
+        dataset.name = f'Syn Variance Outliers (extremeness={extreme_value})'
+        return dataset
+
+    @staticmethod
     def trend_1(seed, n=1, k=1, anomaly_percentage=0.2):
         length = 3000
         train_split = 0.7
@@ -262,6 +282,16 @@ class SyntheticDataGenerator:
         dataset.pollution_config = pollution_config
 
         dataset.name = f'Syn Trend Outliers (pol={pollution_percentage})'
+        return dataset
+
+    @staticmethod
+    def trend_1_extremeness(seed, extreme_value=10, n=1):
+        """Full pollution -> All anomalies from test set are in train set"""
+        dataset = SyntheticDataGenerator.trend_1(seed, n)
+
+        dataset.outlier_config['trend'][0]['factor'] = extreme_value
+
+        dataset.name = f'Syn Trend Outliers (extremeness={extreme_value})'
         return dataset
 
     @staticmethod

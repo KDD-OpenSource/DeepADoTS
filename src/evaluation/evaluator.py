@@ -1,5 +1,6 @@
 import logging
 import os
+import pickle
 import re
 import json
 import sys
@@ -43,7 +44,7 @@ class Evaluator:
         output_dir = os.path.join(self.output_dir, 'evaluators')
         os.makedirs(output_dir, exist_ok=True)
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        path = os.path.join(output_dir, f'{name}-{timestamp}.pkl')
+        path = os.path.join(output_dir, f'{name}-{timestamp}.json')
         self.logger.info(f'Store evaluator results at {os.path.abspath(path)}')
         if self.benchmark_results is None:
             self.benchmark_result = pd.DataFrame()
@@ -59,6 +60,13 @@ class Evaluator:
         with open(path, 'w') as f:
             json.dump(save_dict, f)
         return path
+
+    def save_pickle(self):
+        output_dir = os.path.join(self.output_dir, 'evaluators')
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+        path = os.path.join(output_dir, f'{timestamp}.pkl')
+        pickle.dump(self.results, open(path, 'wb'))
 
     # Import benchmark_results if this evaluator uses the same detectors and datasets
     # self.results are not available because they are overwritten by each run
@@ -149,6 +157,7 @@ class Evaluator:
                                 "F0.1-score": f01_score,
                                 "auroc": auroc},
                                ignore_index=True)
+        self.save_pickle()
         return df
 
     @staticmethod

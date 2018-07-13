@@ -112,11 +112,10 @@ def run_experiments(output_dir=None, steps=5):
     for outlier_type in ['extreme_1', 'shift_1', 'variance_1', 'trend_1']:
         output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
 
-        if outlier_type == 'extreme_1':
-            announce_experiment('Outlier Height')
-            ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type,
-                                              output_dir=os.path.join(output_dir, 'extremes'),
-                                              steps=steps)
+        announce_experiment('Outlier Height')
+        ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type,
+                                          output_dir=os.path.join(output_dir, 'extremes'),
+                                          steps=steps)
         # CI: Keep the execution fast so stop after one experiment
         if os.environ.get("CIRCLECI", False):
             ev_extr.plot_single_heatmap()
