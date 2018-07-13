@@ -70,7 +70,7 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def extreme_1_polluted(seed, pollution_percentage=0.2, n=1):
+    def extreme_1_polluted(seed, pollution_percentage=0.2, n=1, anomaly_percentage=0.023):
         """Full pollution -> All anomalies from test set are in train set"""
         np.random.seed(seed)
         dataset = SyntheticDataGenerator.extreme_1(seed, n)
