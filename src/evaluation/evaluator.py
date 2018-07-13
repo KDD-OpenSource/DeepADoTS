@@ -137,6 +137,7 @@ class Evaluator:
                     self.logger.error(f"An exception occurred while training {det.name} on {ds}: {e}")
                     self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
+        self.save_pickle()
 
     def benchmarks(self) -> pd.DataFrame:
         df = pd.DataFrame()
@@ -157,7 +158,6 @@ class Evaluator:
                                 "F0.1-score": f01_score,
                                 "auroc": auroc},
                                ignore_index=True)
-        self.save_pickle()
         return df
 
     @staticmethod
