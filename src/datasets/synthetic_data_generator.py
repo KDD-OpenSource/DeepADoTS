@@ -51,12 +51,9 @@ class SyntheticDataGenerator:
         baseline_config = {}
 
         # outliers randomly distributed over all dimensions
-        # timestamps = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,), (2361,), (2369,),
-        #               (2428,), (2510,), (2512,), (2538,), (2567,), (2589,), (2695,), (2819,),
-        #               (2892,), (2940,), (2952,), (2970,)]
         train_size = int(length * train_split)
-        timestamps = np.random.randint(0, length - train_size,
-                                       int(anomaly_percentage * (length - train_size))) + train_size
+        timestamps = [(t,) for t in np.random.randint(0, length - train_size,
+                                                      int(anomaly_percentage * (length - train_size))) + train_size]
 
         dim = np.random.choice(n, len(timestamps))
         outlier_config = {'extreme':
@@ -78,9 +75,10 @@ class SyntheticDataGenerator:
         np.random.seed(seed)
         dataset = SyntheticDataGenerator.extreme_1(seed, n)
 
-        train_length = int(dataset.train_split * dataset.length)
-        indices = np.random.choice(train_length, int(pollution_percentage * train_length), replace=False)
-        timestamps = [(i,) for i in indices]
+        windows = np.arange(int(dataset.train_split * dataset.length), dataset.length - WINDOW_SIZE, WINDOW_SIZE)
+        timestamps = [(w, w+WINDOW_SIZE) for w in np.random.choice(
+            windows, int(pollution_percentage * len(windows)), replace=False)]
+
         dim = np.random.choice(n, len(timestamps))
         pollution_config = {'extreme': [{'n': i, 'timestamps':
                                          [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
