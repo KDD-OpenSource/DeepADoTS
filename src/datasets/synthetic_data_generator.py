@@ -281,7 +281,7 @@ class SyntheticDataGenerator:
         pollution_config = {}
         random_state = seed
 
-        return SyntheticDataset(name='Synthetic Combined Outliers (dim={n})', file_name='combined1.pkl', length=length,
+        return SyntheticDataset(name=f'Synthetic Combined Outliers (dim={n})', file_name='combined1.pkl', length=length,
                                 n=n, k=k, baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,
@@ -305,7 +305,8 @@ class SyntheticDataGenerator:
         behavior_config = {}
         baseline_config = {}
 
-        outl_chunks = [n[i:i + 4] for i in range(0, len(n), 4)]
+        indices = range(0, n+1, n//4)
+        outl_chunks = [np.arange(j, indices[i+1]) for i, j in enumerate(indices[:-1])]
         timestamps_ext = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,),
                           (2361,), (2369,), (2428,), (2510,), (2512,), (2538,),
                           (2567,), (2589,), (2695,), (2819,), (2892,), (2940,),
@@ -328,7 +329,7 @@ class SyntheticDataGenerator:
         pollution_config = {}
         random_state = seed
 
-        return SyntheticDataset(name='Synthetic Combined Outliers (dim={n})', file_name='combined4.pkl',
+        return SyntheticDataset(name=f'Synthetic Combined Outliers (dim={n})', file_name='combined4.pkl',
                                 length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
