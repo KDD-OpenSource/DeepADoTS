@@ -37,7 +37,7 @@ class LSTMED(Algorithm, GPUWrapper):
         self.cov = None
 
     def fit(self, X: pd.DataFrame, _):
-        X.fillna(0, inplace=True)
+        X.interpolate(inplace=True)
         data = X.values
 
         sequences = [data[i:i + self.sequence_length] for i in range(data.shape[0] - self.sequence_length + 1)]
@@ -75,7 +75,7 @@ class LSTMED(Algorithm, GPUWrapper):
         self.cov = np.cov(error_vectors, rowvar=False)
 
     def predict(self, X: pd.DataFrame):
-        X.fillna(0, inplace=True)
+        X.interpolate(inplace=True)
         data = X.values
         sequences = [data[i:i + self.sequence_length] for i in range(data.shape[0] - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=False, drop_last=False)
