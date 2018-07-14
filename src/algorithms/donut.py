@@ -203,8 +203,8 @@ class Donut(Algorithm, GPUWrapper):
                 predictor = DonutPredictor(model)
                 with tf_session.as_default():
                     test_score = predictor.get_score(test_values, test_missing)
-                test_score = np.power(np.e, test_score)  # Convert to reconstruction probability
-                test_score = -test_score
+                # Convert to negative reconstruction probability so score is in accordance with other detectors
+                test_score = -np.power(np.e, test_score)
                 test_scores[self.x_dims - 1:, col_idx] = test_score
             aggregated_test_scores = np.amax(test_scores, axis=1)
             return aggregated_test_scores
