@@ -13,25 +13,23 @@ from experiments import run_pollution_experiment, run_missing_experiment, run_ex
 # os.environ["CIRCLECI"] = "True"
 
 # min number of runs = 2 for std operation
-RUNS = 2 if os.environ.get("CIRCLECI", False) else 5
+RUNS = 2 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
-    #run_pipeline()
+    run_pipeline()
     run_experiments()
     # test_stored_result()
 
 
-def get_detectors():
+def get_pipeline_detectors():
     if os.environ.get("CIRCLECI", False):
         return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        '''return [RecurrentEBM(num_epochs=15), LSTMED(num_epochs=40), LSTMAD(), Donut(),
+        return [RecurrentEBM(num_epochs=15), LSTMED(num_epochs=40), LSTMAD(), Donut(),
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
-                DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]'''
-        return [DAGMM(sequence_length=15),
-            DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
+                DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
 
 def get_pipeline_datasets(seed):
@@ -49,7 +47,6 @@ def get_pipeline_datasets(seed):
 
 
 def run_pipeline():
-    detectors = get_detectors()
 
     # perform multiple pipeline runs for more robust end results
     # Set the random seed manually for reproducibility and more significant results
@@ -63,7 +60,7 @@ def run_pipeline():
 
     for seed in seeds:
         datasets = datasets or get_pipeline_datasets(seed)
-        evaluator = Evaluator(datasets, detectors, seed=seed)
+        evaluator = Evaluator(datasets, get_pipeline_detectors(), seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
         evaluator.plot_roc_curves()
@@ -97,7 +94,7 @@ def run_pipeline():
 def test_stored_result():
     filename = 'run-pipeline-2018-07-03-165029'
     datasets = get_pipeline_datasets()
-    detectors = get_detectors()
+    detectors = get_pipeline_detectors()
     evaluator = Evaluator(datasets, detectors)
     evaluator.import_results(filename)
 
@@ -107,36 +104,34 @@ def test_stored_result():
 
 def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
-    detectors = get_detectors()
     # Set the random seed manually for reproducibility and more significant results
     # numpy expects a max. 32-bit unsigned integer
     seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
 
-    '''announce_experiment('Outlier Height')
-    ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type,
+    announce_experiment('Outlier Height')
+    ev_extr = run_extremes_experiment(seeds, RUNS, outlier_type,
                                       output_dir=os.path.join(output_dir, 'extremes'),
                                       steps=steps)
     # CI: Keep the execution fast so stop after one experiment
     if os.environ.get("CIRCLECI", False):
         ev_extr.plot_single_heatmap()
-        return'''
+        return
     announce_experiment('Pollution')
-    ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type, steps=steps,
+    ev_pol = run_pollution_experiment(seeds, RUNS, outlier_type, steps=steps,
                                       output_dir=os.path.join(output_dir, 'pollution'))
 
     announce_experiment('Missing Values')
-    ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type,
+    ev_mis = run_missing_experiment(seeds, RUNS, outlier_type,
                                     output_dir=os.path.join(output_dir, 'missing'), steps=steps)
 
-    '''announce_experiment('Multivariate Datasets')
-    ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
+    announce_experiment('Multivariate Datasets')
+    ev_mv = run_multivariate_experiment(seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
     announce_experiment('High-dimensional normal outliers')
-    ev_mv_dim = run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
+    ev_mv_dim = run_multi_dim_experiment(outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
                                          steps=20)
 
-    evaluators = [ev_pol, ev_mis, ev_extr, ev_mv, ev_mv_dim]'''
-    evaluators = [ev_pol, ev_mis]
+    evaluators = [ev_pol, ev_mis, ev_extr, ev_mv, ev_mv_dim]
     Evaluator.plot_heatmap(evaluators)
 
 

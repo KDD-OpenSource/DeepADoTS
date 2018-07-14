@@ -231,7 +231,7 @@ class DAGMM(Algorithm, GPUWrapper):
                 index = i1 * self.batch_size + i2
                 window_elements = list(range(index, index + self.sequence_length, 1))
                 train_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
-        self.train_energy = np.nanmedian(train_energy, axis=0)
+        self.train_energy = np.nanmean(train_energy, axis=0)
 
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
@@ -249,25 +249,15 @@ class DAGMM(Algorithm, GPUWrapper):
             window_elements = np.arange(idx, idx + self.sequence_length, 1)
             test_energy[idx % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
 
-        test_energy = np.nanmedian(test_energy, axis=0)
+        test_energy = np.nanmean(test_energy, axis=0)
 
         if (self.autoencoder_type == LSTMAutoEncoder) or (self.sequence_length > 1):
             test_energy = np.square(np.array(test_energy) - np.mean(test_energy))
 
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
         self._threshold = np.nanpercentile(combined_energy, self.normal_percentile)
+
         return test_energy
-
-    '''def threshold(self, score):
-        return self._threshold
-
-    def binarize(self, y, threshold=None):
-        if threshold is None:
-            if self._threshold is not None:
-                threshold = self._threshold
-            else:
-                return np.zeros_like(y)
-        return np.where(y > threshold, 1, 0)'''
 
     def binarize(self, score, threshold=None):
         if threshold is None:
@@ -275,7 +265,7 @@ class DAGMM(Algorithm, GPUWrapper):
         return np.where(score >= threshold, 1, 0)
 
     def threshold(self, score):
-        return np.nanmean(score) + 2 * np.nanstd(score)
+        return np.nanmean(score) + np.nanstd(score)
 
     def set_seed(self, seed):
         torch.manual_seed(seed)
