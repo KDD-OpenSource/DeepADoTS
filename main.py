@@ -7,7 +7,7 @@ from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoE
 from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
 from src.evaluation.evaluator import Evaluator
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-    run_multivariate_experiment, run_multi_dim_experiment, announce_experiment
+    run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
 
 # Add this line if you want to shortly test the pipeline & experiments
 # os.environ["CIRCLECI"] = "True"
@@ -47,7 +47,6 @@ def get_pipeline_datasets(seed):
 
 
 def run_pipeline():
-
     # perform multiple pipeline runs for more robust end results
     # Set the random seed manually for reproducibility and more significant results
     # numpy expects a max. 32-bit unsigned integer
@@ -128,10 +127,14 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     ev_mv = run_multivariate_experiment(seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
     announce_experiment('High-dimensional normal outliers')
-    ev_mv_dim = run_multi_dim_experiment(outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
-                                         steps=20)
+    ev_dim = run_multi_dim_experiment(seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
+                                      steps=20)
 
-    evaluators = [ev_pol, ev_mis, ev_extr, ev_mv, ev_mv_dim]
+    announce_experiment('High-dimensional multivariate outliers')
+    ev_mv_dim = run_multi_dim_multivariate_experiment(seeds, RUNS,
+                                                      output_dir=os.path.join(output_dir, 'multi_dim_mv'), steps=20)
+
+    evaluators = [ev_pol, ev_mis, ev_extr, ev_mv, ev_dim, ev_mv_dim]
     Evaluator.plot_heatmap(evaluators)
 
 

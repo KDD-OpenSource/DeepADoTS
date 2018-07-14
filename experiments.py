@@ -8,7 +8,7 @@ from src.evaluation.evaluator import Evaluator
 from src.datasets import SyntheticDataGenerator, MultivariateAnomalyFunction
 
 
-def get_detectors():
+def get_experiment_detectors():
     if os.environ.get("CIRCLECI", False):
         return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
@@ -48,6 +48,11 @@ def run_multivariate_experiment(seeds, runs, output_dir=None):
                                      anomaly_type="multivariate")
 
 
+def run_multi_dim_multivariate_experiment(seeds, runs, output_dir=None, steps=2):
+    return run_experiment_evaluation(seeds, runs, output_dir, "multi_dim_multivariate", steps)
+
+
+# outlier type means agots types for the univariate experiments, the multivariate types for the multivariate experiments
 def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
     multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
 
@@ -64,18 +69,25 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
         elif anomaly_type == "multivariate":
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(dim_func, random_seed=seed)
                    for dim_func in multivariate_anomaly_functions]
+        elif anomaly_type == "multi_dim_multivariate":
+            num_dims = [250, 500, 1000, 1500]
+            yield [MultivariateAnomalyFunction.get_multivariate_dataset(outlier_type, random_seed=seed,
+                                                                        features=dim, group_size=20,
+                   name=f'Synthetic Multivariate {dim}-dimensional {outlier_type} Curve Outliers')
+                   for dim in num_dims]
         elif anomaly_type == "multi_dim":
             yield [SyntheticDataGenerator.get(f'{outlier_type}', seed, num_dim)
                    for num_dim in np.linspace(100, 1500, steps, dtype=int)]
 
 
 def run_experiment_evaluation(seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
+
     datasets = list(get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type))
     results = pd.DataFrame()
     evaluator = None
 
     for index, seed in enumerate(seeds):
-        evaluator = Evaluator(datasets[index], get_detectors(), output_dir, seed=seed)
+        evaluator = Evaluator(datasets[index], get_experiment_detectors(), output_dir, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
         evaluator.plot_roc_curves()
