@@ -17,7 +17,7 @@ RUNS = 1 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
-    run_final_missing_experiment(outlier_type='extreme_1', runs=25, only_load=True)
+    run_final_missing_experiment(outlier_type='extreme_1', runs=100, only_load=True)
     # run_pipeline()
     # run_experiments()
     # test_stored_result()
@@ -28,7 +28,7 @@ def get_detectors():
         return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        return [RecurrentEBM(num_epochs=40), Donut(),  # , LSTMAD(), LSTMED(num_epochs=40)
+        return [RecurrentEBM(num_epochs=15), Donut(),  # , LSTMAD(), LSTMED(num_epochs=40)
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
@@ -133,7 +133,7 @@ def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=N
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
     steps = 5
     detectors = get_detectors()
-    seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
+    seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=runs, dtype="uint32")
     if not only_load:
         run_missing_experiment(detectors, seeds, RUNS, outlier_type, output_dir=output_dir,
                                steps=steps, store_results=False)
