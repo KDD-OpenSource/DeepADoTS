@@ -53,4 +53,4 @@ class Algorithm(metaclass=abc.ABCMeta):
         PyTorch, Tensorflow = range(2)
 
     def clone(self):
-        return copy.copy(self)
+        return copy.deepcopy(self)
