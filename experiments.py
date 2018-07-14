@@ -1,55 +1,41 @@
-import os
-
 import numpy as np
 import pandas as pd
 
-from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoEncoder
 from src.evaluation.evaluator import Evaluator
 from src.datasets import SyntheticDataGenerator, MultivariateAnomalyFunction
 
 
-def get_experiment_detectors():
-    if os.environ.get("CIRCLECI", False):
-        return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
-                LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
-    else:
-        return [RecurrentEBM(num_epochs=15), LSTMED(num_epochs=40), LSTMAD(), Donut(),
-                DAGMM(sequence_length=1), DAGMM(sequence_length=15),
-                DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
-
-
 # Validates all algorithms regarding polluted data based on a given outlier type.
 # The pollution of the training data is tested from 0 to 100% (with default steps=5).
-def run_pollution_experiment(seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
-    return run_experiment_evaluation(seeds, runs, output_dir, "polluted", steps, outlier_type)
+def run_pollution_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "polluted", steps, outlier_type)
 
 
 # Validates all algorithms regarding missing data based on a given outlier type.
 # The percentage of missing values within the training data is tested from 0 to 100% (with default
 # steps=5). By default the missing values are represented as zeros since no algorithm can't handle
 # nan values.
-def run_missing_experiment(seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
-    return run_experiment_evaluation(seeds, runs, output_dir, "missing", steps, outlier_type)
+def run_missing_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "missing", steps, outlier_type)
 
 
 # high-dimensional experiment on normal outlier types
-def run_multi_dim_experiment(seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
-    return run_experiment_evaluation(seeds, runs, output_dir, "multi_dim", steps, outlier_type)
+def run_multi_dim_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim", steps, outlier_type)
 
 
 # Validates all algorithms regarding different heights of extreme outliers
 # The extreme values are added to the outlier timestamps everywhere in the dataset distribution.
-def run_extremes_experiment(seeds, runs, outlier_type='extreme_1', output_dir=None, steps=10):
-    return run_experiment_evaluation(seeds, runs, output_dir, "extreme", steps, outlier_type)
+def run_extremes_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=10):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "extreme", steps, outlier_type)
 
 
-def run_multivariate_experiment(seeds, runs, output_dir=None):
-    return run_experiment_evaluation(seeds=seeds, runs=runs, output_dir=output_dir,
-                                     anomaly_type="multivariate")
+def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type="multivariate")
 
 
-def run_multi_dim_multivariate_experiment(seeds, runs, output_dir=None, steps=2):
-    return run_experiment_evaluation(seeds, runs, output_dir, "multi_dim_multivariate", steps)
+def run_multi_dim_multivariate_experiment(detectors, seeds, runs, output_dir=None, steps=2):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim_multivariate", steps)
 
 
 # outlier type means agots types for the univariate experiments, the multivariate types for the multivariate experiments
@@ -81,13 +67,13 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
                    for num_dim in np.linspace(100, 1500, steps, dtype=int)]
 
 
-def run_experiment_evaluation(seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
+def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
     datasets = list(get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type))
     results = pd.DataFrame()
     evaluator = None
 
     for index, seed in enumerate(seeds):
-        evaluator = Evaluator(datasets[index], get_experiment_detectors(), output_dir, seed=seed)
+        evaluator = Evaluator(datasets[index], detectors, output_dir, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
         evaluator.plot_roc_curves()
