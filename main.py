@@ -17,10 +17,9 @@ RUNS = 1 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
-    run_final_missing_experiment(outlier_type='extreme_1', runs=100, only_load=True)
-    # run_pipeline()
-    # run_experiments()
-    # test_stored_result()
+    run_pipeline()
+    run_experiments()
+    # run_final_missing_experiment(outlier_type='extreme_1', runs=100, only_load=False)
 
 
 def get_detectors():
@@ -28,7 +27,7 @@ def get_detectors():
         return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        return [RecurrentEBM(num_epochs=15), Donut(),  # , LSTMAD(), LSTMED(num_epochs=40)
+        return [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40)
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
