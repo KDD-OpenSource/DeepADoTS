@@ -38,312 +38,29 @@ class SyntheticDataGenerator:
         return func(*args, **kwargs)
 
     @staticmethod
-    def extreme_1(seed):
+    def extreme_1(seed, n=1, k=1):
+        np.random.seed(seed)
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        n = 1
-        k = 1
         shift_config = {}
         behavior = None
         behavior_config = {}
         baseline_config = {}
-        outlier_config = {
-            'extreme': [
-                {
-                    'n': 0,
-                    'timestamps': [
-                        (2192,), (2212,), (2258,), (2262,), (2319,), (2343,),
-                        (2361,), (2369,), (2428,), (2510,), (2512,), (2538,),
-                        (2567,), (2589,), (2695,), (2819,), (2892,), (2940,),
-                        (2952,), (2970,)
-                    ]
-                }
-            ]
-        }
+
+        # outliers randomly distributed over all dimensions
+        timestamps = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,), (2361,), (2369,),
+                      (2428,), (2510,), (2512,), (2538,), (2567,), (2589,), (2695,), (2819,),
+                      (2892,), (2940,), (2952,), (2970,)]
+
+        dim = np.random.choice(n, len(timestamps))
+        outlier_config = {'extreme':
+                          [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+
         pollution_config = {}
         random_state = seed
 
-        return SyntheticDataset(name='Synthetic Extreme Outliers', file_name='extreme1.pkl', length=length, n=n, k=k,
-                                baseline_config=baseline_config, shift_config=shift_config,
-                                behavior=behavior, behavior_config=behavior_config,
-                                outlier_config=outlier_config, pollution_config=pollution_config,
-                                train_split=train_split, random_state=random_state)
-
-    @staticmethod
-    def extreme_1_polluted(seed, pollution_percentage=0.2):
-        """Full pollution -> All anomalies from test set are in train set"""
-        dataset = SyntheticDataGenerator.extreme_1(seed)
-
-        train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(seed)
-        indices = np.random.choice(train_length, int(pollution_percentage * train_length), replace=False)
-        np.random.seed(seed)
-        pollution_config = {
-            'extreme': [
-                {
-                    'n': 0,
-                    'timestamps': [(i,) for i in indices]
-                }
-            ]
-        }
-        dataset.pollution_config = pollution_config
-
-        dataset.name = f'Syn Extreme Outliers (pol={pollution_percentage})'
-        return dataset
-
-    @staticmethod
-    def extreme_1_extremeness(seed, extreme_value=10):
-        """Full pollution -> All anomalies from test set are in train set"""
-        dataset = SyntheticDataGenerator.extreme_1(seed)
-
-        dataset.outlier_config['extreme'][0]['value'] = extreme_value
-
-        dataset.name = f'Syn Extreme Outliers (extremeness={extreme_value})'
-        return dataset
-
-    @staticmethod
-    def extreme_1_missing(seed, missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.extreme_1(seed)
-        dataset.load()
-        dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = f'Syn Extreme Outliers (mis={missing_percentage})'
-        return dataset
-
-    @staticmethod
-    def shift_1(seed):
-        length = 3000
-        train_split = 0.7
-        n = 1
-        k = 1
-        shift_config = {}
-        behavior = None
-        behavior_config = {}
-        baseline_config = {}
-        outlier_config = {
-            'shift': [{'n': 0, 'timestamps': [
-                (2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)
-            ]}],
-        }
-        pollution_config = {}
-        random_state = seed
-
-        return SyntheticDataset(name='Synthetic Shift Outliers', file_name='shift1.pkl', length=length, n=n, k=k,
-                                baseline_config=baseline_config, shift_config=shift_config,
-                                behavior=behavior, behavior_config=behavior_config,
-                                outlier_config=outlier_config, pollution_config=pollution_config,
-                                train_split=train_split, random_state=random_state)
-
-    @staticmethod
-    def shift_1_missing(seed, missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.shift_1(seed)
-        dataset.load()
-        dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = f'Syn Shift Outliers (mis={missing_percentage})'
-        return dataset
-
-    @staticmethod
-    def shift_1_polluted(seed, pollution_percentage=0.2):
-        dataset = SyntheticDataGenerator.shift_1(seed)
-
-        train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(seed)
-        indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        np.random.seed(seed)
-        pollution_config = {
-            'shift': [
-                {
-                    'n': 0,
-                    'timestamps': [(i, j) for i, j in zip(indices[::2], indices[1::2])]
-                }
-            ]
-        }
-        dataset.pollution_config = pollution_config
-
-        dataset.name = f'Syn Shift Outliers (pol={pollution_percentage})'
-        return dataset
-
-    @staticmethod
-    def variance_1(seed):
-        length = 3000
-        train_split = 0.7
-        n = 1
-        k = 1
-        shift_config = {}
-        behavior = None
-        behavior_config = {}
-        baseline_config = {}
-        outlier_config = {
-            'variance': [{'n': 0, 'timestamps': [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]}],
-        }
-        pollution_config = {}
-        random_state = seed
-
-        return SyntheticDataset(name='Synthetic Variance Outliers', file_name='variance1.pkl', length=length, n=n, k=k,
-                                baseline_config=baseline_config, shift_config=shift_config,
-                                behavior=behavior, behavior_config=behavior_config,
-                                outlier_config=outlier_config, pollution_config=pollution_config,
-                                train_split=train_split, random_state=random_state)
-
-    @staticmethod
-    def variance_1_missing(seed, missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.variance_1(seed)
-        dataset.load()
-        dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = f'Syn Variance Outliers (mis={missing_percentage})'
-        return dataset
-
-    @staticmethod
-    def variance_1_polluted(seed, pollution_percentage=0.2):
-        dataset = SyntheticDataGenerator.variance_1(seed)
-
-        train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(seed)
-        indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        np.random.seed(seed)
-        pollution_config = {
-            'variance': [
-                {
-                    'n': 0,
-                    'timestamps': [(i, j) for i, j in zip(indices[::2], indices[1::2])]
-                }
-            ]
-        }
-        dataset.pollution_config = pollution_config
-
-        dataset.name = f'Syn Variance Outliers (pol={pollution_percentage})'
-        return dataset
-
-    @staticmethod
-    def trend_1(seed):
-        length = 3000
-        train_split = 0.7
-        n = 1
-        k = 1
-        shift_config = {}
-        behavior = None
-        behavior_config = {}
-        baseline_config = {}
-        outlier_config = {
-            'trend': [{'n': 0, 'timestamps': [(2200, 2400), (2450, 2480), (2500, 2550), (2700, 2950)]}],
-        }
-        pollution_config = {}
-        random_state = seed
-
-        return SyntheticDataset(name='Synthetic Trend Outliers', file_name='trend1.pkl', length=length, n=n, k=k,
-                                baseline_config=baseline_config, shift_config=shift_config,
-                                behavior=behavior, behavior_config=behavior_config,
-                                outlier_config=outlier_config, pollution_config=pollution_config,
-                                train_split=train_split, random_state=random_state)
-
-    @staticmethod
-    def trend_1_missing(seed, missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.trend_1(seed)
-        dataset.load()
-        dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = f'Syn Trend Outliers (mis={missing_percentage})'
-        return dataset
-
-    @staticmethod
-    def trend_1_polluted(seed, pollution_percentage=0.2):
-        dataset = SyntheticDataGenerator.trend_1(seed)
-
-        train_length = int(dataset.train_split * dataset.length)
-        np.random.seed(seed)
-        indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        np.random.seed(seed)
-        pollution_config = {
-            'trend': [
-                {
-                    'n': 0,
-                    'timestamps': [(i, j) for i, j in zip(indices[::2], indices[1::2])]
-                }
-            ]
-        }
-        dataset.pollution_config = pollution_config
-
-        dataset.name = f'Syn Trend Outliers (pol={pollution_percentage})'
-        return dataset
-
-    @staticmethod
-    def combined_1(seed):
-        # train begins at 2100
-        length = 3000
-        train_split = 0.7
-        n = 1
-        k = 1
-        shift_config = {}
-        behavior = None
-        behavior_config = {}
-        baseline_config = {}
-        outlier_config = {
-            'extreme': [
-                {
-                    'n': 0,
-                    'timestamps': [
-                        (2192,), (2212,), (2258,), (2262,), (2319,), (2343,),
-                        (2361,), (2369,), (2428,), (2510,), (2512,), (2538,),
-                        (2567,), (2589,), (2695,), (2819,), (2892,), (2940,),
-                        (2952,), (2970,)
-                    ]
-                }
-            ],
-            'shift': [{'n': 0, 'timestamps': [
-                (2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)
-            ]}],
-            'variance': [{'n': 0, 'timestamps': [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]}],
-            'trend': [{'n': 0, 'timestamps': [(2200, 2400), (2550, 2420), (2500, 2550), (2800, 2950)]}]
-        }
-        pollution_config = {}
-        random_state = seed
-
-        return SyntheticDataset(name='Synthetic Combined Outliers', file_name='combined1.pkl', length=length, n=n, k=k,
-                                baseline_config=baseline_config, shift_config=shift_config,
-                                behavior=behavior, behavior_config=behavior_config,
-                                outlier_config=outlier_config, pollution_config=pollution_config,
-                                train_split=train_split, random_state=random_state)
-
-    @staticmethod
-    def combined_1_missing(seed, missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.combined_1(seed)
-        dataset.load()
-        dataset.add_missing_values(missing_percentage=missing_percentage)
-        dataset.name = f'Syn Combined Outliers (mis={missing_percentage})'
-        return dataset
-
-    @staticmethod
-    def combined_4(seed):
-        # train begins at 2100
-        length = 3000
-        train_split = 0.7
-        n = 4
-        k = 1
-        shift_config = {}
-        behavior = None
-        behavior_config = {}
-        baseline_config = {}
-        outlier_config = {
-            'extreme': [
-                {
-                    'n': 0,
-                    'timestamps': [
-                        (2192,), (2212,), (2258,), (2262,), (2319,), (2343,),
-                        (2361,), (2369,), (2428,), (2510,), (2512,), (2538,),
-                        (2567,), (2589,), (2695,), (2819,), (2892,), (2940,),
-                        (2952,), (2970,)
-                    ]
-                }
-            ],
-            'shift': [{'n': 1, 'timestamps': [
-                (2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)
-            ]}],
-            'variance': [{'n': 2, 'timestamps': [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]}],
-            'trend': [{'n': 3, 'timestamps': [(2200, 2400), (2550, 2420), (2500, 2550), (2800, 2950)]}]
-        }
-        pollution_config = {}
-        random_state = seed
-
-        return SyntheticDataset(name='Synthetic Combined Outliers 4-dimensional', file_name='combined4.pkl',
+        return SyntheticDataset(name=f'Syn Extreme Outliers (dim={n})', file_name='extreme1.pkl',
                                 length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
@@ -351,20 +68,288 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def combined_4_missing(seed, missing_percentage=0.1):
-        dataset = SyntheticDataGenerator.combined_4(seed)
+    def extreme_1_polluted(seed, pollution_percentage=0.2, n=1):
+        """Full pollution -> All anomalies from test set are in train set"""
+        np.random.seed(seed)
+        dataset = SyntheticDataGenerator.extreme_1(seed, n)
+
+        train_length = int(dataset.train_split * dataset.length)
+        indices = np.random.choice(train_length, int(pollution_percentage * train_length), replace=False)
+        timestamps = [(i,) for i in indices]
+        dim = np.random.choice(n, len(timestamps))
+        pollution_config = {'extreme': [{'n': i, 'timestamps':
+                                         [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+        dataset.pollution_config = pollution_config
+
+        dataset.name = f'Syn Extreme Outliers (pol={pollution_percentage})'
+        return dataset
+
+    @staticmethod
+    def extreme_1_extremeness(seed, extreme_value=10, n=1):
+        """Full pollution -> All anomalies from test set are in train set"""
+        dataset = SyntheticDataGenerator.extreme_1(seed, n)
+
+        dataset.outlier_config['extreme'][0]['value'] = extreme_value
+
+        dataset.name = f'Syn Extreme Outliers (extremeness={extreme_value})'
+        return dataset
+
+    @staticmethod
+    def extreme_1_missing(seed, missing_percentage=0.1, n=1):
+        dataset = SyntheticDataGenerator.extreme_1(seed, n)
+        dataset.load()
+        dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.name = f'Syn Extreme Outliers (mis={missing_percentage})'
+        return dataset
+
+    @staticmethod
+    def shift_1(seed, n=1, k=1):
+        length = 3000
+        train_split = 0.7
+        shift_config = {}
+        behavior = None
+        behavior_config = {}
+        baseline_config = {}
+
+        # outliers randomly distributed over all dimensions
+        timestamps = [(2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)]
+
+        dim = np.random.choice(n, len(timestamps))
+        outlier_config = {'shift':
+                          [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+
+        pollution_config = {}
+        random_state = seed
+
+        return SyntheticDataset(name=f'Syn Shift Outliers (dim={n})', file_name='shift1.pkl', length=length, n=n, k=k,
+                                baseline_config=baseline_config, shift_config=shift_config,
+                                behavior=behavior, behavior_config=behavior_config,
+                                outlier_config=outlier_config, pollution_config=pollution_config,
+                                train_split=train_split, random_state=random_state)
+
+    @staticmethod
+    def shift_1_missing(seed, missing_percentage=0.1, n=1):
+        dataset = SyntheticDataGenerator.shift_1(seed, n)
+        dataset.load()
+        dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.name = f'Syn Shift Outliers (mis={missing_percentage})'
+        return dataset
+
+    @staticmethod
+    def shift_1_polluted(seed, pollution_percentage=0.2, n=1):
+        np.random.seed(seed)
+        dataset = SyntheticDataGenerator.shift_1(seed, n)
+
+        train_length = int(dataset.train_split * dataset.length)
+        indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
+        timestamps = [(i, j) for i, j in zip(indices[::2], indices[1::2])]
+        dim = np.random.choice(n, len(timestamps))
+        pollution_config = {'shift': [{'n': i, 'timestamps':
+                                       [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+        dataset.pollution_config = pollution_config
+
+        dataset.name = f'Syn Shift Outliers (pol={pollution_percentage})'
+        return dataset
+
+    @staticmethod
+    def variance_1(seed, n=1, k=1):
+        length = 3000
+        train_split = 0.7
+        shift_config = {}
+        behavior = None
+        behavior_config = {}
+        baseline_config = {}
+
+        # outliers randomly distributed over all dimensions
+        timestamps = [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]
+
+        dim = np.random.choice(n, len(timestamps))
+        outlier_config = {'variance':
+                          [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+
+        pollution_config = {}
+        random_state = seed
+
+        return SyntheticDataset(name=f'Syn Variance Outliers (dim={n})', file_name='variance1.pkl',
+                                length=length, n=n, k=k,
+                                baseline_config=baseline_config, shift_config=shift_config,
+                                behavior=behavior, behavior_config=behavior_config,
+                                outlier_config=outlier_config, pollution_config=pollution_config,
+                                train_split=train_split, random_state=random_state)
+
+    @staticmethod
+    def variance_1_missing(seed, missing_percentage=0.1, n=1):
+        dataset = SyntheticDataGenerator.variance_1(seed, n)
+        dataset.load()
+        dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.name = f'Syn Variance Outliers (mis={missing_percentage})'
+        return dataset
+
+    @staticmethod
+    def variance_1_polluted(seed, pollution_percentage=0.2, n=1):
+        np.random.seed(seed)
+        dataset = SyntheticDataGenerator.variance_1(seed, n)
+
+        train_length = int(dataset.train_split * dataset.length)
+        indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
+        timestamps = [(i, j) for i, j in zip(indices[::2], indices[1::2])]
+        dim = np.random.choice(n, len(timestamps))
+        pollution_config = {'variance': [{'n': i, 'timestamps':
+                                          [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+        dataset.pollution_config = pollution_config
+
+        dataset.name = f'Syn Variance Outliers (pol={pollution_percentage})'
+        return dataset
+
+    @staticmethod
+    def trend_1(seed, n=1, k=1):
+        length = 3000
+        train_split = 0.7
+        shift_config = {}
+        behavior = None
+        behavior_config = {}
+        baseline_config = {}
+
+        # outliers randomly distributed over all dimensions
+        timestamps = [(2200, 2400), (2450, 2480), (2500, 2550), (2700, 2950)]
+
+        dim = np.random.choice(n, len(timestamps))
+        outlier_config = {'trend':
+                          [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+
+        pollution_config = {}
+        random_state = seed
+
+        return SyntheticDataset(name=f'Syn Trend Outliers (dim={n})', file_name='trend1.pkl', length=length, n=n, k=k,
+                                baseline_config=baseline_config, shift_config=shift_config,
+                                behavior=behavior, behavior_config=behavior_config,
+                                outlier_config=outlier_config, pollution_config=pollution_config,
+                                train_split=train_split, random_state=random_state)
+
+    @staticmethod
+    def trend_1_missing(seed, missing_percentage=0.1, n=1):
+        dataset = SyntheticDataGenerator.trend_1(seed, n)
+        dataset.load()
+        dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.name = f'Syn Trend Outliers (mis={missing_percentage})'
+        return dataset
+
+    @staticmethod
+    def trend_1_polluted(seed, pollution_percentage=0.2, n=1):
+        np.random.seed(seed)
+        dataset = SyntheticDataGenerator.trend_1(seed, n)
+
+        train_length = int(dataset.train_split * dataset.length)
+        indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
+        timestamps = [(i, j) for i, j in zip(indices[::2], indices[1::2])]
+        dim = np.random.choice(n, len(timestamps))
+        pollution_config = {'trend': [{'n': i, 'timestamps':
+                                       [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+        dataset.pollution_config = pollution_config
+
+        dataset.name = f'Syn Trend Outliers (pol={pollution_percentage})'
+        return dataset
+
+    @staticmethod
+    def combined_1(seed, n=1, k=1):
+        # train begins at 2100
+        length = 3000
+        train_split = 0.7
+        shift_config = {}
+        behavior = None
+        behavior_config = {}
+        baseline_config = {}
+        timestamps_ext = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,),
+                          (2361,), (2369,), (2428,), (2510,), (2512,), (2538,),
+                          (2567,), (2589,), (2695,), (2819,), (2892,), (2940,),
+                          (2952,), (2970,)]
+        dim_ext = np.random.choice(n, len(timestamps_ext))
+        timestamps_shi = [(2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)]
+        dim_shi = np.random.choice(n, len(timestamps_shi))
+        timestamps_var = [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]
+        dim_var = np.random.choice(n, len(timestamps_var))
+        timestamps_tre = [(2200, 2400), (2550, 2420), (2500, 2550), (2800, 2950)]
+        dim_tre = np.random.choice(n, len(timestamps_tre))
+        outlier_config = {'extreme': [{'n': i, 'timestamps':
+                                       [ts for d, ts in zip(dim_ext, timestamps_ext) if d == i]} for i in range(n)],
+                          'shift': [{'n': i, 'timestamps':
+                                     [ts for d, ts in zip(dim_shi, timestamps_shi) if d == i]} for i in range(n)],
+                          'variance': [{'n': i, 'timestamps':
+                                        [ts for d, ts in zip(dim_var, timestamps_var) if d == i]} for i in range(n)],
+                          'trend': [{'n': i, 'timestamps':
+                                     [ts for d, ts in zip(dim_tre, timestamps_tre) if d == i]} for i in range(n)]}
+        pollution_config = {}
+        random_state = seed
+
+        return SyntheticDataset(name=f'Synthetic Combined Outliers (dim={n})', file_name='combined1.pkl', length=length,
+                                n=n, k=k, baseline_config=baseline_config, shift_config=shift_config,
+                                behavior=behavior, behavior_config=behavior_config,
+                                outlier_config=outlier_config, pollution_config=pollution_config,
+                                train_split=train_split, random_state=random_state)
+
+    @staticmethod
+    def combined_1_missing(seed, missing_percentage=0.1, n=1):
+        dataset = SyntheticDataGenerator.combined_1(seed, n)
+        dataset.load()
+        dataset.add_missing_values(missing_percentage=missing_percentage)
+        dataset.name = f'Syn Combined Outliers (mis={missing_percentage})'
+        return dataset
+
+    @staticmethod
+    def combined_4(seed, n=4, k=4):
+        # train begins at 2100
+        length = 3000
+        train_split = 0.7
+        shift_config = {}
+        behavior = None
+        behavior_config = {}
+        baseline_config = {}
+
+        indices = range(0, n+1, n//4)
+        outl_chunks = [np.arange(j, indices[i+1]) for i, j in enumerate(indices[:-1])]
+        timestamps_ext = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,),
+                          (2361,), (2369,), (2428,), (2510,), (2512,), (2538,),
+                          (2567,), (2589,), (2695,), (2819,), (2892,), (2940,),
+                          (2952,), (2970,)]
+        dim_ext = np.random.choice(outl_chunks[0], len(timestamps_ext))
+        timestamps_shi = [(2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)]
+        dim_shi = np.random.choice(outl_chunks[1], len(timestamps_shi))
+        timestamps_var = [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]
+        dim_var = np.random.choice(outl_chunks[2], len(timestamps_var))
+        timestamps_tre = [(2200, 2400), (2550, 2420), (2500, 2550), (2800, 2950)]
+        dim_tre = np.random.choice(outl_chunks[3], len(timestamps_tre))
+        outlier_config = {'extreme': [{'n': i, 'timestamps':
+                                       [ts for d, ts in zip(dim_ext, timestamps_ext) if d == i]} for i in range(n)],
+                          'shift': [{'n': i, 'timestamps':
+                                     [ts for d, ts in zip(dim_shi, timestamps_shi) if d == i]} for i in range(n)],
+                          'variance': [{'n': i, 'timestamps':
+                                        [ts for d, ts in zip(dim_var, timestamps_var) if d == i]} for i in range(n)],
+                          'trend': [{'n': i, 'timestamps':
+                                     [ts for d, ts in zip(dim_tre, timestamps_tre) if d == i]} for i in range(n)]}
+        pollution_config = {}
+        random_state = seed
+
+        return SyntheticDataset(name=f'Synthetic Combined Outliers (dim={n})', file_name='combined4.pkl',
+                                length=length, n=n, k=k,
+                                baseline_config=baseline_config, shift_config=shift_config,
+                                behavior=behavior, behavior_config=behavior_config,
+                                outlier_config=outlier_config, pollution_config=pollution_config,
+                                train_split=train_split, random_state=random_state)
+
+    @staticmethod
+    def combined_4_missing(seed, missing_percentage=0.1, n=4):
+        dataset = SyntheticDataGenerator.combined_4(seed, n)
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Combined Outliers 4D (mis={missing_percentage})'
         return dataset
 
+# for accurate high-dimensional multivariate datasets (>2) rather use synthetic_multivariate_dataset.py
     @staticmethod
-    def mv_extreme_1(seed):
+    def mv_extreme_1(seed, n=2, k=2):
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        n = 2
-        k = 2
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -426,7 +411,7 @@ class SyntheticDataGenerator:
         }
         random_state = seed
 
-        return SyntheticDataset(name="Synthetic Multivariate Extreme Outliers", file_name="mv_extreme1.pkl",
+        return SyntheticDataset(name="Synthetic Multivariate Extreme Outliers (dim={n})", file_name="mv_extreme1.pkl",
                                 length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
@@ -435,11 +420,9 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_shift_1(seed):
+    def mv_shift_1(seed, n=2, k=2):
         length = 3000
         train_split = 0.7
-        n = 2
-        k = 2
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -479,7 +462,7 @@ class SyntheticDataGenerator:
         }
         random_state = seed
 
-        return SyntheticDataset(name="Synthetic Multivariate Shift Outliers", file_name="mv_shift1.pkl",
+        return SyntheticDataset(name="Synthetic Multivariate Shift Outliers (dim={n})", file_name="mv_shift1.pkl",
                                 length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
@@ -488,11 +471,9 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_variance_1(seed):
+    def mv_variance_1(seed, n=2, k=2):
         length = 3000
         train_split = 0.7
-        n = 2
-        k = 2
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -520,7 +501,7 @@ class SyntheticDataGenerator:
         }
         random_state = seed
 
-        return SyntheticDataset(name="Synthetic Multivariate Variance Outliers", file_name="mv_variance1.pkl",
+        return SyntheticDataset(name="Synthetic Multivariate Variance Outliers (dim={n})", file_name="mv_variance1.pkl",
                                 length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
@@ -529,11 +510,9 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_trend_1(seed):
+    def mv_trend_1(seed, n=2, k=2):
         length = 3000
         train_split = 0.7
-        n = 2
-        k = 2
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -557,7 +536,7 @@ class SyntheticDataGenerator:
         }
         random_state = seed
 
-        return SyntheticDataset(name="Synthetic Multivariate Trend Outliers", file_name="mv_trend1.pkl",
+        return SyntheticDataset(name="Synthetic Multivariate Trend Outliers (dim={n})", file_name="mv_trend1.pkl",
                                 length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
@@ -566,12 +545,10 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def mv_xor_extreme_1(seed):
+    def mv_xor_extreme_1(seed, n=2, k=2):
         # train begins at 2100
         length = 3000
         train_split = 0.7
-        n = 2
-        k = 2
         shift_config = {}
         behavior = None
         behavior_config = {}
@@ -633,8 +610,8 @@ class SyntheticDataGenerator:
         }
         random_state = seed
 
-        return SyntheticDataset(name="Synthetic Multivariate XOR Extreme Outliers", file_name="mv_xor_extreme1.pkl",
-                                length=length, n=n, k=k,
+        return SyntheticDataset(name="Synthetic Multivariate XOR Extreme Outliers (dim={n})",
+                                file_name="mv_xor_extreme1.pkl", length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,
@@ -642,12 +619,10 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def behavior_sine_1(seed, cycle_length=200):
+    def behavior_sine_1(seed, cycle_length=200, n=1, k=1):
         """Test seasonality (long term frequency)"""
         length = 3000
         train_split = 0.7
-        n = 1
-        k = 1
         shift_config = {}
         behavior = sine_generator
         behavior_config = {'cycle_duration': cycle_length, 'amplitude': 0.1}
@@ -656,8 +631,8 @@ class SyntheticDataGenerator:
         pollution_config = {}
         random_state = seed
 
-        return SyntheticDataset(name='Synthetic Seasonal Outliers', file_name='sine1.pkl', length=length, n=n, k=k,
-                                baseline_config=baseline_config, shift_config=shift_config,
+        return SyntheticDataset(name='Synthetic Seasonal Outliers (dim={n})', file_name='sine1.pkl', length=length,
+                                n=n, k=k, baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,
                                 train_split=train_split, random_state=random_state)

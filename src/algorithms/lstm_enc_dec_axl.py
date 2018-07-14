@@ -16,8 +16,7 @@ from .cuda_utils import GPUWrapper
 class LSTMED(Algorithm, GPUWrapper):
     def __init__(self, hidden_size: int=5, sequence_length: int=30, batch_size: int=20, num_epochs: int=10,
                  n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
-                 lr: float=0.1, weight_decay: float=1e-4, criterion=nn.MSELoss,
-                 framework: int=Algorithm.Frameworks.PyTorch, gpu: int=0):
+                 lr: float=0.1, weight_decay: float=1e-4, framework: int=Algorithm.Frameworks.PyTorch, gpu: int=0):
         Algorithm.__init__(self, __name__, 'LSTMED', framework)
         GPUWrapper.__init__(self, gpu)
         self.hidden_size = hidden_size
@@ -31,7 +30,6 @@ class LSTMED(Algorithm, GPUWrapper):
 
         self.lr = lr
         self.weight_decay = weight_decay
-        self.criterion = criterion
 
         self.lstmed = None
 
@@ -61,7 +59,7 @@ class LSTMED(Algorithm, GPUWrapper):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in train_loader:
                 output = self.lstmed(self.to_var(ts_batch))
-                loss = self.criterion()(output, self.to_var(ts_batch.float()))
+                loss = nn.MSELoss(reduce=False)(output, self.to_var(ts_batch.float())).sum()
                 self.lstmed.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -70,7 +68,7 @@ class LSTMED(Algorithm, GPUWrapper):
         error_vectors = []
         for ts_batch in train_gaussian_loader:
             output = self.lstmed(self.to_var(ts_batch))
-            error = self.criterion(reduce=False)(output, self.to_var(ts_batch.float()))
+            error = nn.L1Loss(reduce=False)(output, self.to_var(ts_batch.float()))
             error_vectors += list(error.view(ts_batch.size(0), -1).data.cpu().numpy())
 
         self.mean = np.mean(error_vectors, axis=0)
@@ -89,7 +87,7 @@ class LSTMED(Algorithm, GPUWrapper):
         for idx, ts in enumerate(data_loader):
             output = self.lstmed(self.to_var(ts))
 
-            error = self.criterion(reduce=False)(output, self.to_var(ts.float()))
+            error = nn.L1Loss(reduce=False)(output, self.to_var(ts.float()))
             score = -mvnormal.logpdf(error.view(ts.shape[0], -1).data.cpu().numpy())
             scores.append(score)
 
@@ -120,8 +118,7 @@ class LSTMED(Algorithm, GPUWrapper):
 
 
 class LSTMEDModule(nn.Module, GPUWrapper):
-    def __init__(self, n_features: int, hidden_size: int,
-                 n_layers: tuple, use_bias: tuple, dropout: tuple, gpu: int=0):
+    def __init__(self, n_features: int, hidden_size: int, n_layers: tuple, use_bias: tuple, dropout: tuple, gpu: int=0):
         super().__init__()
         GPUWrapper.__init__(self, gpu)
         self.n_features = n_features

@@ -1,3 +1,4 @@
+import logging
 from typing import Tuple, Callable
 
 import numpy as np
@@ -17,17 +18,25 @@ class SyntheticMultivariateDataset(Dataset):
                  labels_padding: int = 6,
                  random_seed: int = None,
                  features: int = 2,
+                 group_size: int = None,
+                 test_pollution: float = 0.5,
+                 global_noise: float = 0.1,  # Noise added to all dimensions over the whole timeseries
                  file_name: str = 'synthetic_mv1.pkl'):
         super().__init__(f'{name} (f={anomaly_func.__name__})', file_name)
         self.length = length
         self.mean_curve_length = mean_curve_length
         self.mean_curve_amplitude = mean_curve_amplitude
-        self.global_noise = 0.1  # Noise added to all dimensions over the whole timeseries
+        self.global_noise = global_noise
         self.anomaly_func = anomaly_func
         self.pause_range = pause_range
         self.labels_padding = labels_padding
         self.random_seed = random_seed
+        self.test_pollution = test_pollution
         self.features = features
+        self.group_size = self.features if group_size is None else group_size
+        if self.features % self.group_size == 1:  # How many dimensions each correlated group has
+            logging.warn('Group size results in one overhanging univariate group. Generating multivariate'
+                         'anomalies on univariate data is impossible.')
 
     @staticmethod
     def get_noisy_value(x, strength=1):
@@ -62,17 +71,16 @@ class SyntheticMultivariateDataset(Dataset):
     def add_global_noise(self, x):
         return self.get_noisy_value(x, self.global_noise)
 
-    """
-        pollution: Portion of anomalous curves. Because it's not known how many curves there are
-            in the end. It's randomly chosen based on this value. To avoid anomalies set this to zero.
-    """
-    def generate_data(self, pollution=0.5):
-        values = np.zeros((self.length, self.features))
+    def generate_correlated_group(self, dimensions, pollution):
+        values = np.zeros((self.length, dimensions))
+        xaxis_distances = np.linspace(0, 100, dimensions)
+        for index in range(dimensions):
+            values[:, index].fill(xaxis_distances[index])
         labels = np.zeros(self.length)
         pos = self.create_pause()
 
         # First pos data points are noise (don't start directly with curve)
-        values[:pos] = self.add_global_noise(values[:pos])
+        values[:pos, :] = self.add_global_noise(values[:pos])
 
         while pos < self.length - self.mean_curve_length - 20:
             # General outline for the repeating curves, varying height and length
@@ -81,12 +89,26 @@ class SyntheticMultivariateDataset(Dataset):
             create_anomaly = np.random.choice([False, True], p=[1-pollution, pollution])
             # After curve add pause, only noise
             end_of_interval = pos + len(curve) + self.create_pause()
-            self.insert_features(values[pos:end_of_interval], labels[pos:end_of_interval], curve, create_anomaly)
+            self.insert_features(values[pos:end_of_interval, :], labels[pos:end_of_interval], curve, create_anomaly)
             pos = end_of_interval
         # rest of values is noise
-        values[pos:] = self.add_global_noise(values[pos:])
+        values[:pos, :] = self.add_global_noise(values[:pos, :])
         return pd.DataFrame(values), pd.Series(labels)
 
+    """
+        pollution: Portion of anomalous curves. Because it's not known how many curves there are
+            in the end. It's randomly chosen based on this value. To avoid anomalies set this to zero.
+    """
+    def generate_data(self, pollution):
+        value_dfs, label_series = [], []
+        for i in range(0, self.features, self.group_size):
+            values, labels = self.generate_correlated_group(min(self.group_size, self.features-i),
+                                                            pollution=pollution * self.group_size / self.features)
+            value_dfs.append(values)
+            label_series.append(labels)
+        labels = pd.Series(np.logical_or.reduce(label_series))
+        values = pd.concat(value_dfs, axis=1, ignore_index=True)
+        return values, labels
     """
         Insert values for curve and following pause over all dimensions.
         interval_values is changed by reference so this function doesn't return anything.
@@ -95,20 +117,24 @@ class SyntheticMultivariateDataset(Dataset):
     """
     def insert_features(self, interval_values: np.ndarray, interval_labels: np.ndarray,
                         curve: np.ndarray, create_anomaly: bool):
-        assert self.features == 2, 'Only two features are supported right now!'
+
+        anomaly_dim = np.random.randint(0, interval_values.shape[1])
 
         # Insert curve and pause in first dimension (after adding the global noise)
-        interval_values[:len(curve), 0] = self.add_global_noise(curve)
-        interval_values[len(curve):, 0] = self.add_global_noise(interval_values[len(curve):, 0])
+        for i in set(range(interval_values.shape[1])) - {anomaly_dim}:
+            interval_values[:len(curve), i] += self.add_global_noise(curve)
+            interval_values[len(curve):, i] = self.add_global_noise(interval_values[len(curve):, i])
+
         # Get values of anomaly_func and fill missing spots with noise
         # anomaly_func function gets the clean curve values (not noisy)
         interval_length = interval_values.shape[0]
         anomaly_values, start, end = self.anomaly_func(curve, create_anomaly, interval_length)
         assert len(anomaly_values) <= interval_length, f'Interval too long: {len(anomaly_values)} > {interval_length}'
 
-        interval_values[:len(anomaly_values), 1] = self.add_global_noise(anomaly_values)
+        interval_values[:len(anomaly_values), anomaly_dim] += self.add_global_noise(anomaly_values)
         # Fill interval up with noisy zero values
-        interval_values[len(anomaly_values):, 1] = self.add_global_noise(interval_values[len(anomaly_values):, 1])
+        interval_values[len(anomaly_values):, anomaly_dim] = self.add_global_noise(
+            interval_values[len(anomaly_values):, anomaly_dim])
 
         # Add anomaly labels with slight padding (dont start with the first interval value).
         # The padding is curve_length / padding_factor
@@ -120,5 +146,5 @@ class SyntheticMultivariateDataset(Dataset):
     def load(self):
         np.random.seed(self.random_seed)
         X_train, y_train = self.generate_data(pollution=0)
-        X_test, y_test = self.generate_data(pollution=0.5)
+        X_test, y_test = self.generate_data(pollution=self.test_pollution)
         self._data = X_train, y_train, X_test, y_test

@@ -125,7 +125,7 @@ class DAGMMModule(nn.Module, GPUWrapper):
         exp_term = torch.exp(exp_term_tmp - max_val)
 
         sample_energy = -max_val.squeeze() - torch.log(
-            torch.sum(self.to_var(phi.unsqueeze(0)) * exp_term / (torch.sqrt(self.to_var(det_cov))).unsqueeze(0),
+            torch.sum(self.to_var(phi.unsqueeze(0)) * exp_term / (torch.sqrt(self.to_var(det_cov)) + eps).unsqueeze(0),
                       dim=1) + eps)
 
         if size_average:
@@ -171,9 +171,11 @@ class DAGMM(Algorithm, GPUWrapper):
                                                                                     self.lambda_energy,
                                                                                     self.lambda_cov_diag)
         self.reset_grad()
-        total_loss = torch.clamp(total_loss, max=1e8)  # Extremely high loss can cause NaN gradients
+        total_loss = torch.clamp(total_loss, max=1e7)  # Extremely high loss can cause NaN gradients
         total_loss.backward()
         torch.nn.utils.clip_grad_norm_(self.dagmm.parameters(), 5)
+        # if np.array([np.isnan(p.grad.detach().numpy()).any() for p in self.dagmm.parameters()]).any():
+        #     import IPython; IPython.embed()
         self.optimizer.step()
         return total_loss, sample_energy, recon_error, cov_diag
 
@@ -231,7 +233,7 @@ class DAGMM(Algorithm, GPUWrapper):
                 index = i1 * self.batch_size + i2
                 window_elements = list(range(index, index + self.sequence_length, 1))
                 train_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
-        self.train_energy = np.nanmedian(train_energy, axis=0)
+        self.train_energy = np.nanmean(train_energy, axis=0)
 
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
@@ -249,7 +251,7 @@ class DAGMM(Algorithm, GPUWrapper):
             window_elements = np.arange(idx, idx + self.sequence_length, 1)
             test_energy[idx % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
 
-        test_energy = np.nanmedian(test_energy, axis=0)
+        test_energy = np.nanmean(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
         self._threshold = np.nanpercentile(combined_energy, self.normal_percentile)
