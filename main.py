@@ -27,7 +27,7 @@ def get_detectors():
         return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        return [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40)
+        return [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40),
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
 
