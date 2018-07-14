@@ -182,7 +182,7 @@ class DAGMM(Algorithm, GPUWrapper):
     def fit(self, X: pd.DataFrame, _):
         """Learn the mixture probability, mean and covariance for each component k.
         Store the computed energy based on the training data and the aforementioned parameters."""
-        X.fillna(X.mean(), inplace=True)
+        X.interpolate(inplace=True)
         data = X.values
         # Each point is a flattened window and thus has as many features as sequence_length * features
         multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
@@ -239,7 +239,7 @@ class DAGMM(Algorithm, GPUWrapper):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
         given data."""
         self.dagmm.eval()
-        X.fillna(X.mean(), inplace=True)
+        X.interpolate(inplace=True)
         data = X.values
         multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=multi_points, batch_size=1, shuffle=False)
