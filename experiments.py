@@ -73,7 +73,8 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
             num_dims = [250, 500, 1000, 1500]
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(outlier_type, random_seed=seed,
                                                                         features=dim, group_size=20,
-                   name=f'Synthetic Multivariate {dim}-dimensional {outlier_type} Curve Outliers')
+                                                                        name=f'Synthetic Multivariate {dim}-dim. '
+                                                                             f'{outlier_type} Curve Outliers')
                    for dim in num_dims]
         elif anomaly_type == "multi_dim":
             yield [SyntheticDataGenerator.get(f'{outlier_type}', seed, num_dim)
@@ -81,7 +82,6 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
 
 
 def run_experiment_evaluation(seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
-
     datasets = list(get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type))
     results = pd.DataFrame()
     evaluator = None
