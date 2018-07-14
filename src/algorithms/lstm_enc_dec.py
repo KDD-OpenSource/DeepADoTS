@@ -91,7 +91,7 @@ class LSTM_Enc_Dec(Algorithm):
         self.criterion = nn.MSELoss()
 
     def fit(self, X_train: pd.DataFrame, y_train: pd.Series):
-        X_train.fillna(0, inplace=True)
+        X_train.fillna(X_train.mean(), inplace=True)
         self._build_model(X_train.shape[1])
         train_timeseries_dataset = self._transform_fit_data(X_train, y_train)
         self._fit(train_timeseries_dataset)
@@ -103,7 +103,7 @@ class LSTM_Enc_Dec(Algorithm):
         return [x.numpy() for x in channels_scores]
 
     def predict(self, X_test: pd.DataFrame) -> np.ndarray:
-        X_test.fillna(0, inplace=True)
+        X_test.fillna(X_test.mean(), inplace=True)
         channels_scores = self.predict_channel_scores(X_test)
         return np.max(channels_scores, axis=0)
 
