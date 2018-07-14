@@ -256,8 +256,8 @@ class DAGMM(Algorithm, GPUWrapper):
         if (self.autoencoder_type == LSTMAutoEncoder) or (self.sequence_length > 1):
             test_energy = np.square(np.array(test_energy) - np.mean(test_energy))
 
-        combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
-        self._threshold = np.nanpercentile(combined_energy, self.normal_percentile)
+        # combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
+        # self._threshold = np.nanpercentile(combined_energy, self.normal_percentile)
 
         return test_energy
 
