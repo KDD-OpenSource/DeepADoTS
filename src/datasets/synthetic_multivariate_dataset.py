@@ -33,7 +33,7 @@ class SyntheticMultivariateDataset(Dataset):
         self.random_seed = random_seed
         self.test_pollution = test_pollution
         self.features = features
-        self.group_size = self.features if group_size is None else group_size
+        self.group_size = self.features if group_size is None else min(self.features, group_size)
         if self.features % self.group_size == 1:  # How many dimensions each correlated group has
             logging.warn('Group size results in one overhanging univariate group. Generating multivariate'
                          'anomalies on univariate data is impossible.')
