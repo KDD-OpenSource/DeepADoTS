@@ -17,7 +17,7 @@ RUNS = 1 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
-    run_final_missing_experiment(outlier_type='extreme_1', runs=1, only_load=True)
+    run_final_missing_experiment(outlier_type='extreme_1', runs=25, only_load=True)
     # run_pipeline()
     # run_experiments()
     # test_stored_result()
@@ -129,7 +129,7 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     Evaluator.plot_heatmap(evaluators)
 
 
-def run_final_missing_experiment(outlier_type='extreme_1', runs=10, output_dir=None, only_load=False):
+def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=None, only_load=False):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
     steps = 5
     detectors = get_detectors()
@@ -137,7 +137,7 @@ def run_final_missing_experiment(outlier_type='extreme_1', runs=10, output_dir=N
     if not only_load:
         run_missing_experiment(detectors, seeds, RUNS, outlier_type, output_dir=output_dir,
                                steps=steps, store_results=False)
-    plotter = Plotter(output_dir)
+    plotter = Plotter('reports', output_dir)
     plotter.plot_experiment('missing on extreme_1')
 
 

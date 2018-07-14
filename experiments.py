@@ -87,6 +87,7 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
         evaluator.plot_roc_curves(store=store_results)
         evaluator.plot_threshold_comparison(store=store_results)
         evaluator.plot_scores(store=store_results)
+        evaluator.set_benchmark_results(result)
         evaluator.export_results(f'experiment-run-{index}-{seed}')
         results = results.append(result, ignore_index=True)
 

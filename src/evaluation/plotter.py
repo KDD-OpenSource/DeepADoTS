@@ -1,5 +1,7 @@
 import os
 import json
+import logging
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,10 +11,12 @@ from .evaluator import Evaluator
 
 
 class Plotter:
-    def __init__(self, pickle_dirs=None, dataset_names=None, detector_names=None):
+    def __init__(self, output_dir, pickle_dirs=None, dataset_names=None, detector_names=None):
+        self.output_dir = output_dir
         self.dataset_names = dataset_names
         self.detector_names = detector_names
         self.results = None
+        self.logger = logging.getLogger(__name__)
         if pickle_dirs is not None:
             self.results = self.import_results_for_runs(pickle_dirs)
 
@@ -49,13 +53,21 @@ class Plotter:
             ax.boxplot([ds_groups.get_group(x)['auroc'].values for x in self.dataset_names],
                        positions=np.linspace(0, 1, 5))
             ax.set_xticklabels([Evaluator.get_key_and_value(x)[1] for x in self.dataset_names])
-            ax.set_xlabel(det, rotation=20)
-            ax.set_ylim((0, 1))
+            ax.set_xlabel(det, rotation=15)
+            ax.set_ylim((0, 1.05))
             ax.yaxis.grid(True)
             ax.set_xlim((-0.15, 1.15))
             ax.margins(0.05)
 
         fig.subplots_adjust(wspace=0)
         fig.suptitle(f'Area under ROC for {title} (runs={len(self.results)})')
-        fig.savefig(f'boxplot-experiment-{title}.pdf')
+        self.store(fig, f'boxplot-experiment-{title}.pdf', bbox_inches='tight')
         return fig
+
+    def store(self, fig, title, extension="pdf", **kwargs):
+        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+        output_dir = os.path.join(self.output_dir, 'figures')
+        os.makedirs(output_dir, exist_ok=True)
+        path = os.path.join(output_dir, f"{title}-{timestamp}.{extension}")
+        fig.savefig(path, **kwargs)
+        self.logger.info(f"Stored plot at {path}")

@@ -496,20 +496,20 @@ class Evaluator:
             index=str, columns=dict([(old_col, old_col + '_avg') for old_col in rename_columns]))
         return (std_results, avg_results, avg_results_renamed)
 
-    def gen_merged_tables(self, results, title_suffix=None):
+    def gen_merged_tables(self, results, title_suffix=None, store=True):
         title_suffix = f'_{title_suffix}' if title_suffix else ''
         std_results, avg_results, avg_results_renamed = Evaluator.get_printable_runs_results(results)
 
         ds_title_suffix = f'per_dataset{title_suffix}'
         self.print_merged_table_per_dataset(std_results)
-        self.gen_merged_latex_per_dataset(std_results, f'std_{ds_title_suffix}')
+        self.gen_merged_latex_per_dataset(std_results, f'std_{ds_title_suffix}', store=store)
 
         self.print_merged_table_per_dataset(avg_results_renamed)
-        self.gen_merged_latex_per_dataset(avg_results_renamed, f'avg_{ds_title_suffix}')
+        self.gen_merged_latex_per_dataset(avg_results_renamed, f'avg_{ds_title_suffix}', store=store)
 
         det_title_suffix = f'per_algorithm{title_suffix}'
         self.print_merged_table_per_algorithm(std_results)
-        self.gen_merged_latex_per_algorithm(std_results, f'std_{det_title_suffix}')
 
+        self.gen_merged_latex_per_algorithm(std_results, f'std_{det_title_suffix}', store=store)
         self.print_merged_table_per_algorithm(avg_results_renamed)
-        self.gen_merged_latex_per_algorithm(avg_results_renamed, f'avg_{det_title_suffix}')
+        self.gen_merged_latex_per_algorithm(avg_results_renamed, f'avg_{det_title_suffix}', store=store)
