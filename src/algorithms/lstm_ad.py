@@ -65,7 +65,7 @@ class LSTMAD(Algorithm, GPUWrapper):
         self.cov = None
 
     def fit(self, X, _):
-        X.fillna(0, inplace=True)
+        X.interpolate(inplace=True)
         self.batch_size = 1
         self._build_model(X.shape[-1], self.batch_size)
 
@@ -88,7 +88,7 @@ class LSTMAD(Algorithm, GPUWrapper):
         self.cov = np.cov(norm.T)
 
     def predict(self, X):
-        X.fillna(0, inplace=True)
+        X.interpolate(inplace=True)
         self.model.eval()
         input_data, target_data = self._input_and_target_data(X)
 

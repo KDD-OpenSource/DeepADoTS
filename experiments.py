@@ -7,35 +7,44 @@ from src.datasets import SyntheticDataGenerator, MultivariateAnomalyFunction
 
 # Validates all algorithms regarding polluted data based on a given outlier type.
 # The pollution of the training data is tested from 0 to 100% (with default steps=5).
-def run_pollution_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
-    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "polluted", steps, outlier_type)
+def run_pollution_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5,
+                             store_results=True):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "polluted", steps, outlier_type,
+                                     store_results=store_results)
 
 
 # Validates all algorithms regarding missing data based on a given outlier type.
 # The percentage of missing values within the training data is tested from 0 to 100% (with default
 # steps=5). By default the missing values are represented as zeros since no algorithm can't handle
 # nan values.
-def run_missing_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
-    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "missing", steps, outlier_type)
+def run_missing_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5,
+                           store_results=True):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "missing", steps, outlier_type,
+                                     store_results=store_results)
 
 
 # high-dimensional experiment on normal outlier types
-def run_multi_dim_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5):
-    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim", steps, outlier_type)
+def run_multi_dim_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=5,
+                             store_results=True):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim", steps, outlier_type,
+                                     store_results=store_results)
 
 
 # Validates all algorithms regarding different heights of extreme outliers
 # The extreme values are added to the outlier timestamps everywhere in the dataset distribution.
-def run_extremes_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=10):
-    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "extreme", steps, outlier_type)
+def run_extremes_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=10,
+                            store_results=True):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "extreme", steps, outlier_type,
+                                     store_results=store_results)
 
 
-def run_multivariate_experiment(detectors, seeds, runs, output_dir=None):
-    return run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type="multivariate")
+def run_multivariate_experiment(detectors, seeds, runs, output_dir=None, store_results=True):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multivariate", store_results=store_results)
 
 
-def run_multi_dim_multivariate_experiment(detectors, seeds, runs, output_dir=None, steps=2):
-    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim_multivariate", steps)
+def run_multi_dim_multivariate_experiment(detectors, seeds, runs, output_dir=None, steps=2, store_results=True):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim_multivariate", steps,
+                                     store_results=store_results)
 
 
 # outlier type means agots types for the univariate experiments, the multivariate types for the multivariate experiments
@@ -67,7 +76,8 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
                    for num_dim in np.linspace(100, 1500, steps, dtype=int)]
 
 
-def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1'):
+def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1',
+                              store_results=True):
     datasets = list(get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type))
     results = pd.DataFrame()
     evaluator = None
@@ -76,9 +86,11 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
         evaluator = Evaluator(datasets[index], detectors, output_dir, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
-        evaluator.plot_roc_curves()
-        evaluator.plot_threshold_comparison()
-        evaluator.plot_scores()
+        evaluator.plot_roc_curves(store=store_results)
+        evaluator.plot_threshold_comparison(store=store_results)
+        evaluator.plot_scores(store=store_results)
+        evaluator.set_benchmark_results(result)
+        evaluator.export_results(f'experiment-run-{index}-{seed}')
         results = results.append(result, ignore_index=True)
 
     # set average results from multiple pipeline runs for evaluation
@@ -87,19 +99,19 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
     evaluator.export_results(f'experiment-{anomaly_type}')
 
     # Plots which need the whole data (not averaged)
-    evaluator.create_boxplots(runs=runs, data=results, detectorwise=True)
-    evaluator.create_boxplots(runs=runs, data=results, detectorwise=False)
-    evaluator.gen_merged_tables(results, f"for_{anomaly_type}")
+    evaluator.create_boxplots(runs=runs, data=results, detectorwise=True, store=store_results)
+    evaluator.create_boxplots(runs=runs, data=results, detectorwise=False, store=store_results)
+    evaluator.gen_merged_tables(results, f"for_{anomaly_type}", store=store_results)
 
     # Plots using "self.benchmark_results" -> using the averaged results
-    evaluator.create_bar_charts(runs=runs, detectorwise=True)
-    evaluator.create_bar_charts(runs=runs, detectorwise=False)
-    evaluator.plot_auroc(title=f"Area under the curve for differing {anomaly_type} anomalies")
+    evaluator.create_bar_charts(runs=runs, detectorwise=True, store=store_results)
+    evaluator.create_bar_charts(runs=runs, detectorwise=False, store=store_results)
+    evaluator.plot_auroc(title=f"Area under the curve for differing {anomaly_type} anomalies", store=store_results)
 
     # Plots using "self.results" (need the score) -> only from the last run
-    evaluator.plot_threshold_comparison()
-    evaluator.plot_scores()
-    evaluator.plot_roc_curves()
+    evaluator.plot_threshold_comparison(store=store_results)
+    evaluator.plot_scores(store=store_results)
+    evaluator.plot_roc_curves(store=store_results)
 
     return evaluator
 
