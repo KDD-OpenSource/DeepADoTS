@@ -65,7 +65,7 @@ class Evaluator:
         output_dir = os.path.join(self.output_dir, 'evaluators')
         os.makedirs(output_dir, exist_ok=True)
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        path = os.path.join(output_dir, f'{timestamp}.pkl')
+        path = os.path.join(output_dir, f'{self.seed}_{timestamp}.pkl')
         pickle.dump(self.results, open(path, 'wb'))
 
     # Import benchmark_results if this evaluator uses the same detectors and datasets

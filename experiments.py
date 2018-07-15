@@ -50,7 +50,7 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
                    for extreme in np.logspace(4, -5, num=steps, base=2)]
         elif anomaly_type == "missing":
             yield [SyntheticDataGenerator.get(f'{outlier_type}_missing', seed, missing)
-                   for missing in np.linspace(0, 0.9, steps)]
+                   for missing in np.logspace(-6.5, -0.15, num=steps, base=2)]
         elif anomaly_type == "polluted":
             anomaly_percentages = [0.01, 0.023, 0.05, 0.2, 0.5] if outlier_type == 'extreme_1' \
                                    else [0.05, 0.1, 0.2, 0.4, 0.8]
@@ -78,8 +78,8 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
     results = pd.DataFrame()
     evaluator = None
 
-    for index, seed in enumerate(seeds):
-        evaluator = Evaluator(datasets[index], detectors, output_dir, seed=seed)
+    for dataset, seed in zip(datasets, seeds):
+        evaluator = Evaluator(dataset, detectors, output_dir, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
         evaluator.plot_roc_curves()
