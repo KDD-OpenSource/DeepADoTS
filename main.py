@@ -13,7 +13,7 @@ from experiments import run_pollution_experiment, run_missing_experiment, run_ex
 # os.environ["CIRCLECI"] = "True"
 
 # min number of runs = 2 for std operation
-RUNS = 1 if os.environ.get("CIRCLECI", False) else 10
+RUNS = 2 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
