@@ -129,8 +129,8 @@ def run_experiments(output_dir=None, steps=5):
                                         output_dir=os.path.join(output_dir, 'missing'), steps=steps)
 
         announce_experiment('High-dimensional normal outliers')
-        ev_dim = run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
-                                          steps=20)
+        ev_dim = run_multi_dim_experiment(detectors, seeds, RUNS, outlier_type,
+                                          output_dir=os.path.join(output_dir, 'multi_dim'), steps=20)
 
     output_dir = output_dir or os.path.join('reports/experiments', 'multivariate')
     announce_experiment('Multivariate Datasets')
