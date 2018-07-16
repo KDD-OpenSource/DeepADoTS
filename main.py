@@ -1,13 +1,16 @@
+import glob
 import os
+import sys
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import auc, roc_curve
 
-from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoEncoder
-from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
-from src.evaluation import Evaluator, Plotter
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
     run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
+from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoEncoder
+from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator, RealPickledDataset
+from src.evaluation import Evaluator, Plotter
 
 # Add this line if you want to shortly test the pipeline & experiments
 # os.environ["CIRCLECI"] = "True"
@@ -17,9 +20,37 @@ RUNS = 1 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
+    evaluate_real_datasets()
     run_pipeline()
     run_experiments()
     # run_final_missing_experiment(outlier_type='extreme_1', runs=100, only_load=False)
+
+
+def evaluate_real_datasets():
+    REAL_DATASET_GROUP_PATH = "data/raw/"
+    real_dataset_groups = glob.glob(REAL_DATASET_GROUP_PATH + "*")
+    detectors = get_detectors()
+    df = pd.DataFrame()
+    for det in detectors:
+        scores = []
+        for real_dataset_group in real_dataset_groups:
+            print(real_dataset_group.replace(REAL_DATASET_GROUP_PATH, ""))
+            for data_set in glob.glob(real_dataset_group + "/labeled/train/*"):
+                data_set_name = data_set.split('/')[-1].replace('.pkl', '')
+                dataset = RealPickledDataset(data_set_name, data_set)
+                X_train, y_train, X_test, y_test = dataset.load()
+                det.fit(X_train.copy(), y_train)
+                score = det.predict(X_test.copy())
+                if np.isnan(score).all():
+                    score = np.zeros_like(score)
+                score_nonan = score.copy()
+                # Rank NaN below every other value in terms of anomaly score
+                score_nonan[np.isnan(score_nonan)] = np.nanmin(score_nonan) - sys.float_info.epsilon
+                fpr, tpr, _ = roc_curve(y_test, score_nonan)
+                auc_score = auc(fpr, tpr)
+                scores.append(auc_score)
+        df[str(det)] = scores
+    print(df)
 
 
 def get_detectors():

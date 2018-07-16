@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .real_dataset import RealDataset
+from .real_datasets import RealDataset
 
 
 class AirQuality(RealDataset):

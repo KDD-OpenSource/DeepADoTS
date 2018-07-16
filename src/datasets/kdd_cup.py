@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from .real_dataset import RealDataset
+from .real_datasets import RealDataset
 
 
 class KDDCup(RealDataset):
