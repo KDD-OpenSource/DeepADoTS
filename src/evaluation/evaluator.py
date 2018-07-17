@@ -187,7 +187,7 @@ class Evaluator:
                 sp.set_title(f"scores of {det.name}", loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
                 plt.plot(np.arange(len(score)), [x for x in score])
-                threshold_line = len(score) * [det.threshold(score)]
+                threshold_line = len(score) * [self.get_optimal_threshold(det, y_test, np.array(score))]
                 plt.plot([x for x in threshold_line])
                 subplot_num += 1
 
@@ -284,7 +284,7 @@ class Evaluator:
         plt.ylim(ymin=0, ymax=1)
         plt.tight_layout()
         if store:
-            self.store(plt.gcf(), 'auroc')
+            self.store(plt.gcf(), 'auroc', store_in_figures=True)
 
     # create boxplot diagrams for auc values for each algorithm/dataset per algorithm/dataset
     def create_boxplots(self, runs, data, detectorwise=True, store=True):
@@ -300,7 +300,7 @@ class Evaluator:
             plt.tight_layout()
             figures.append(plt.gcf())
             if store:
-                self.store(plt.gcf(), f"boxplot_auc_for_{det_or_ds.name}_{runs}_runs")
+                self.store(plt.gcf(), f"boxplot_auc_for_{det_or_ds.name}_{runs}_runs", store_in_figures=True)
         return figures
 
     # create bar charts for averaged pipeline results per algorithm/dataset
@@ -317,12 +317,15 @@ class Evaluator:
             plt.tight_layout()
             figures.append(plt.gcf())
             if store:
-                self.store(plt.gcf(), f"barchart_auc_for_{det_or_ds.name}_{runs}_runs")
+                self.store(plt.gcf(), f"barchart_auc_for_{det_or_ds.name}_{runs}_runs", store_in_figures=True)
         return figures
 
-    def store(self, fig, title, extension="pdf", no_counters=False):
+    def store(self, fig, title, extension="pdf", no_counters=False, store_in_figures=False):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        output_dir = os.path.join(self.output_dir, 'figures', f'seed-{self.seed}')
+        if store_in_figures:
+            output_dir = os.path.join(self.output_dir, 'figures')
+        else:
+            output_dir = os.path.join(self.output_dir, 'figures', f'seed-{self.seed}')
         os.makedirs(output_dir, exist_ok=True)
         counters_str = '' if no_counters else f'-{len(self.detectors)}-{len(self.datasets)}'
         path = os.path.join(output_dir, f"{title}{counters_str}-{timestamp}.{extension}")
@@ -466,11 +469,11 @@ class Evaluator:
                             offset=(1, -1), shadow_rgbFace="b", alpha=0.9)])
 
         ax.set_title('AUROC over all datasets and detectors')
-        if store:
-            evaluators[0].store(fig, 'heatmap', no_counters=True)
         # Prevent bug where x axis ticks are completely outside of bounds (matplotlib/issues/5456)
         if len(datasets) > 2:
             fig.tight_layout()
+        if store:
+            evaluators[0].store(fig, 'heatmap', no_counters=True, store_in_figures=True)
         return fig
 
     def plot_single_heatmap(self, store=True):
@@ -494,7 +497,7 @@ class Evaluator:
 
         avg_results_renamed = avg_results.rename(
             index=str, columns=dict([(old_col, old_col + '_avg') for old_col in rename_columns]))
-        return (std_results, avg_results, avg_results_renamed)
+        return std_results, avg_results, avg_results_renamed
 
     def gen_merged_tables(self, results, title_suffix=None, store=True):
         title_suffix = f'_{title_suffix}' if title_suffix else ''
