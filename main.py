@@ -102,9 +102,9 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
                                       output_dir=os.path.join(output_dir, 'extremes'),
                                       steps=steps)
     # CI: Keep the execution fast so stop after one experiment
-    if os.environ.get("CIRCLECI", False):
-        ev_extr.plot_single_heatmap()
-        return
+    #if os.environ.get("CIRCLECI", False):
+    #    ev_extr.plot_single_heatmap()
+    #    return
     announce_experiment('Pollution')
     ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type, steps=steps,
                                       output_dir=os.path.join(output_dir, 'pollution'))
@@ -117,7 +117,8 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
     announce_experiment('High-dimensional normal outliers')
-    ev_dim = run_multi_dim_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
+    ev_dim = run_multi_dim_experiment(detectors, seeds, RUNS, outlier_type,
+                                      output_dir=os.path.join(output_dir, 'multi_dim'),
                                       steps=20)
 
     announce_experiment('High-dimensional multivariate outliers')
