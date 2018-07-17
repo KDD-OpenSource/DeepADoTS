@@ -21,19 +21,20 @@ class RealPickledDataset(Dataset):
         self.training_path = training_path
         self.test_path = self.training_path.replace("train", "test")
         self._data = None
-        print(name, training_path)
 
-    def load(self):
-        with open(self.training_path, 'rb') as f:
-            X_train = pd.DataFrame(pickle.load(f))
-        X_train = X_train.iloc[:, :-1]
+    def data(self):
+        if self._data is None:
+            with open(self.training_path, 'rb') as f:
+                X_train = pd.DataFrame(pickle.load(f))
+            X_train = X_train.iloc[:, :-1]
 
-        mean, std = X_train.mean(), X_train.std()
-        X_train = (X_train - mean) / std
+            mean, std = X_train.mean(), X_train.std()
+            X_train = (X_train - mean) / std
 
-        with open(self.test_path, 'rb') as f:
-            X_test = pd.DataFrame(pickle.load(f))
-        y_test = X_test.iloc[:, -1]
-        X_test = X_test.iloc[:, :-1]
-        X_test = (X_test - mean) / std
-        return X_train, np.zeros(len(X_train)), X_test, y_test
+            with open(self.test_path, 'rb') as f:
+                X_test = pd.DataFrame(pickle.load(f))
+            y_test = X_test.iloc[:, -1]
+            X_test = X_test.iloc[:, :-1]
+            X_test = (X_test - mean) / std
+            self._data = X_train, np.zeros(len(X_train)), X_test, y_test
+        return self._data

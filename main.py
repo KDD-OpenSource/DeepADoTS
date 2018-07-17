@@ -18,25 +18,39 @@ RUNS = 2 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
-    run_pipeline()
-    run_experiments()
+    # run_pipeline()
+    # run_experiments()
     # run_final_missing_experiment(outlier_type='extreme_1', runs=100, only_load=False)
-    # evaluate_real_datasets()
+    evaluate_real_datasets()
 
 
 def evaluate_real_datasets():
     REAL_DATASET_GROUP_PATH = "data/raw/"
     real_dataset_groups = glob.glob(REAL_DATASET_GROUP_PATH + "*")
     detectors = get_detectors()
+    seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=1, dtype="uint32")
+    results = pd.DataFrame()
     datasets = []
     for real_dataset_group in real_dataset_groups:
         for data_set_path in glob.glob(real_dataset_group + "/labeled/train/*"):
             data_set_name = data_set_path.split('/')[-1].replace('.pkl', '')
             dataset = RealPickledDataset(data_set_name, data_set_path)
             datasets.append(dataset)
-    evaluator = Evaluator(datasets, detectors, seed=0)
-    evaluator.evaluate()
-    Evaluator.plot_heatmap(evaluator)
+
+    for seed in seeds:
+        evaluator = Evaluator(datasets, detectors, seed=seed)
+        evaluator.evaluate()
+        result = evaluator.benchmarks()
+        evaluator.plot_roc_curves()
+        evaluator.plot_threshold_comparison()
+        evaluator.plot_scores()
+        results = results.append(result, ignore_index=True)
+
+    results.to_pickle("df_real_datasets")
+    evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=False)
+    evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=True)
+    evaluator.export_results('real_datasets')
+
 
 
 def get_detectors():
