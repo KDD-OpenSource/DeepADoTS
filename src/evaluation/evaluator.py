@@ -104,7 +104,7 @@ class Evaluator:
         fpr, tpr, _ = roc_curve(y_test, score_nonan)
         return auc(fpr, tpr)
 
-    def get_optimal_threshold(self, det, y_test, score, steps=40, return_metrics=False):
+    def get_optimal_threshold(self, det, y_test, score, steps=100, return_metrics=False):
         maximum = np.nanmax(score)
         minimum = np.nanmin(score)
         threshold = np.linspace(minimum, maximum, steps)
@@ -193,7 +193,8 @@ class Evaluator:
 
                 sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, subplot_num)
                 sp.set_title(f"binary labels of {det.name}", loc=subtitle_loc)
-                plt.plot(np.arange(len(score)), [x for x in det.binarize(score)])
+                plt.plot(np.arange(len(score)),
+                         [x for x in det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))])
                 subplot_num += 1
             fig.subplots_adjust(top=0.9, hspace=0.4)
             fig.tight_layout()
