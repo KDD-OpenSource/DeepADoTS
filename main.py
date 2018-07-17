@@ -13,7 +13,7 @@ from experiments import run_pollution_experiment, run_missing_experiment, run_ex
 # os.environ["CIRCLECI"] = "True"
 
 # min number of runs = 2 for std operation
-RUNS = 1 if os.environ.get("CIRCLECI", False) else 10
+RUNS = 2 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
@@ -117,10 +117,10 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
     announce_experiment('High-dimensional normal outliers')
-    ev_dim = run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
+    ev_dim = run_multi_dim_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
                                       steps=20)
 
-    announce_experiment('High-dimensional normal outliers')
+    announce_experiment('High-dimensional multivariate outliers')
     ev_mv_dim = run_multi_dim_multivariate_experiment(detectors, seeds, RUNS,
                                                       output_dir=os.path.join(output_dir, 'multi_dim_mv'), steps=20)
 
