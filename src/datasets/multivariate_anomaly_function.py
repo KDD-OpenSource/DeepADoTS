@@ -54,7 +54,7 @@ class MultivariateAnomalyFunction:
         else:
             # Anomaly: curves overlap (at the same time or at least half overlapping)
             max_pause = min(len(curve_values) // 2, pause_length)
-            nonce = np.zeros(np.random.randint(max_pause))
+            nonce = np.zeros(max_pause)
             return np.concatenate([nonce, curve_values]), len(nonce), len(curve_values)
 
     @staticmethod

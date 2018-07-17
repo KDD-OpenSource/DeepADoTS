@@ -34,8 +34,9 @@ class SyntheticMultivariateDataset(Dataset):
         self.random_seed = random_seed
         self.test_pollution = test_pollution
         self.values_range = values_range
-        assert group_size is None or group_size <= features, 'Group size may not be greater than amount of dimensions'
+        assert features >= 2, 'At least two dimensions are required for generating MV outliers'
         self.features = features
+        assert group_size is None or group_size <= features, 'Group size may not be greater than amount of dimensions'
         self.group_size = self.features if group_size is None else group_size
         if self.features % self.group_size == 1:  # How many dimensions each correlated group has
             logging.warn('Group size results in one overhanging univariate group. Generating multivariate'
@@ -122,7 +123,7 @@ class SyntheticMultivariateDataset(Dataset):
     def insert_features(self, interval_values: np.ndarray, interval_labels: np.ndarray,
                         curve: np.ndarray, create_anomaly: bool):
         # Randomly switch between dimensions for inserting the anomaly_func
-        anomaly_dim = np.random.randint(0, interval_values.shape[1])
+        anomaly_dim = np.random.randint(1, interval_values.shape[1])
 
         # Insert curve and pause in first dimension (after adding the global noise)
         for i in set(range(interval_values.shape[1])) - {anomaly_dim}:
