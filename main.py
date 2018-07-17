@@ -90,35 +90,37 @@ def run_pipeline():
     evaluator.plot_roc_curves()
 
 
-def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
-    output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
+def run_experiments(steps=5):
     detectors = get_detectors()
     # Set the random seed manually for reproducibility and more significant results
     # numpy expects a max. 32-bit unsigned integer
     seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
 
-    announce_experiment('Outlier Height')
-    ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type,
-                                      output_dir=os.path.join(output_dir, 'extremes'),
-                                      steps=steps)
-    # CI: Keep the execution fast so stop after one experiment
-    if os.environ.get("CIRCLECI", False):
-        ev_extr.plot_single_heatmap()
-        return
-    announce_experiment('Pollution')
-    ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type, steps=steps,
-                                      output_dir=os.path.join(output_dir, 'pollution'))
+    for outlier_type in ['extreme_1', 'shift_1', 'variance_1', 'trend_1']:
+        output_dir = os.path.join('reports/experiments', outlier_type)
 
-    announce_experiment('Missing Values')
-    ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type,
-                                    output_dir=os.path.join(output_dir, 'missing'), steps=steps)
+        announce_experiment('Outlier Height')
+        ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type,
+                                          output_dir=os.path.join(output_dir, 'extremes'),
+                                          steps=10)
+        # CI: Keep the execution fast so stop after one experiment
+        if os.environ.get("CIRCLECI", False):
+            ev_extr.plot_single_heatmap()
+            return
+        announce_experiment('Pollution')
+        ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type, steps=steps,
+                                          output_dir=os.path.join(output_dir, 'pollution'))
+
+        announce_experiment('Missing Values')
+        ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type,
+                                        output_dir=os.path.join(output_dir, 'missing'), steps=steps)
+
+        announce_experiment('High-dimensional normal outliers')
+        ev_dim = run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
+                                          steps=20)
 
     announce_experiment('Multivariate Datasets')
     ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
-
-    announce_experiment('High-dimensional normal outliers')
-    ev_dim = run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
-                                      steps=20)
 
     announce_experiment('High-dimensional normal outliers')
     ev_mv_dim = run_multi_dim_multivariate_experiment(detectors, seeds, RUNS,
