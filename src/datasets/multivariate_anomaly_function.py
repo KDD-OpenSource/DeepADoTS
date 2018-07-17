@@ -13,7 +13,7 @@ class MultivariateAnomalyFunction:
     # Get a dataset by passing the method name as string. All following parameters
     # are passed through. Throws AttributeError if attribute was not found.
     @staticmethod
-    def get_multivariate_dataset(method, name=None, group_size=None, *args, **kwargs):
+    def get_multivariate_dataset(method, name=None, group_size=10, *args, **kwargs):
         name = name or f'Synthetic Multivariate {method} Curve Outliers'
         func = getattr(MultivariateAnomalyFunction, method)
         return SyntheticMultivariateDataset(anomaly_func=func,
@@ -65,7 +65,7 @@ class MultivariateAnomalyFunction:
             # Anomaly: curves overlap (at the same time or at least half overlapping)
             max_pause = min(len(curve_values) // 2, pause_length)
             nonce = np.zeros(np.random.randint(max_pause))
-            return np.concatenate([nonce, curve_values]), len(nonce), len(curve_values)
+            return np.concatenate([nonce, curve_values]), len(nonce), len(nonce) + len(curve_values)
 
     @staticmethod
     def delayed_missing(curve_values, anomalous, interval_length):
