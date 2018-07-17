@@ -1,7 +1,7 @@
 import logging
 import os
+import pickle
 import re
-import json
 import sys
 import traceback
 from textwrap import wrap
@@ -46,19 +46,16 @@ class Evaluator:
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
         path = os.path.join(output_dir, f'{name}-{timestamp}.pkl')
         self.logger.info(f'Store evaluator results at {os.path.abspath(path)}')
-        if self.benchmark_results is None:
-            self.benchmark_result = pd.DataFrame()
         save_dict = {
             'datasets': [x.name for x in self.datasets],
             'detectors': [x.name for x in self.detectors],
-            'benchmark_results': self.benchmark_results.to_json(),
-            # Not working since keys are tuples (not serializable)
-            # 'results': self.results,
+            'benchmark_results': self.benchmark_results,
+            'results': self.results,
             'output_dir': self.output_dir,
             'seed': int(self.seed),
         }
-        with open(path, 'w') as f:
-            json.dump(save_dict, f)
+        with open(path, 'wb') as f:
+            pickle.dump(save_dict, f)
         return path
 
     # Import benchmark_results if this evaluator uses the same detectors and datasets
@@ -68,7 +65,7 @@ class Evaluator:
         path = os.path.join(output_dir, f'{name}.pkl')
         self.logger.info(f'Read evaluator results at {os.path.abspath(path)}')
         with open(path, 'r') as f:
-            save_dict = json.load(f)
+            save_dict = pickle.load(f)
 
         self.logger.debug(f'Importing detectors {"; ".join(save_dict["detectors"])}')
         my_detectors = [x.name for x in self.detectors]
@@ -78,7 +75,7 @@ class Evaluator:
         my_datasets = [x.name for x in self.datasets]
         assert np.array_equal(save_dict['datasets'], my_datasets), 'Datasets should be the same'
 
-        self.benchmark_results = pd.read_json(save_dict['benchmark_results'])
+        self.benchmark_results = save_dict['benchmark_results']
         self.seed = save_dict['seed']
         # self.results = save_dict['results']
 
@@ -104,7 +101,7 @@ class Evaluator:
         fpr, tpr, _ = roc_curve(y_test, score_nonan)
         return auc(fpr, tpr)
 
-    def get_optimal_threshold(self, det, y_test, score, steps=40, return_metrics=False):
+    def get_optimal_threshold(self, det, y_test, score, steps=100, return_metrics=False):
         maximum = np.nanmax(score)
         minimum = np.nanmin(score)
         threshold = np.linspace(minimum, maximum, steps)
@@ -130,6 +127,7 @@ class Evaluator:
                     self.logger.error(f"An exception occurred while training {det.name} on {ds}: {e}")
                     self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
+        self.save_pickle()
 
     def benchmarks(self) -> pd.DataFrame:
         df = pd.DataFrame()
@@ -187,13 +185,14 @@ class Evaluator:
                 sp.set_title(f"scores of {det.name}", loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
                 plt.plot(np.arange(len(score)), [x for x in score])
-                threshold_line = len(score) * [det.threshold(score)]
+                threshold_line = len(score) * [self.get_optimal_threshold(det, y_test, np.array(score))]
                 plt.plot([x for x in threshold_line])
                 subplot_num += 1
 
                 sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, subplot_num)
                 sp.set_title(f"binary labels of {det.name}", loc=subtitle_loc)
-                plt.plot(np.arange(len(score)), [x for x in det.binarize(score)])
+                plt.plot(np.arange(len(score)),
+                         [x for x in det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))])
                 subplot_num += 1
             fig.subplots_adjust(top=0.9, hspace=0.4)
             fig.tight_layout()
@@ -284,7 +283,7 @@ class Evaluator:
         plt.ylim(ymin=0, ymax=1)
         plt.tight_layout()
         if store:
-            self.store(plt.gcf(), 'auroc')
+            self.store(plt.gcf(), 'auroc', store_in_figures=True)
 
     # create boxplot diagrams for auc values for each algorithm/dataset per algorithm/dataset
     def create_boxplots(self, runs, data, detectorwise=True, store=True):
@@ -300,7 +299,7 @@ class Evaluator:
             plt.tight_layout()
             figures.append(plt.gcf())
             if store:
-                self.store(plt.gcf(), f"boxplot_auc_for_{det_or_ds.name}_{runs}_runs")
+                self.store(plt.gcf(), f"boxplot_auc_for_{det_or_ds.name}_{runs}_runs", store_in_figures=True)
         return figures
 
     # create bar charts for averaged pipeline results per algorithm/dataset
@@ -317,12 +316,15 @@ class Evaluator:
             plt.tight_layout()
             figures.append(plt.gcf())
             if store:
-                self.store(plt.gcf(), f"barchart_auc_for_{det_or_ds.name}_{runs}_runs")
+                self.store(plt.gcf(), f"barchart_auc_for_{det_or_ds.name}_{runs}_runs", store_in_figures=True)
         return figures
 
-    def store(self, fig, title, extension="pdf", no_counters=False):
+    def store(self, fig, title, extension="pdf", no_counters=False, store_in_figures=False):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        output_dir = os.path.join(self.output_dir, 'figures', f'seed-{self.seed}')
+        if store_in_figures:
+            output_dir = os.path.join(self.output_dir, 'figures')
+        else:
+            output_dir = os.path.join(self.output_dir, 'figures', f'seed-{self.seed}')
         os.makedirs(output_dir, exist_ok=True)
         counters_str = '' if no_counters else f'-{len(self.detectors)}-{len(self.datasets)}'
         path = os.path.join(output_dir, f"{title}{counters_str}-{timestamp}.{extension}")
@@ -466,11 +468,11 @@ class Evaluator:
                             offset=(1, -1), shadow_rgbFace="b", alpha=0.9)])
 
         ax.set_title('AUROC over all datasets and detectors')
-        if store:
-            evaluators[0].store(fig, 'heatmap', no_counters=True)
         # Prevent bug where x axis ticks are completely outside of bounds (matplotlib/issues/5456)
         if len(datasets) > 2:
             fig.tight_layout()
+        if store:
+            evaluators[0].store(fig, 'heatmap', no_counters=True, store_in_figures=True)
         return fig
 
     def plot_single_heatmap(self, store=True):
@@ -494,7 +496,7 @@ class Evaluator:
 
         avg_results_renamed = avg_results.rename(
             index=str, columns=dict([(old_col, old_col + '_avg') for old_col in rename_columns]))
-        return (std_results, avg_results, avg_results_renamed)
+        return std_results, avg_results, avg_results_renamed
 
     def gen_merged_tables(self, results, title_suffix=None, store=True):
         title_suffix = f'_{title_suffix}' if title_suffix else ''

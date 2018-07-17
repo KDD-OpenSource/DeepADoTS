@@ -36,7 +36,7 @@ class SyntheticMultivariateDataset(Dataset):
         self.values_range = values_range
         assert group_size is None or group_size <= features, 'Group size may not be greater than amount of dimensions'
         self.features = features
-        self.group_size = self.features if group_size is None else group_size
+        self.group_size = self.features if group_size is None else min(self.features, group_size)
         if self.features % self.group_size == 1:  # How many dimensions each correlated group has
             logging.warn('Group size results in one overhanging univariate group. Generating multivariate'
                          'anomalies on univariate data is impossible.')
