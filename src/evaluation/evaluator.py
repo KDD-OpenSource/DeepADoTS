@@ -431,16 +431,14 @@ class Evaluator:
     @staticmethod
     def to_multi_index_frame(evaluators):
         evaluator = evaluators[0]
-        detectors = evaluator.detectors
         for other_evaluator in evaluators[1:]:
             assert evaluator.detectors == other_evaluator.detectors, 'All evaluators should use the same detectors'
         datasets = [[evaluator.get_key_and_value(str(d)) for d in ev.datasets] for ev in evaluators]
         datasets = [tuple(d) for d in np.concatenate(datasets)]  # Required for MultiIndex.from_tuples
         datasets = pd.MultiIndex.from_tuples(datasets, names=['Type', 'Level'])
-
-        auroc_matrix = np.concatenate([ev.benchmark_results['auroc'].values.reshape((len(ev.datasets), len(detectors)))
+        auroc_matrix = np.concatenate([ev.benchmark_results['auroc'].values.reshape((len(ev.datasets), len(ev.detectors)))
                                        for ev in evaluators])
-        return pd.DataFrame(auroc_matrix, index=datasets, columns=detectors)
+        return pd.DataFrame(auroc_matrix, index=datasets, columns=evaluator.benchmark_results['algorithm'].values[:len(evaluator.detectors)])
 
     def get_multi_index_dataframe(self):
         return Evaluator.to_multi_index_frame([self])
