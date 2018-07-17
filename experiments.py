@@ -44,8 +44,9 @@ def run_multivariate_experiment(detectors, seeds, runs, output_dir=None, store_r
     return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multivariate", store_results=store_results)
 
 
-def run_multi_dim_multivariate_experiment(detectors, seeds, runs, output_dir=None, steps=2):
-    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim_multivariate", steps)
+def run_multi_dim_multivariate_experiment(detectors, seeds, runs, output_dir=None, steps=2, store_results=True):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim_multivariate",
+                                     steps, store_results=store_results)
 
 
 # outlier type means agots types for the univariate experiments, the multivariate types for the multivariate experiments
