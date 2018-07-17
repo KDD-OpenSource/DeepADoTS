@@ -18,6 +18,7 @@ class RealPickledDataset(Dataset):
         self.name = name
         self.training_path = training_path
         self.test_path = self.training_path.replace("train", "test")
+        self._data = None
         print(name, training_path)
 
     def load(self):

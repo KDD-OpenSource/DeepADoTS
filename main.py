@@ -30,27 +30,15 @@ def evaluate_real_datasets():
     REAL_DATASET_GROUP_PATH = "data/raw/"
     real_dataset_groups = glob.glob(REAL_DATASET_GROUP_PATH + "*")
     detectors = get_detectors()
-    df = pd.DataFrame()
-    for det in detectors:
-        scores = []
-        for real_dataset_group in real_dataset_groups:
-            print(real_dataset_group.replace(REAL_DATASET_GROUP_PATH, ""))
-            for data_set in glob.glob(real_dataset_group + "/labeled/train/*"):
-                data_set_name = data_set.split('/')[-1].replace('.pkl', '')
-                dataset = RealPickledDataset(data_set_name, data_set)
-                X_train, y_train, X_test, y_test = dataset.load()
-                det.fit(X_train.copy(), y_train)
-                score = det.predict(X_test.copy())
-                if np.isnan(score).all():
-                    score = np.zeros_like(score)
-                score_nonan = score.copy()
-                # Rank NaN below every other value in terms of anomaly score
-                score_nonan[np.isnan(score_nonan)] = np.nanmin(score_nonan) - sys.float_info.epsilon
-                fpr, tpr, _ = roc_curve(y_test, score_nonan)
-                auc_score = auc(fpr, tpr)
-                scores.append(auc_score)
-        df[str(det)] = scores
-    print(df)
+    datasets = []
+    for real_dataset_group in real_dataset_groups:
+        for data_set_path in glob.glob(real_dataset_group + "/labeled/train/*"):
+            data_set_name = data_set_path.split('/')[-1].replace('.pkl', '')
+            dataset = RealPickledDataset(data_set_name, data_set_path)
+            datasets.append(dataset)
+    evaluator = Evaluator(datasets, detectors, seed=0)
+    evaluator.evaluate()
+    Evaluator.plot_heatmap(evaluator)
 
 
 def get_detectors():
