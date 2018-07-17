@@ -1,5 +1,5 @@
 import os
-import json
+import pickle
 import logging
 import time
 
@@ -30,13 +30,16 @@ class Plotter:
         for dir_ in pickle_dirs:
             for path in os.listdir(os.path.join(dir_, 'evaluators')):
                 with open(os.path.join(dir_, 'evaluators', path), 'r') as f:
-                    save_dict = json.load(f)
-                benchmark_results = pd.read_json(save_dict['benchmark_results'])
+                    save_dict = pickle.load(f)
+                benchmark_results = save_dict['benchmark_results']
                 assert self.dataset_names is None or np.array_equal(self.dataset_names, save_dict['datasets']), \
                     'Runs should be executed on same datasets'
                 self.dataset_names = save_dict['datasets']
                 self.detector_names = save_dict['detectors']
-                all_results.append(benchmark_results)
+                if benchmark_results is not None:
+                    all_results.append(benchmark_results)
+                else:
+                    self.logger.warn('benchmark_results was None')
         return all_results
 
     # results is an array of benchmark_results (e.g. returned by get_results_for_runs)

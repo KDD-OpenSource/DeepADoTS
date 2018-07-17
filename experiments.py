@@ -1,3 +1,5 @@
+from itertools import product
+
 import numpy as np
 import pandas as pd
 
@@ -43,8 +45,8 @@ def run_multivariate_experiment(detectors, seeds, runs, output_dir=None, store_r
 
 
 def run_multi_dim_multivariate_experiment(detectors, seeds, runs, output_dir=None, steps=2, store_results=True):
-    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim_multivariate", steps,
-                                     store_results=store_results)
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, "multi_dim_multivariate",
+                                     steps, store_results=store_results)
 
 
 # outlier type means agots types for the univariate experiments, the multivariate types for the multivariate experiments
@@ -54,23 +56,27 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
     for seed in seeds:
         if anomaly_type == "extreme":
             yield [SyntheticDataGenerator.get(f'{outlier_type}_extremeness', seed, extreme)
-                   for extreme in np.linspace(1, 9, steps)]
+                   for extreme in np.logspace(4, -5, num=steps, base=2)]
         elif anomaly_type == "missing":
             yield [SyntheticDataGenerator.get(f'{outlier_type}_missing', seed, missing)
-                   for missing in np.linspace(0, 0.9, steps)]
+                   for missing in np.logspace(-6.5, -0.15, num=steps, base=2)]
         elif anomaly_type == "polluted":
-            yield [SyntheticDataGenerator.get(f'{outlier_type}_polluted', seed, pollution)
-                   for pollution in np.linspace(0, 0.5, steps)]
+            anomaly_percentages = [0.01, 0.023, 0.05, 0.2, 0.5] if outlier_type == 'extreme_1' \
+                                   else [0.05, 0.1, 0.2, 0.4, 0.8]
+            yield [SyntheticDataGenerator.get(f'{outlier_type}_polluted', seed, pollution, anomaly_percentage=anomalies)
+                   for pollution, anomalies in product(np.linspace(0, 1, steps), anomaly_percentages)]
         elif anomaly_type == "multivariate":
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(dim_func, random_seed=seed)
                    for dim_func in multivariate_anomaly_functions]
         elif anomaly_type == "multi_dim_multivariate":
+            group_sizes = [None, 20]
             num_dims = [250, 500, 1000, 1500]
-            yield [MultivariateAnomalyFunction.get_multivariate_dataset(outlier_type, random_seed=seed,
-                                                                        features=dim, group_size=20,
-                                                                        name=f'Synthetic Multivariate {dim}-dim. '
-                                                                             f'{outlier_type} Curve Outliers')
-                   for dim in num_dims]
+            yield [MultivariateAnomalyFunction.get_multivariate_dataset(
+                        mv_outlier_type, random_seed=seed, features=dim, group_size=gsize,
+                        name=f'Synthetic Multivariate {dim}-dimensional {outlier_type} '
+                        f'Curve Outliers with {gsize or dim} per group'
+                    )
+                   for dim, mv_outlier_type, gsize in product(num_dims, multivariate_anomaly_functions, group_sizes)]
         elif anomaly_type == "multi_dim":
             yield [SyntheticDataGenerator.get(f'{outlier_type}', seed, num_dim)
                    for num_dim in np.linspace(100, 1500, steps, dtype=int)]
