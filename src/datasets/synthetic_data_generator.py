@@ -3,6 +3,14 @@ from agots.generators.behavior_generators import sine_generator
 
 from .synthetic_dataset import SyntheticDataset
 
+WINDOW_SIZE = 36
+
+
+def generate_timestamps(start, end, percentage):
+    windows = np.arange(start, end - WINDOW_SIZE, WINDOW_SIZE)
+    timestamps = [(w, w+WINDOW_SIZE) for w in np.random.choice(windows, int(percentage * len(windows)), replace=False)]
+    return timestamps
+
 
 class SyntheticDataGenerator:
     """
@@ -38,7 +46,7 @@ class SyntheticDataGenerator:
         return func(*args, **kwargs)
 
     @staticmethod
-    def extreme_1(seed, n=1, k=1):
+    def extreme_1(seed, n=1, k=1, anomaly_percentage=0.023):
         np.random.seed(seed)
         # train begins at 2100
         length = 3000
@@ -49,9 +57,9 @@ class SyntheticDataGenerator:
         baseline_config = {}
 
         # outliers randomly distributed over all dimensions
-        timestamps = [(2192,), (2212,), (2258,), (2262,), (2319,), (2343,), (2361,), (2369,),
-                      (2428,), (2510,), (2512,), (2538,), (2567,), (2589,), (2695,), (2819,),
-                      (2892,), (2940,), (2952,), (2970,)]
+        train_size = int(length * train_split)
+        timestamps = [(t,) for t in np.random.randint(0, length - train_size,
+                                                      int(anomaly_percentage * (length - train_size))) + train_size]
 
         dim = np.random.choice(n, len(timestamps))
         outlier_config = {'extreme':
@@ -68,20 +76,21 @@ class SyntheticDataGenerator:
                                 train_split=train_split, random_state=random_state)
 
     @staticmethod
-    def extreme_1_polluted(seed, pollution_percentage=0.2, n=1):
+    def extreme_1_polluted(seed, pollution_percentage=0.2, n=1, anomaly_percentage=0.023):
         """Full pollution -> All anomalies from test set are in train set"""
         np.random.seed(seed)
         dataset = SyntheticDataGenerator.extreme_1(seed, n)
+        pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
-        train_length = int(dataset.train_split * dataset.length)
-        indices = np.random.choice(train_length, int(pollution_percentage * train_length), replace=False)
-        timestamps = [(i,) for i in indices]
+        train_size = int(dataset.length * dataset.train_split)
+        timestamps = [(t,) for t in np.random.randint(0, train_size, int(pollution_percentage * train_size))]
+
         dim = np.random.choice(n, len(timestamps))
         pollution_config = {'extreme': [{'n': i, 'timestamps':
                                          [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
         dataset.pollution_config = pollution_config
 
-        dataset.name = f'Syn Extreme Outliers (pol={pollution_percentage})'
+        dataset.name = f'Syn Extreme Outliers (pol={pollution_percentage}, anom={anomaly_percentage})'
         return dataset
 
     @staticmethod
@@ -89,7 +98,7 @@ class SyntheticDataGenerator:
         """Full pollution -> All anomalies from test set are in train set"""
         dataset = SyntheticDataGenerator.extreme_1(seed, n)
 
-        dataset.outlier_config['extreme'][0]['value'] = extreme_value
+        dataset.outlier_config['extreme'][0]['factor'] = extreme_value
 
         dataset.name = f'Syn Extreme Outliers (extremeness={extreme_value})'
         return dataset
@@ -103,7 +112,7 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def shift_1(seed, n=1, k=1):
+    def shift_1(seed, n=1, k=1, anomaly_percentage=0.2):
         length = 3000
         train_split = 0.7
         shift_config = {}
@@ -111,9 +120,9 @@ class SyntheticDataGenerator:
         behavior_config = {}
         baseline_config = {}
 
-        # outliers randomly distributed over all dimensions
-        timestamps = [(2210, 2270), (2300, 2340), (2500, 2580), (2600, 2650), (2800, 2900)]
+        timestamps = generate_timestamps(int(train_split * length), length, anomaly_percentage)
 
+        # outliers randomly distributed over all dimensions
         dim = np.random.choice(n, len(timestamps))
         outlier_config = {'shift':
                           [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
@@ -136,23 +145,33 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def shift_1_polluted(seed, pollution_percentage=0.2, n=1):
+    def shift_1_polluted(seed, pollution_percentage=0.2, n=1, anomaly_percentage=0.2):
         np.random.seed(seed)
-        dataset = SyntheticDataGenerator.shift_1(seed, n)
+        dataset = SyntheticDataGenerator.shift_1(seed, n, anomaly_percentage=anomaly_percentage)
+        pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
-        train_length = int(dataset.train_split * dataset.length)
-        indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        timestamps = [(i, j) for i, j in zip(indices[::2], indices[1::2])]
+        timestamps = generate_timestamps(0, int(dataset.train_split * dataset.length), pollution_percentage)
+
         dim = np.random.choice(n, len(timestamps))
         pollution_config = {'shift': [{'n': i, 'timestamps':
                                        [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
         dataset.pollution_config = pollution_config
 
-        dataset.name = f'Syn Shift Outliers (pol={pollution_percentage})'
+        dataset.name = f'Syn Shift Outliers (pol={pollution_percentage}, anom={anomaly_percentage}))'
         return dataset
 
     @staticmethod
-    def variance_1(seed, n=1, k=1):
+    def shift_1_extremeness(seed, extreme_value=10, n=1):
+        """Full pollution -> All anomalies from test set are in train set"""
+        dataset = SyntheticDataGenerator.shift_1(seed, n)
+
+        dataset.outlier_config['shift'][0]['factor'] = extreme_value
+
+        dataset.name = f'Syn Shift Outliers (extremeness={extreme_value})'
+        return dataset
+
+    @staticmethod
+    def variance_1(seed, n=1, k=1, anomaly_percentage=0.2):
         length = 3000
         train_split = 0.7
         shift_config = {}
@@ -160,9 +179,9 @@ class SyntheticDataGenerator:
         behavior_config = {}
         baseline_config = {}
 
-        # outliers randomly distributed over all dimensions
-        timestamps = [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]
+        timestamps = generate_timestamps(int(train_split * length), length, anomaly_percentage)
 
+        # outliers randomly distributed over all dimensions
         dim = np.random.choice(n, len(timestamps))
         outlier_config = {'variance':
                           [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
@@ -186,23 +205,33 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def variance_1_polluted(seed, pollution_percentage=0.2, n=1):
+    def variance_1_polluted(seed, pollution_percentage=0.2, n=1, anomaly_percentage=0.2):
         np.random.seed(seed)
         dataset = SyntheticDataGenerator.variance_1(seed, n)
+        pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
-        train_length = int(dataset.train_split * dataset.length)
-        indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        timestamps = [(i, j) for i, j in zip(indices[::2], indices[1::2])]
+        timestamps = generate_timestamps(0, int(dataset.train_split * dataset.length), pollution_percentage)
+
         dim = np.random.choice(n, len(timestamps))
         pollution_config = {'variance': [{'n': i, 'timestamps':
                                           [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
         dataset.pollution_config = pollution_config
 
-        dataset.name = f'Syn Variance Outliers (pol={pollution_percentage})'
+        dataset.name = f'Syn Variance Outliers (pol={pollution_percentage}, anom={anomaly_percentage}))'
         return dataset
 
     @staticmethod
-    def trend_1(seed, n=1, k=1):
+    def variance_1_extremeness(seed, extreme_value=10, n=1):
+        """Full pollution -> All anomalies from test set are in train set"""
+        dataset = SyntheticDataGenerator.variance_1(seed, n)
+
+        dataset.outlier_config['variance'][0]['factor'] = extreme_value
+
+        dataset.name = f'Syn Variance Outliers (extremeness={extreme_value})'
+        return dataset
+
+    @staticmethod
+    def trend_1(seed, n=1, k=1, anomaly_percentage=0.2):
         length = 3000
         train_split = 0.7
         shift_config = {}
@@ -210,8 +239,7 @@ class SyntheticDataGenerator:
         behavior_config = {}
         baseline_config = {}
 
-        # outliers randomly distributed over all dimensions
-        timestamps = [(2200, 2400), (2450, 2480), (2500, 2550), (2700, 2950)]
+        timestamps = generate_timestamps(int(train_split * length), length, anomaly_percentage)
 
         dim = np.random.choice(n, len(timestamps))
         outlier_config = {'trend':
@@ -235,19 +263,29 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def trend_1_polluted(seed, pollution_percentage=0.2, n=1):
+    def trend_1_polluted(seed, pollution_percentage=0.2, n=1, anomaly_percentage=0.2):
         np.random.seed(seed)
         dataset = SyntheticDataGenerator.trend_1(seed, n)
+        pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
-        train_length = int(dataset.train_split * dataset.length)
-        indices = sorted(np.random.choice(train_length, int(pollution_percentage * train_length), replace=False))
-        timestamps = [(i, j) for i, j in zip(indices[::2], indices[1::2])]
+        timestamps = generate_timestamps(0, int(dataset.train_split * dataset.length), pollution_percentage)
+
         dim = np.random.choice(n, len(timestamps))
         pollution_config = {'trend': [{'n': i, 'timestamps':
                                        [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
         dataset.pollution_config = pollution_config
 
-        dataset.name = f'Syn Trend Outliers (pol={pollution_percentage})'
+        dataset.name = f'Syn Trend Outliers (pol={pollution_percentage}, anom={anomaly_percentage}))'
+        return dataset
+
+    @staticmethod
+    def trend_1_extremeness(seed, extreme_value=10, n=1):
+        """Full pollution -> All anomalies from test set are in train set"""
+        dataset = SyntheticDataGenerator.trend_1(seed, n)
+
+        dataset.outlier_config['trend'][0]['factor'] = extreme_value
+
+        dataset.name = f'Syn Trend Outliers (extremeness={extreme_value})'
         return dataset
 
     @staticmethod
@@ -268,7 +306,7 @@ class SyntheticDataGenerator:
         dim_shi = np.random.choice(n, len(timestamps_shi))
         timestamps_var = [(2300, 2310), (2400, 2420), (2500, 2550), (2800, 2900)]
         dim_var = np.random.choice(n, len(timestamps_var))
-        timestamps_tre = [(2200, 2400), (2550, 2420), (2500, 2550), (2800, 2950)]
+        timestamps_tre = [(2200, 2400), (2400, 2420), (2500, 2550), (2800, 2950)]
         dim_tre = np.random.choice(n, len(timestamps_tre))
         outlier_config = {'extreme': [{'n': i, 'timestamps':
                                        [ts for d, ts in zip(dim_ext, timestamps_ext) if d == i]} for i in range(n)],
