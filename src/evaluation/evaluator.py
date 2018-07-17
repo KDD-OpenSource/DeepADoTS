@@ -23,14 +23,15 @@ from .config import init_logging
 
 
 class Evaluator:
-    def __init__(self, datasets: list, detectors: list, output_dir: {str} = None, seed: int = 42):
+    def __init__(self, datasets: list, detectors: list, output_dir: {str} = None, seed: int = 42, create_log_file=True):
         assert np.unique([x.name for x in datasets]).size == len(datasets), 'Some datasets have the same name!'
         assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
         self.datasets = datasets
         self.detectors = sorted(detectors, key=lambda x: x.framework)
         self.output_dir = output_dir or 'reports'
         self.results = dict()
-        init_logging(output_dir or 'reports/logs/')
+        if create_log_file:
+            init_logging(os.path.join(self.output_dir, 'logs'))
         self.logger = logging.getLogger(__name__)
         # Dirty hack: Is set by the main.py to insert results from multiple evaluator runs
         self.benchmark_results = None
@@ -195,7 +196,7 @@ class Evaluator:
                 sp.set_title(f"scores of {det.name}", loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
                 plt.plot(np.arange(len(score)), [x for x in score])
-                threshold_line = len(score) * [det.threshold(score)]
+                threshold_line = len(score) * [self.get_optimal_threshold(det, y_test, np.array(score))]
                 plt.plot([x for x in threshold_line])
                 subplot_num += 1
 
@@ -292,37 +293,48 @@ class Evaluator:
         plt.ylim(ymin=0, ymax=1)
         plt.tight_layout()
         if store:
-            self.store(plt.gcf(), 'auroc')
+            self.store(plt.gcf(), 'auroc', store_in_figures=True)
 
     # create boxplot diagrams for auc values for each algorithm/dataset per algorithm/dataset
-    def create_boxplots(self, runs, data, detectorwise=True):
+    def create_boxplots(self, runs, data, detectorwise=True, store=True):
         target = 'algorithm' if detectorwise else 'dataset'
         grouped_by = 'dataset' if detectorwise else 'algorithm'
         relevant_results = data[["algorithm", "dataset", "auroc"]]
+        figures = []
         for det_or_ds in (self.detectors if detectorwise else self.datasets):
             relevant_results[relevant_results[target] == det_or_ds.name].boxplot(by=grouped_by, figsize=(15, 15))
             plt.suptitle("")  # boxplot() adds a suptitle
             plt.title(f"AUC grouped by {grouped_by} for {det_or_ds.name} over {runs} runs")
             plt.ylim(ymin=0, ymax=1)
             plt.tight_layout()
-            self.store(plt.gcf(), f"boxplot_auc_for_{det_or_ds.name}_{runs}_runs")
+            figures.append(plt.gcf())
+            if store:
+                self.store(plt.gcf(), f"boxplot_auc_for_{det_or_ds.name}_{runs}_runs", store_in_figures=True)
+        return figures
 
     # create bar charts for averaged pipeline results per algorithm/dataset
-    def create_bar_charts(self, runs, detectorwise=True):
+    def create_bar_charts(self, runs, detectorwise=True, store=True):
         target = 'algorithm' if detectorwise else 'dataset'
         grouped_by = 'dataset' if detectorwise else 'algorithm'
         relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
+        figures = []
         for det_or_ds in (self.detectors if detectorwise else self.datasets):
             relevant_results[relevant_results[target] == det_or_ds.name].plot(x=grouped_by, kind="bar", figsize=(7, 7))
             plt.suptitle("")  # boxplot() adds a suptitle
             plt.title(f"AUC for {target} {det_or_ds.name} over {runs} runs")
             plt.ylim(ymin=0, ymax=1)
             plt.tight_layout()
-            self.store(plt.gcf(), f"barchart_auc_for_{det_or_ds.name}_{runs}_runs")
+            figures.append(plt.gcf())
+            if store:
+                self.store(plt.gcf(), f"barchart_auc_for_{det_or_ds.name}_{runs}_runs", store_in_figures=True)
+        return figures
 
-    def store(self, fig, title, extension="pdf", no_counters=False):
+    def store(self, fig, title, extension="pdf", no_counters=False, store_in_figures=False):
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        output_dir = os.path.join(self.output_dir, 'figures', f'seed-{self.seed}')
+        if store_in_figures:
+            output_dir = os.path.join(self.output_dir, 'figures')
+        else:
+            output_dir = os.path.join(self.output_dir, 'figures', f'seed-{self.seed}')
         os.makedirs(output_dir, exist_ok=True)
         counters_str = '' if no_counters else f'-{len(self.detectors)}-{len(self.datasets)}'
         path = os.path.join(output_dir, f"{title}{counters_str}-{timestamp}.{extension}")
@@ -343,27 +355,30 @@ class Evaluator:
             table = tabulate(results[results["dataset"] == ds.name], headers="keys", tablefmt="psql")
             self.logger.info(f"Dataset: {ds.name}\n{table}")
 
-    def gen_merged_latex_per_dataset(self, results, title_suffix=None):
+    def gen_merged_latex_per_dataset(self, results, title_suffix=None, store=True):
         title = f'latex_merged{f"_{title_suffix}" if title_suffix else ""}'
-        result = ""
+        content = ""
         for ds in self.datasets:
-            content = f'''{ds.name}:\n\n{tabulate(results[results["dataset"] == ds.name],
-                                   headers="keys", tablefmt="latex")}\n\n'''
-            result += content
-        self.store_text(content=result, title=title, extension="tex")
+            content += f'''{ds.name}:\n\n{tabulate(results[results["dataset"] == ds.name],
+                                                   headers="keys", tablefmt="latex")}\n\n'''
+        if store:
+            self.store_text(content=content, title=title, extension="tex")
+        return content
 
     def print_merged_table_per_algorithm(self, results):
         for det in self.detectors:
             table = tabulate(results[results["algorithm"] == det.name], headers="keys", tablefmt="psql")
             self.logger.info(f"Detector: {det.name}\n{table}")
 
-    def gen_merged_latex_per_algorithm(self, results, title_suffix=None):
+    def gen_merged_latex_per_algorithm(self, results, title_suffix=None, store=True):
         title = f'latex_merged{f"_{title_suffix}" if title_suffix else ""}'
         content = ""
         for det in self.detectors:
             content += f'''{det.name}:\n\n{tabulate(results[results["algorithm"] == det.name],
                                    headers="keys", tablefmt="latex")}\n\n'''
-        self.store_text(content=content, title=title, extension="tex")
+        if store:
+            self.store_text(content=content, title=title, extension="tex")
+        return content
 
     @staticmethod
     def translate_var_key(key_name):
@@ -463,33 +478,15 @@ class Evaluator:
                             offset=(1, -1), shadow_rgbFace="b", alpha=0.9)])
 
         ax.set_title('AUROC over all datasets and detectors')
-        if store:
-            evaluators[0].store(fig, 'heatmap', no_counters=True)
         # Prevent bug where x axis ticks are completely outside of bounds (matplotlib/issues/5456)
         if len(datasets) > 2:
             fig.tight_layout()
+        if store:
+            evaluators[0].store(fig, 'heatmap', no_counters=True, store_in_figures=True)
         return fig
 
     def plot_single_heatmap(self, store=True):
         Evaluator.plot_heatmap([self], store)
-
-    def plot_experiment_comparison(self, title):
-        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
-        ax.set_title(title)
-
-        results = self.benchmark_results
-        for det in self.detectors:
-            det_results = results[results['algorithm'] == det.name].sort_index()
-            ax.plot(det_results['auroc'].values, label=det.name)
-
-        ax.legend()
-        ax.set_ylim((0, 1))
-        ax.set_xlabel('Dataset')
-        ax.set_ylabel('AUROC')
-
-        dataset_names = results[results['algorithm'] == self.detectors[0].name].sort_index()['dataset']
-        plt.xticks(range(len(dataset_names)), dataset_names, rotation=45, ha='right')
-        return fig
 
     @staticmethod
     def get_printable_runs_results(results):
@@ -509,22 +506,22 @@ class Evaluator:
 
         avg_results_renamed = avg_results.rename(
             index=str, columns=dict([(old_col, old_col + '_avg') for old_col in rename_columns]))
-        return (std_results, avg_results, avg_results_renamed)
+        return std_results, avg_results, avg_results_renamed
 
-    def gen_merged_tables(self, results, title_suffix=None):
+    def gen_merged_tables(self, results, title_suffix=None, store=True):
         title_suffix = f'_{title_suffix}' if title_suffix else ''
         std_results, avg_results, avg_results_renamed = Evaluator.get_printable_runs_results(results)
 
         ds_title_suffix = f'per_dataset{title_suffix}'
         self.print_merged_table_per_dataset(std_results)
-        self.gen_merged_latex_per_dataset(std_results, f'std_{ds_title_suffix}')
+        self.gen_merged_latex_per_dataset(std_results, f'std_{ds_title_suffix}', store=store)
 
         self.print_merged_table_per_dataset(avg_results_renamed)
-        self.gen_merged_latex_per_dataset(avg_results_renamed, f'avg_{ds_title_suffix}')
+        self.gen_merged_latex_per_dataset(avg_results_renamed, f'avg_{ds_title_suffix}', store=store)
 
         det_title_suffix = f'per_algorithm{title_suffix}'
         self.print_merged_table_per_algorithm(std_results)
-        self.gen_merged_latex_per_algorithm(std_results, f'std_{det_title_suffix}')
 
+        self.gen_merged_latex_per_algorithm(std_results, f'std_{det_title_suffix}', store=store)
         self.print_merged_table_per_algorithm(avg_results_renamed)
-        self.gen_merged_latex_per_algorithm(avg_results_renamed, f'avg_{det_title_suffix}')
+        self.gen_merged_latex_per_algorithm(avg_results_renamed, f'avg_{det_title_suffix}', store=store)

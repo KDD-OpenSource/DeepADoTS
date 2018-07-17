@@ -182,7 +182,7 @@ class DAGMM(Algorithm, GPUWrapper):
     def fit(self, X: pd.DataFrame, _):
         """Learn the mixture probability, mean and covariance for each component k.
         Store the computed energy based on the training data and the aforementioned parameters."""
-        X.fillna(0, inplace=True)
+        X.interpolate(inplace=True)
         data = X.values
         # Each point is a flattened window and thus has as many features as sequence_length * features
         multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
@@ -233,13 +233,13 @@ class DAGMM(Algorithm, GPUWrapper):
                 index = i1 * self.batch_size + i2
                 window_elements = list(range(index, index + self.sequence_length, 1))
                 train_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
-        self.train_energy = np.nanmedian(train_energy, axis=0)
+        self.train_energy = np.nanmean(train_energy, axis=0)
 
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
         given data."""
         self.dagmm.eval()
-        X.fillna(0, inplace=True)
+        X.interpolate(inplace=True)
         data = X.values
         multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=multi_points, batch_size=1, shuffle=False)
@@ -251,7 +251,7 @@ class DAGMM(Algorithm, GPUWrapper):
             window_elements = np.arange(idx, idx + self.sequence_length, 1)
             test_energy[idx % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
 
-        test_energy = np.nanmedian(test_energy, axis=0)
+        test_energy = np.nanmean(test_energy, axis=0)
         combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
 
         self._threshold = np.nanpercentile(combined_energy, self.normal_percentile)
