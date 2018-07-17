@@ -2,7 +2,6 @@ import logging
 import os
 import pickle
 import re
-import json
 import sys
 import traceback
 from textwrap import wrap
@@ -45,29 +44,19 @@ class Evaluator:
         output_dir = os.path.join(self.output_dir, 'evaluators')
         os.makedirs(output_dir, exist_ok=True)
         timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        path = os.path.join(output_dir, f'{name}-{timestamp}.json')
+        path = os.path.join(output_dir, f'{name}-{timestamp}.pkl')
         self.logger.info(f'Store evaluator results at {os.path.abspath(path)}')
-        if self.benchmark_results is None:
-            self.benchmark_result = pd.DataFrame()
         save_dict = {
             'datasets': [x.name for x in self.datasets],
             'detectors': [x.name for x in self.detectors],
-            'benchmark_results': self.benchmark_results.to_json(),
-            # Not working since keys are tuples (not serializable)
-            # 'results': self.results,
+            'benchmark_results': self.benchmark_results,
+            'results': self.results,
             'output_dir': self.output_dir,
             'seed': int(self.seed),
         }
-        with open(path, 'w') as f:
-            json.dump(save_dict, f)
+        with open(path, 'wb') as f:
+            pickle.dump(save_dict, f)
         return path
-
-    def save_pickle(self):
-        output_dir = os.path.join(self.output_dir, 'evaluators')
-        os.makedirs(output_dir, exist_ok=True)
-        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
-        path = os.path.join(output_dir, f'{self.seed}_{timestamp}.pkl')
-        pickle.dump(self.results, open(path, 'wb'))
 
     # Import benchmark_results if this evaluator uses the same detectors and datasets
     # self.results are not available because they are overwritten by each run
@@ -76,7 +65,7 @@ class Evaluator:
         path = os.path.join(output_dir, f'{name}.pkl')
         self.logger.info(f'Read evaluator results at {os.path.abspath(path)}')
         with open(path, 'r') as f:
-            save_dict = json.load(f)
+            save_dict = pickle.load(f)
 
         self.logger.debug(f'Importing detectors {"; ".join(save_dict["detectors"])}')
         my_detectors = [x.name for x in self.detectors]
@@ -86,7 +75,7 @@ class Evaluator:
         my_datasets = [x.name for x in self.datasets]
         assert np.array_equal(save_dict['datasets'], my_datasets), 'Datasets should be the same'
 
-        self.benchmark_results = pd.read_json(save_dict['benchmark_results'])
+        self.benchmark_results = save_dict['benchmark_results']
         self.seed = save_dict['seed']
         # self.results = save_dict['results']
 
