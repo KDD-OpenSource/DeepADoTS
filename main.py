@@ -1,10 +1,8 @@
 import glob
 import os
-import sys
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import auc, roc_curve
 
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
     run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
@@ -20,10 +18,10 @@ RUNS = 2 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
-    evaluate_real_datasets()
     run_pipeline()
     run_experiments()
     # run_final_missing_experiment(outlier_type='extreme_1', runs=100, only_load=False)
+    # evaluate_real_datasets()
 
 
 def evaluate_real_datasets():

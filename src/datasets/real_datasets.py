@@ -1,9 +1,10 @@
+import os
+import pickle
+
 import numpy as np
 import pandas as pd
-import os
 
 from .dataset import Dataset
-import pickle
 
 
 class RealDataset(Dataset):
@@ -14,6 +15,7 @@ class RealDataset(Dataset):
 
 class RealPickledDataset(Dataset):
     """Class for pickled datasets from https://github.com/chickenbestlover/RNN-Time-series-Anomaly-Detection"""
+
     def __init__(self, name, training_path):
         self.name = name
         self.training_path = training_path
