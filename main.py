@@ -122,7 +122,7 @@ def run_experiments(steps=5):
     announce_experiment('Multivariate Datasets')
     ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
-    announce_experiment('High-dimensional normal outliers')
+    announce_experiment('High-dimensional multivariate outliers')
     ev_mv_dim = run_multi_dim_multivariate_experiment(detectors, seeds, RUNS,
                                                       output_dir=os.path.join(output_dir, 'multi_dim_mv'), steps=20)
 
