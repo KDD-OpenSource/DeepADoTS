@@ -5,6 +5,7 @@ import pandas as pd
 
 from src.evaluation.evaluator import Evaluator
 from src.datasets import SyntheticDataGenerator, MultivariateAnomalyFunction
+from main import get_detectors
 
 
 # Validates all algorithms regarding polluted data based on a given outlier type.
@@ -89,7 +90,7 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
     evaluator = None
 
     for index, seed in enumerate(seeds):
-        evaluator = Evaluator(datasets[index], detectors, output_dir, seed=seed)
+        evaluator = Evaluator(datasets[index], get_detectors(), output_dir, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
         evaluator.plot_roc_curves(store=store_results)
