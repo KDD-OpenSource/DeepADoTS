@@ -122,7 +122,7 @@ class SyntheticMultivariateDataset(Dataset):
     def insert_features(self, interval_values: np.ndarray, interval_labels: np.ndarray,
                         curve: np.ndarray, create_anomaly: bool):
         # Randomly switch between dimensions for inserting the anomaly_func
-        anomaly_dim = np.random.randint(0, interval_values.shape[1])
+        anomaly_dim = np.random.randint(1, interval_values.shape[1])
 
         # Insert curve and pause in first dimension (after adding the global noise)
         for i in set(range(interval_values.shape[1])) - {anomaly_dim}:
