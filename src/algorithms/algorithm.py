@@ -1,4 +1,5 @@
 import abc
+import copy
 import logging
 
 
@@ -50,3 +51,6 @@ class Algorithm(metaclass=abc.ABCMeta):
 
     class Frameworks:
         PyTorch, Tensorflow = range(2)
+
+    def clone(self):
+        return copy.deepcopy(self)
