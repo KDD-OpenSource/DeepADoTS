@@ -22,7 +22,7 @@ def main():
     # run_final_missing_experiment(outlier_type='extreme_1', runs=100, only_load=False)
 
 
-def get_detectors():
+def detectors():
     if os.environ.get("CIRCLECI", False):
         return [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
@@ -47,8 +47,6 @@ def get_pipeline_datasets(seed):
 
 
 def run_pipeline():
-    detectors = get_detectors()
-
     # perform multiple pipeline runs for more robust end results
     # Set the random seed manually for reproducibility and more significant results
     # numpy expects a max. 32-bit unsigned integer
@@ -91,7 +89,6 @@ def run_pipeline():
 
 
 def run_experiments(steps=5):
-    detectors = get_detectors()
     # Set the random seed manually for reproducibility and more significant results
     # numpy expects a max. 32-bit unsigned integer
     seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
@@ -133,7 +130,6 @@ def run_experiments(steps=5):
 def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=None, only_load=False):
     output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
     steps = 5
-    detectors = get_detectors()
     seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=runs, dtype="uint32")
     if not only_load:
         run_missing_experiment(detectors, seeds, RUNS, outlier_type, output_dir=output_dir,

@@ -1,3 +1,4 @@
+import gc
 import logging
 import os
 import pickle
@@ -5,6 +6,7 @@ import re
 import sys
 import traceback
 from textwrap import wrap
+from typing import Union
 
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as path_effects
@@ -22,11 +24,12 @@ from .config import init_logging
 
 
 class Evaluator:
-    def __init__(self, datasets: list, detectors: list, output_dir: {str} = None, seed: int = 42, create_log_file=True):
-        assert np.unique([x.name for x in datasets]).size == len(datasets), 'Some datasets have the same name!'
-        assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
+    def __init__(self, datasets: list, detectors: Union[list, callable], output_dir: {str} = None, seed: int = 42,
+                 create_log_file=True):
+        # assert np.unique([x.name for x in datasets]).size == len(datasets), 'Some datasets have the same name!'
+        # assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
         self.datasets = datasets
-        self.detectors = sorted(detectors, key=lambda x: x.framework)
+        self._detectors = detectors
         self.output_dir = output_dir or 'reports'
         self.results = dict()
         if create_log_file:
@@ -36,6 +39,11 @@ class Evaluator:
         self.benchmark_results = None
         # Last passed seed value in evaluate()
         self.seed = seed
+
+    @property
+    def detectors(self):
+        detectors = self._detectors if isinstance(self._detectors, list) else self._detectors()
+        return sorted(detectors, key=lambda x: x.framework)
 
     def set_benchmark_results(self, benchmark_result):
         self.benchmark_results = benchmark_result
@@ -127,6 +135,7 @@ class Evaluator:
                     self.logger.error(f"An exception occurred while training {det.name} on {ds}: {e}")
                     self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
+            gc.collect()
 
     def benchmarks(self) -> pd.DataFrame:
         df = pd.DataFrame()
