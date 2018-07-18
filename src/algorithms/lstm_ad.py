@@ -66,6 +66,7 @@ class LSTMAD(Algorithm, GPUWrapper):
 
     def fit(self, X, _):
         X.interpolate(inplace=True)
+        X.bfill(inplace=True)
         self.batch_size = 1
         self._build_model(X.shape[-1], self.batch_size)
 
@@ -89,6 +90,7 @@ class LSTMAD(Algorithm, GPUWrapper):
 
     def predict(self, X):
         X.interpolate(inplace=True)
+        X.bfill(inplace=True)
         self.model.eval()
         input_data, target_data = self._input_and_target_data(X)
 

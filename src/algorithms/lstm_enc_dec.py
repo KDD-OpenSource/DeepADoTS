@@ -92,6 +92,7 @@ class LSTM_Enc_Dec(Algorithm):
 
     def fit(self, X_train: pd.DataFrame, y_train: pd.Series):
         X_train.interpolate(inplace=True)
+        X_train.bfill(inplace=True)
         self._build_model(X_train.shape[1])
         train_timeseries_dataset = self._transform_fit_data(X_train, y_train)
         self._fit(train_timeseries_dataset)
@@ -104,6 +105,7 @@ class LSTM_Enc_Dec(Algorithm):
 
     def predict(self, X_test: pd.DataFrame) -> np.ndarray:
         X_test.interpolate(inplace=True)
+        X_test.bfill(inplace=True)
         channels_scores = self.predict_channel_scores(X_test)
         return np.max(channels_scores, axis=0)
 
