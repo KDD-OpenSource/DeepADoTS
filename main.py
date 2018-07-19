@@ -9,7 +9,7 @@ from src.evaluation import Evaluator, Plotter
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
     run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
 
-# Add this line if you want to shortly test the pipeline & experiments
+# Add this line if you want to test the pipeline & experiments
 # os.environ['CIRCLECI'] = 'True'
 
 # min number of runs = 2 for std operation
@@ -33,7 +33,7 @@ def detectors():
     return sorted(dets, key=lambda x: x.framework)
 
 
-def get_pipeline_datasets(seed):
+def pipeline_datasets(seed):
     if os.environ.get('CIRCLECI', False):
         return [SyntheticDataGenerator.extreme_1(seed)]
     else:
@@ -48,93 +48,96 @@ def get_pipeline_datasets(seed):
 
 
 def run_pipeline():
-    # perform multiple pipeline runs for more robust end results
-    # Set the random seed manually for reproducibility and more significant results
-    # numpy expects a max. 32-bit unsigned integer
-    seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype='uint32')
+    # Perform multiple pipeline runs for more robust end results.
+    # Set the seed manually for reproducibility.
+    seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
     results = pd.DataFrame()
     evaluator = None
 
     # Use same datasets for all CI runs (saves execution time)
-    datasets = get_pipeline_datasets(42) if os.environ.get('CIRCLECI', False) else None
+    datasets = pipeline_datasets(42) if os.environ.get('CIRCLECI', False) else None
 
     for seed in seeds:
-        datasets = datasets or get_pipeline_datasets(seed)
+        datasets = datasets if datasets is not None else pipeline_datasets(seed)
         evaluator = Evaluator(datasets, detectors, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
-        evaluator.plot_roc_curves()
-        evaluator.plot_threshold_comparison()
-        evaluator.plot_scores()
         results = results.append(result, ignore_index=True)
 
-    # Set average results from multiple pipeline runs for evaluation
-    avg_results = results.groupby(['dataset', 'algorithm'], as_index=False).mean()
-    evaluator.set_benchmark_results(avg_results)
-    evaluator.export_results('run-pipeline')
+        # Plots for each (det, ds, seed)
+        evaluator.plot_roc_curves()
+        evaluator.plot_scores()
+        evaluator.plot_threshold_comparison()
 
     # Plots which need the whole data (not averaged)
     evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=False)
     evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=True)
     evaluator.gen_merged_tables(results)
 
-    # Plots using 'self.benchmark_results' -> using the averaged results
+    # Set average results from multiple pipeline runs for evaluation
+    avg_results = results.groupby(['dataset', 'algorithm'], as_index=False).mean()
+    evaluator.benchmark_results = avg_results
+    evaluator.export_results('run-pipeline')
+
+    # Plots using 'self.benchmark_results' (averaged)
     evaluator.plot_single_heatmap()
     evaluator.create_bar_charts(runs=RUNS, detectorwise=False)
     evaluator.create_bar_charts(runs=RUNS, detectorwise=True)
 
-    # Plots using 'self.results' (need the score) -> only from the last run
-    evaluator.plot_threshold_comparison()
-    evaluator.plot_scores()
-    evaluator.plot_roc_curves()
-
 
 def run_experiments(steps=5):
-    # Set the random seed manually for reproducibility and more significant results
-    # numpy expects a max. 32-bit unsigned integer
-    seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype='uint32')
+    # Set the seed manually for reproducibility.
+    seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
 
     for outlier_type in ['extreme_1', 'shift_1', 'variance_1', 'trend_1']:
         output_dir = os.path.join('reports/experiments', outlier_type)
 
         announce_experiment('Outlier Height')
-        ev_extr = run_extremes_experiment(detectors, seeds, RUNS, outlier_type,
-                                          output_dir=os.path.join(output_dir, 'extremes'),
-                                          steps=10)
+        ev_extr = run_extremes_experiment(
+            detectors, seeds, RUNS, outlier_type, steps=10,
+            output_dir=os.path.join(output_dir, 'extremes'))
+
         # CI: Keep the execution fast so stop after one experiment
         if os.environ.get('CIRCLECI', False):
             ev_extr.plot_single_heatmap()
             return
+
         announce_experiment('Pollution')
-        ev_pol = run_pollution_experiment(detectors, seeds, RUNS, outlier_type, steps=steps,
-                                          output_dir=os.path.join(output_dir, 'pollution'))
+        ev_pol = run_pollution_experiment(
+            detectors, seeds, RUNS, outlier_type, steps=steps,
+            output_dir=os.path.join(output_dir, 'pollution'))
 
         announce_experiment('Missing Values')
-        ev_mis = run_missing_experiment(detectors, seeds, RUNS, outlier_type,
-                                        output_dir=os.path.join(output_dir, 'missing'), steps=steps)
+        ev_mis = run_missing_experiment(
+            detectors, seeds, RUNS, outlier_type, steps=steps,
+            output_dir=os.path.join(output_dir, 'missing'))
 
         announce_experiment('High-dimensional normal outliers')
-        ev_dim = run_multi_dim_experiment(detectors, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
-                                          steps=20)
+        ev_dim = run_multi_dim_experiment(
+            detectors, outlier_type, RUNS, steps=20,
+            output_dir=os.path.join(output_dir, 'multi_dim'))
 
     announce_experiment('Multivariate Datasets')
-    ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
+    ev_mv = run_multivariate_experiment(
+        detectors, seeds, RUNS,
+        output_dir=os.path.join(output_dir, 'multivariate'))
 
     announce_experiment('High-dimensional multivariate outliers')
-    ev_mv_dim = run_multi_dim_multivariate_experiment(detectors, seeds, RUNS,
-                                                      output_dir=os.path.join(output_dir, 'multi_dim_mv'), steps=20)
+    ev_mv_dim = run_multi_dim_multivariate_experiment(
+        detectors, seeds, RUNS, steps=20,
+        output_dir=os.path.join(output_dir, 'multi_dim_mv'))
 
     evaluators = [ev_pol, ev_mis, ev_extr, ev_mv, ev_dim, ev_mv_dim]
     Evaluator.plot_heatmap(evaluators)
 
 
-def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=None, only_load=False):
-    output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
-    steps = 5
-    seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=runs, dtype='uint32')
+def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=None, only_load=False, steps=5):
+    output_dir = output_dir if output_dir is not None else os.path.join('reports/experiments', outlier_type)
+    seeds = np.random.randint(np.iinfo(np.uint32).max, size=runs, dtype=np.uint32)
     if not only_load:
-        run_missing_experiment(detectors, seeds, RUNS, outlier_type, output_dir=output_dir,
-                               steps=steps, store_results=False)
+        run_missing_experiment(
+            detectors, seeds, RUNS, outlier_type, steps=steps,
+            output_dir=output_dir, store_results=False)
     plotter = Plotter('reports', output_dir)
     plotter.plot_experiment('missing on extreme_1')
 
@@ -142,7 +145,6 @@ def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=N
 def evaluate_on_real_world_data_sets(seed):
     dagmm = DAGMM()
     dagmm.set_seed(seed)
-    # numpy expects a 32-bit unsigned integer
     kdd_cup = KDDCup(seed)
     X_train, y_train, X_test, y_test = kdd_cup.data()
     dagmm.fit(X_train, y_train)
