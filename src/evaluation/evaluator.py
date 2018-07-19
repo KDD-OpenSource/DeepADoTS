@@ -430,14 +430,18 @@ class Evaluator:
         evaluator = evaluators[0]
         for other_evaluator in evaluators[1:]:
             assert evaluator.detectors == other_evaluator.detectors, 'All evaluators should use the same detectors'
-        datasets = [[evaluator.get_key_and_value(str(d)) for d in ev.datasets] for ev in evaluators]
+        pivot_benchmarks = [ev.benchmark_results.pivot(index='dataset', columns='algorithm',
+                                                       values='auroc') for ev in evaluators]
+
+        concat_benchmarks = pd.concat(pivot_benchmarks)
+        auroc_matrix = concat_benchmarks.groupby(['dataset']).mean()
+
+        datasets = [[evaluator.get_key_and_value(str(d)) for d in ev.index.values]
+                    for ev in pivot_benchmarks]
         datasets = [tuple(d) for d in np.concatenate(datasets)]  # Required for MultiIndex.from_tuples
         datasets = pd.MultiIndex.from_tuples(datasets, names=['Type', 'Level'])
-        auroc_matrix = np.concatenate([ev.benchmark_results['auroc'].values
-                                       .reshape((len(ev.datasets), len(ev.detectors)))
-                                       for ev in evaluators])
-        detectors = evaluator.benchmark_results['algorithm'].values[:len(evaluator.detectors)]
-        return pd.DataFrame(auroc_matrix, index=datasets, columns=detectors)
+        auroc_matrix.index = datasets
+        return auroc_matrix
 
     def get_multi_index_dataframe(self):
         return Evaluator.to_multi_index_frame([self])
