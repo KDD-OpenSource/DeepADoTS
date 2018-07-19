@@ -56,7 +56,7 @@ class Plotter:
             ax.boxplot([ds_groups.get_group(x)['auroc'].values for x in self.dataset_names],
                        positions=np.linspace(0, 1, 5))
             ax.set_xticklabels([f'{float(Evaluator.get_key_and_value(x)[1]):.2f}' for x in self.dataset_names])
-            
+
             ax.set_xlabel(det, rotation=15)
             ax.set_ylim((0, 1.05))
             ax.yaxis.grid(True)

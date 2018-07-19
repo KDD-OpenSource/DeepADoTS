@@ -37,7 +37,7 @@ class SyntheticMultivariateDataset(Dataset):
         assert features >= 2, 'At least two dimensions are required for generating MV outliers'
         self.features = features
         assert group_size is None or (group_size <= features and group_size > 0), 'Group size may not be greater '\
-          'than amount of dimensions'
+            'than amount of dimensions'
         self.group_size = group_size or self.features
         assert self.group_size <= self.features
         if self.features % self.group_size == 1:  # How many dimensions each correlated group has
