@@ -26,7 +26,7 @@ class AirQuality(RealDataset):
 
     def __init__(self):
         super().__init__(
-            name="AirQuality", raw_path="AirQualityUCI.csv", processed_path="air_quality.npz"
+            name='AirQuality', raw_path='AirQualityUCI.csv', processed_path='air_quality.npz'
         )
 
     def load(self):

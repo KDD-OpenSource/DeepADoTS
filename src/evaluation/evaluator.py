@@ -6,6 +6,7 @@ import re
 import sys
 import traceback
 from textwrap import wrap
+from typing import Union
 
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as path_effects
@@ -23,7 +24,7 @@ from .config import init_logging
 
 
 class Evaluator:
-    def __init__(self, datasets: list, detectors: callable, output_dir: {str} = None, seed: int = 42,
+    def __init__(self, datasets: list, detectors: callable, output_dir: {str}=None, seed: int=42,
                  create_log_file=True):
         """
         :param datasets: list of datasets
@@ -54,7 +55,7 @@ class Evaluator:
     def export_results(self, name):
         output_dir = os.path.join(self.output_dir, 'evaluators')
         os.makedirs(output_dir, exist_ok=True)
-        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+        timestamp = time.strftime('%Y-%m-%d-%H%M%S')
         path = os.path.join(output_dir, f'{name}-{timestamp}.pkl')
         self.logger.info(f'Store evaluator results at {os.path.abspath(path)}')
         save_dict = {
@@ -94,7 +95,7 @@ class Evaluator:
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
         accuracy = accuracy_score(y_true, y_pred)
         # warn_for=() avoids log warnings for any result being zero
-        precision, recall, f_score, _ = prf(y_true, y_pred, average="binary", warn_for=())
+        precision, recall, f_score, _ = prf(y_true, y_pred, average='binary', warn_for=())
         if precision == 0 and recall == 0:
             f01_score = 0
         else:
@@ -128,14 +129,14 @@ class Evaluator:
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
             for det in progressbar.progressbar(self.detectors):
-                self.logger.info(f"Training {det.name} on {ds.name} with seed {self.seed}")
+                self.logger.info(f'Training {det.name} on {ds.name} with seed {self.seed}')
                 try:
                     det.set_seed(self.seed)
                     det.fit(X_train.copy(), y_train.copy())
                     score = det.predict(X_test.copy())
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
-                    self.logger.error(f"An exception occurred while training {det.name} on {ds}: {e}")
+                    self.logger.error(f'An exception occurred while training {det.name} on {ds}: {e}')
                     self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
             gc.collect()
@@ -150,14 +151,14 @@ class Evaluator:
                 acc, prec, rec, f1_score, f01_score = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
                 score = self.results[(ds.name, det.name)]
                 auroc = self.get_auroc(det, ds, score)
-                df = df.append({"dataset": ds.name,
-                                "algorithm": det.name,
-                                "accuracy": acc,
-                                "precision": prec,
-                                "recall": rec,
-                                "F1-score": f1_score,
-                                "F0.1-score": f01_score,
-                                "auroc": auroc},
+                df = df.append({'dataset': ds.name,
+                                'algorithm': det.name,
+                                'accuracy': acc,
+                                'precision': prec,
+                                'recall': rec,
+                                'F1-score': f1_score,
+                                'F0.1-score': f01_score,
+                                'auroc': auroc},
                                ignore_index=True)
         return df
 
@@ -179,22 +180,22 @@ class Evaluator:
             fig.canvas.set_window_title(ds.name)
 
             sp = fig.add_subplot((2 * len(detectors) + 3), 1, 1)
-            sp.set_title("original training data", loc=subtitle_loc)
+            sp.set_title('original training data', loc=subtitle_loc)
             for col in X_train.columns:
                 plt.plot(X_train[col])
             sp = fig.add_subplot((2 * len(detectors) + 3), 1, 2)
-            sp.set_title("original test set", loc=subtitle_loc)
+            sp.set_title('original test set', loc=subtitle_loc)
             for col in X_test.columns:
                 plt.plot(X_test[col])
 
             sp = fig.add_subplot((2 * len(detectors) + 3), 1, 3)
-            sp.set_title("binary labels of test set", loc=subtitle_loc)
+            sp.set_title('binary labels of test set', loc=subtitle_loc)
             plt.plot(y_test)
 
             subplot_num = 4
             for det in detectors:
                 sp = fig.add_subplot((2 * len(detectors) + 3), 1, subplot_num)
-                sp.set_title(f"scores of {det.name}", loc=subtitle_loc)
+                sp.set_title(f'scores of {det.name}', loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
                 plt.plot(np.arange(len(score)), [x for x in score])
                 threshold_line = len(score) * [self.get_optimal_threshold(det, y_test, np.array(score))]
@@ -202,14 +203,14 @@ class Evaluator:
                 subplot_num += 1
 
                 sp = fig.add_subplot((2 * len(detectors) + 3), 1, subplot_num)
-                sp.set_title(f"binary labels of {det.name}", loc=subtitle_loc)
+                sp.set_title(f'binary labels of {det.name}', loc=subtitle_loc)
                 plt.plot(np.arange(len(score)),
                          [x for x in det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))])
                 subplot_num += 1
             fig.subplots_adjust(top=0.9, hspace=0.4)
             fig.tight_layout()
             if store:
-                self.store(fig, f"scores_{ds.name}")
+                self.store(fig, f'scores_{ds.name}')
             figures.append(fig)
         return figures
 
@@ -220,7 +221,7 @@ class Evaluator:
         fig, axes = plt.subplots(*plots_shape, figsize=(len(detectors) * 15, len(self.datasets) * 5))
         # Ensure two dimensions for iteration
         axes = np.array(axes).reshape(*plots_shape).T
-        plt.suptitle("Compare thresholds", fontsize=10)
+        plt.suptitle('Compare thresholds', fontsize=10)
         for ds, axes_row in zip(self.datasets, axes):
             _, _, X_test, y_test = ds.data()
 
@@ -231,13 +232,13 @@ class Evaluator:
                     det, y_test, score, return_metrics=True)
 
                 ax.plot(thresh, anomalies / len(y_test),
-                        label=fr"anomalies ({len(y_test)} $\rightarrow$ 1)")
-                ax.plot(thresh, prec, label="precision")
-                ax.plot(thresh, rec, label="recall")
-                ax.plot(thresh, f_score, label="f_score", linestyle='dashed')
-                ax.plot(thresh, f01_score, label="f01_score", linestyle='dashed')
-                ax.set_title(f"{det.name} on {ds.name}")
-                ax.set_xlabel("Threshold")
+                        label=fr'anomalies ({len(y_test)} $\rightarrow$ 1)')
+                ax.plot(thresh, prec, label='precision')
+                ax.plot(thresh, rec, label='recall')
+                ax.plot(thresh, f_score, label='f_score', linestyle='dashed')
+                ax.plot(thresh, f01_score, label='f01_score', linestyle='dashed')
+                ax.set_title(f'{det.name} on {ds.name}')
+                ax.set_xlabel('Threshold')
                 ax.legend()
 
         # Avoid overlapping title and axis labels
@@ -245,7 +246,7 @@ class Evaluator:
         fig.subplots_adjust(top=0.9, hspace=0.4, right=1, left=0)
         fig.tight_layout()
         if store:
-            self.store(fig, "metrics_by_thresholds")
+            self.store(fig, 'metrics_by_thresholds')
         return fig
 
     def plot_roc_curves(self, store=True):
@@ -256,11 +257,11 @@ class Evaluator:
             _, _, _, y_test = ds.data()
             fig_scale = 3
             fig = plt.figure(figsize=(fig_scale * len(detectors), fig_scale))
-            fig.canvas.set_window_title(ds.name + " ROC")
-            fig.suptitle(f"ROC curve on {ds.name}", fontsize=14, y="1.1")
+            fig.canvas.set_window_title(ds.name + ' ROC')
+            fig.suptitle(f'ROC curve on {ds.name}', fontsize=14, y='1.1')
             subplot_count = 1
             for det in detectors:
-                self.logger.info(f"Plotting ROC curve for {det.name} on {ds.name}")
+                self.logger.info(f'Plotting ROC curve for {det.name} on {ds.name}')
                 score = self.results[(ds.name, det.name)]
                 if np.isnan(score).all():
                     score = np.zeros_like(score)
@@ -269,20 +270,20 @@ class Evaluator:
                 fpr, tpr, _ = roc_curve(y_test, score)
                 roc_auc = auc(fpr, tpr)
                 plt.subplot(1, len(detectors), subplot_count)
-                plt.plot(fpr, tpr, color="darkorange",
-                         lw=2, label="area = %0.2f" % roc_auc)
+                plt.plot(fpr, tpr, color='darkorange',
+                         lw=2, label='area = %0.2f' % roc_auc)
                 subplot_count += 1
-                plt.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--")
+                plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
                 plt.xlim([0.0, 1.0])
                 plt.ylim([0.0, 1.05])
-                plt.xlabel("False Positive Rate")
-                plt.ylabel("True Positive Rate")
-                plt.gca().set_aspect("equal", adjustable="box")
+                plt.xlabel('False Positive Rate')
+                plt.ylabel('True Positive Rate')
+                plt.gca().set_aspect('equal', adjustable='box')
                 plt.title('\n'.join(wrap(det.name, 20)))
-                plt.legend(loc="lower right")
+                plt.legend(loc='lower right')
             plt.tight_layout()
             if store:
-                self.store(fig, f"roc_{ds.name}")
+                self.store(fig, f'roc_{ds.name}')
             figures.append(fig)
         return figures
 
@@ -303,85 +304,85 @@ class Evaluator:
     def create_boxplots(self, runs, data, detectorwise=True, store=True):
         target = 'algorithm' if detectorwise else 'dataset'
         grouped_by = 'dataset' if detectorwise else 'algorithm'
-        relevant_results = data[["algorithm", "dataset", "auroc"]]
+        relevant_results = data[['algorithm', 'dataset', 'auroc']]
         figures = []
         for det_or_ds in (self.detectors if detectorwise else self.datasets):
             relevant_results[relevant_results[target] == det_or_ds.name].boxplot(by=grouped_by, figsize=(15, 15))
-            plt.suptitle("")  # boxplot() adds a suptitle
-            plt.title(f"AUC grouped by {grouped_by} for {det_or_ds.name} over {runs} runs")
+            plt.suptitle('')  # boxplot() adds a suptitle
+            plt.title(f'AUC grouped by {grouped_by} for {det_or_ds.name} over {runs} runs')
             plt.ylim(ymin=0, ymax=1)
             plt.tight_layout()
             figures.append(plt.gcf())
             if store:
-                self.store(plt.gcf(), f"boxplot_auc_for_{det_or_ds.name}_{runs}_runs", store_in_figures=True)
+                self.store(plt.gcf(), f'boxplot_auc_for_{det_or_ds.name}_{runs}_runs', store_in_figures=True)
         return figures
 
     # create bar charts for averaged pipeline results per algorithm/dataset
     def create_bar_charts(self, runs, detectorwise=True, store=True):
         target = 'algorithm' if detectorwise else 'dataset'
         grouped_by = 'dataset' if detectorwise else 'algorithm'
-        relevant_results = self.benchmark_results[["algorithm", "dataset", "auroc"]]
+        relevant_results = self.benchmark_results[['algorithm', 'dataset', 'auroc']]
         figures = []
         for det_or_ds in (self.detectors if detectorwise else self.datasets):
-            relevant_results[relevant_results[target] == det_or_ds.name].plot(x=grouped_by, kind="bar", figsize=(7, 7))
-            plt.suptitle("")  # boxplot() adds a suptitle
-            plt.title(f"AUC for {target} {det_or_ds.name} over {runs} runs")
+            relevant_results[relevant_results[target] == det_or_ds.name].plot(x=grouped_by, kind='bar', figsize=(7, 7))
+            plt.suptitle('')  # boxplot() adds a suptitle
+            plt.title(f'AUC for {target} {det_or_ds.name} over {runs} runs')
             plt.ylim(ymin=0, ymax=1)
             plt.tight_layout()
             figures.append(plt.gcf())
             if store:
-                self.store(plt.gcf(), f"barchart_auc_for_{det_or_ds.name}_{runs}_runs", store_in_figures=True)
+                self.store(plt.gcf(), f'barchart_auc_for_{det_or_ds.name}_{runs}_runs', store_in_figures=True)
         return figures
 
-    def store(self, fig, title, extension="pdf", no_counters=False, store_in_figures=False):
-        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+    def store(self, fig, title, extension='pdf', no_counters=False, store_in_figures=False):
+        timestamp = time.strftime('%Y-%m-%d-%H%M%S')
         if store_in_figures:
             output_dir = os.path.join(self.output_dir, 'figures')
         else:
             output_dir = os.path.join(self.output_dir, 'figures', f'seed-{self.seed}')
         os.makedirs(output_dir, exist_ok=True)
         counters_str = '' if no_counters else f'-{len(self.detectors)}-{len(self.datasets)}'
-        path = os.path.join(output_dir, f"{title}{counters_str}-{timestamp}.{extension}")
+        path = os.path.join(output_dir, f'{title}{counters_str}-{timestamp}.{extension}')
         fig.savefig(path)
-        self.logger.info(f"Stored plot at {path}")
+        self.logger.info(f'Stored plot at {path}')
 
-    def store_text(self, content, title, extension="txt"):
+    def store_text(self, content, title, extension='txt'):
         timestamp = int(time.time())
         output_dir = os.path.join(self.output_dir, 'tables', f'seed-{self.seed}')
-        path = os.path.join(output_dir, f"{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}")
+        path = os.path.join(output_dir, f'{title}-{len(self.detectors)}-{len(self.datasets)}-{timestamp}.{extension}')
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as f:
             f.write(content)
-        self.logger.info(f"Stored {extension} file at {path}")
+        self.logger.info(f'Stored {extension} file at {path}')
 
     def print_merged_table_per_dataset(self, results):
         for ds in self.datasets:
-            table = tabulate(results[results["dataset"] == ds.name], headers="keys", tablefmt="psql")
-            self.logger.info(f"Dataset: {ds.name}\n{table}")
+            table = tabulate(results[results['dataset'] == ds.name], headers='keys', tablefmt='psql')
+            self.logger.info(f'Dataset: {ds.name}\n{table}')
 
     def gen_merged_latex_per_dataset(self, results, title_suffix=None, store=True):
         title = f'latex_merged{f"_{title_suffix}" if title_suffix else ""}'
-        content = ""
+        content = ''
         for ds in self.datasets:
-            content += f'''{ds.name}:\n\n{tabulate(results[results["dataset"] == ds.name],
-                                                   headers="keys", tablefmt="latex")}\n\n'''
+            content += f'''{ds.name}:\n\n{tabulate(results[results['dataset'] == ds.name],
+                                                   headers='keys', tablefmt='latex')}\n\n'''
         if store:
-            self.store_text(content=content, title=title, extension="tex")
+            self.store_text(content=content, title=title, extension='tex')
         return content
 
     def print_merged_table_per_algorithm(self, results):
         for det in self.detectors:
-            table = tabulate(results[results["algorithm"] == det.name], headers="keys", tablefmt="psql")
-            self.logger.info(f"Detector: {det.name}\n{table}")
+            table = tabulate(results[results['algorithm'] == det.name], headers='keys', tablefmt='psql')
+            self.logger.info(f'Detector: {det.name}\n{table}')
 
     def gen_merged_latex_per_algorithm(self, results, title_suffix=None, store=True):
         title = f'latex_merged{f"_{title_suffix}" if title_suffix else ""}'
-        content = ""
+        content = ''
         for det in self.detectors:
-            content += f'''{det.name}:\n\n{tabulate(results[results["algorithm"] == det.name],
-                                   headers="keys", tablefmt="latex")}\n\n'''
+            content += f'''{det.name}:\n\n{tabulate(results[results['algorithm'] == det.name],
+                                   headers='keys', tablefmt='latex')}\n\n'''
         if store:
-            self.store_text(content=content, title=title, extension="tex")
+            self.store_text(content=content, title=title, extension='tex')
         return content
 
     @staticmethod
@@ -433,11 +434,11 @@ class Evaluator:
             # Somehow it's sorted by its occurence (which is what we want here)
             dataset_levels = section_frame.index.remove_unused_levels().levels[1]
             title_pos = y_axis_title_pos + 0.5 * (len(dataset_levels) - 1)
-            ax.text(type_title_offset, title_pos, dataset_type, ha="center", va="center", rotation=90,
+            ax.text(type_title_offset, title_pos, dataset_type, ha='center', va='center', rotation=90,
                     fontproperties=FontProperties(weight='bold'))
             if idx < len(dataset_types) - 1:
                 sep_pos = y_axis_title_pos + (len(dataset_levels) - 0.6)
-                ax.text(-0.5, sep_pos, '_' * int(type_title_offset * -10), ha="right", va="center")
+                ax.text(-0.5, sep_pos, '_' * int(type_title_offset * -10), ha='right', va='center')
             y_axis_title_pos += len(dataset_levels)
 
     @staticmethod
@@ -463,7 +464,7 @@ class Evaluator:
         detectors, datasets = mi_df.columns, mi_df.index
 
         fig, ax = plt.subplots(figsize=(len(detectors) + 2, len(datasets)))
-        im = ax.imshow(mi_df, cmap=plt.get_cmap("YlOrRd"), vmin=0, vmax=1)
+        im = ax.imshow(mi_df, cmap=plt.get_cmap('YlOrRd'), vmin=0, vmax=1)
         plt.colorbar(im)
 
         # Show MultiIndex for ordinate
@@ -472,14 +473,14 @@ class Evaluator:
         # Rotate the tick labels and set their alignment.
         ax.set_xticks(np.arange(len(detectors)))
         ax.set_xticklabels(detectors)
-        plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+        plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
 
         # Loop over data dimensions and create text annotations.
         for i in range(len(detectors)):
             for j in range(len(datasets)):
-                ax.text(i, j, f'{mi_df.iloc[j, i]:.2f}', ha="center", va="center", color="w",
+                ax.text(i, j, f'{mi_df.iloc[j, i]:.2f}', ha='center', va='center', color='w',
                         path_effects=[path_effects.withSimplePatchShadow(
-                            offset=(1, -1), shadow_rgbFace="b", alpha=0.9)])
+                            offset=(1, -1), shadow_rgbFace='b', alpha=0.9)])
 
         ax.set_title('AUROC over all datasets and detectors')
         # Prevent bug where x axis ticks are completely outside of bounds (matplotlib/issues/5456)
@@ -494,18 +495,18 @@ class Evaluator:
 
     @staticmethod
     def get_printable_runs_results(results):
-        print_order = ["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score", "auroc"]
+        print_order = ['dataset', 'algorithm', 'accuracy', 'precision', 'recall', 'F1-score', 'F0.1-score', 'auroc']
         rename_columns = [col for col in print_order if col not in ['dataset', 'algorithm']]
 
         # calc std and mean for each algorithm per dataset
-        std_results = results.groupby(["dataset", "algorithm"]).std(ddof=0).fillna(0)
+        std_results = results.groupby(['dataset', 'algorithm']).std(ddof=0).fillna(0)
         # get rid of multi-index
         std_results = std_results.reset_index()
         std_results = std_results[print_order]
         std_results.rename(inplace=True, index=str,
                            columns=dict([(old_col, old_col + '_std') for old_col in rename_columns]))
 
-        avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
+        avg_results = results.groupby(['dataset', 'algorithm'], as_index=False).mean()
         avg_results = avg_results[print_order]
 
         avg_results_renamed = avg_results.rename(
