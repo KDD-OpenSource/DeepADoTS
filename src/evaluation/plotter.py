@@ -50,6 +50,9 @@ class Plotter:
         fig, axes = plt.subplots(
             ncols=len(self.detector_names), figsize=(3*len(self.detector_names), 4), sharey=True)
 
+        if len(self.detector_names) == 1:
+            axes = np.array(axes)
+
         for ax, det in zip(axes.flat, self.detector_names):
             values = aurocs_df[aurocs_df['algorithm'] == det].drop(columns='algorithm')
             ds_groups = values.groupby('dataset')
