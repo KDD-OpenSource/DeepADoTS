@@ -151,8 +151,6 @@ class Donut(Algorithm, GPUWrapper):
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
-        if y is None:
-            y = np.zeros(len(X))
         with self.tf_device:
             # Reset all results from last run to avoid reusing variables
             self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
