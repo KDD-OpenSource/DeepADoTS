@@ -1,4 +1,3 @@
-from .air_quality import AirQuality
 from .dataset import Dataset
 from .kdd_cup import KDDCup
 from .real_datasets import RealDataset, RealPickledDataset
@@ -11,7 +10,6 @@ __all__ = [
     'SyntheticDataset',
     'RealDataset',
     'RealPickledDataset',
-    'AirQuality',
     'KDDCup',
     'SyntheticDataGenerator',
     'MultivariateAnomalyFunction'

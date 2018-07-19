@@ -7,7 +7,7 @@ import pandas as pd
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
     run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoEncoder
-from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator, RealPickledDataset
+from src.datasets import KDDCup, SyntheticDataGenerator, RealPickledDataset
 from src.evaluation import Evaluator, Plotter
 
 # Add this line if you want to shortly test the pipeline & experiments
@@ -18,10 +18,10 @@ RUNS = 2 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
-    # run_pipeline()
-    # run_experiments()
+    run_pipeline()
+    run_experiments()
     # run_final_missing_experiment(outlier_type='extreme_1', runs=100, only_load=False)
-    evaluate_real_datasets()
+    # evaluate_real_datasets()
 
 
 def evaluate_real_datasets():
@@ -51,7 +51,6 @@ def evaluate_real_datasets():
     evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=False)
     evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=True)
     evaluator.export_results('real_datasets')
-
 
 
 def get_detectors():
@@ -149,7 +148,8 @@ def run_experiments(outlier_type='extreme_1', output_dir=None, steps=5):
     ev_mv = run_multivariate_experiment(detectors, seeds, RUNS, output_dir=os.path.join(output_dir, 'multivariate'))
 
     announce_experiment('High-dimensional normal outliers')
-    ev_dim = run_multi_dim_experiment(detectors, seeds, RUNS, outlier_type, output_dir=os.path.join(output_dir, 'multi_dim'),
+    ev_dim = run_multi_dim_experiment(detectors, seeds, RUNS, outlier_type,
+                                      output_dir=os.path.join(output_dir, 'multi_dim'),
                                       steps=20)
 
     announce_experiment('High-dimensional multivariate outliers')
@@ -170,6 +170,7 @@ def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=N
                                steps=steps, store_results=False)
     plotter = Plotter('reports', output_dir)
     plotter.plot_experiment('missing on extreme_1')
+
 
 if __name__ == '__main__':
     main()
