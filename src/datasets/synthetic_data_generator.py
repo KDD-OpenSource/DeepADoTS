@@ -449,7 +449,7 @@ class SyntheticDataGenerator:
         }
         random_state = seed
 
-        return SyntheticDataset(name="Synthetic Multivariate Extreme Outliers (dim={n})", file_name="mv_extreme1.pkl",
+        return SyntheticDataset(name=f'Synthetic Multivariate Extreme Outliers (dim={n})', file_name='mv_extreme1.pkl',
                                 length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
@@ -500,7 +500,7 @@ class SyntheticDataGenerator:
         }
         random_state = seed
 
-        return SyntheticDataset(name="Synthetic Multivariate Shift Outliers (dim={n})", file_name="mv_shift1.pkl",
+        return SyntheticDataset(name=f'Synthetic Multivariate Shift Outliers (dim={n})', file_name='mv_shift1.pkl',
                                 length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
@@ -539,7 +539,7 @@ class SyntheticDataGenerator:
         }
         random_state = seed
 
-        return SyntheticDataset(name="Synthetic Multivariate Variance Outliers (dim={n})", file_name="mv_variance1.pkl",
+        return SyntheticDataset(name=f'Synthetic Multivariate Variance Outliers (dim={n})', file_name='mv_variance1.pkl',
                                 length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
@@ -574,7 +574,7 @@ class SyntheticDataGenerator:
         }
         random_state = seed
 
-        return SyntheticDataset(name="Synthetic Multivariate Trend Outliers (dim={n})", file_name="mv_trend1.pkl",
+        return SyntheticDataset(name=f'Synthetic Multivariate Trend Outliers (dim={n})', file_name='mv_trend1.pkl',
                                 length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
@@ -648,8 +648,8 @@ class SyntheticDataGenerator:
         }
         random_state = seed
 
-        return SyntheticDataset(name="Synthetic Multivariate XOR Extreme Outliers (dim={n})",
-                                file_name="mv_xor_extreme1.pkl", length=length, n=n, k=k,
+        return SyntheticDataset(name=f'Synthetic Multivariate XOR Extreme Outliers (dim={n})',
+                                file_name='mv_xor_extreme1.pkl', length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,
                                 outlier_config=outlier_config, pollution_config=pollution_config,

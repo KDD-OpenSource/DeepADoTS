@@ -13,7 +13,7 @@ class RecurrentEBM(Algorithm, GPUWrapper):
 
     def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100,
                  min_lr=0.01, min_energy=None, batch_size=10, framework=Algorithm.Frameworks.Tensorflow, gpu: int=0):
-        Algorithm.__init__(self, __name__, "Recurrent EBM", framework)
+        Algorithm.__init__(self, __name__, 'Recurrent EBM', framework)
         GPUWrapper.__init__(self, gpu)
         self.num_epochs = num_epochs
         self.n_hidden = n_hidden  # Size of RBM's hidden layer
@@ -137,17 +137,17 @@ class RecurrentEBM(Algorithm, GPUWrapper):
         return x, lr, batch_size
 
     def _create_variables(self, n_visible):
-        W = tf.Variable(tf.random_normal([n_visible, self.n_hidden], stddev=0.01), name="W")
-        Wuh = tf.Variable(tf.random_normal([self.n_hidden_recurrent, self.n_hidden], stddev=0.01), name="Wuh")
-        Wux = tf.Variable(tf.random_normal([self.n_hidden_recurrent, n_visible], stddev=0.01), name="Wux")
-        Wxu = tf.Variable(tf.random_normal([n_visible, self.n_hidden_recurrent], stddev=0.01), name="Wxu")
-        Wuu = tf.Variable(tf.random_normal([self.n_hidden_recurrent, self.n_hidden_recurrent], stddev=0.01), name="Wuu")
-        bu = tf.Variable(tf.zeros([1, self.n_hidden_recurrent]), name="bu")
-        u0 = tf.Variable(tf.zeros([1, self.n_hidden_recurrent]), name="u0")
-        bh = tf.Variable(tf.zeros([1, self.n_hidden]), name="bh")
-        bx = tf.Variable(tf.zeros([1, n_visible]), name="bx")
-        BH_t = tf.Variable(tf.zeros([1, self.n_hidden]), name="BH_t")
-        BX_t = tf.Variable(tf.zeros([1, n_visible]), name="BX_t")
+        W = tf.Variable(tf.random_normal([n_visible, self.n_hidden], stddev=0.01), name='W')
+        Wuh = tf.Variable(tf.random_normal([self.n_hidden_recurrent, self.n_hidden], stddev=0.01), name='Wuh')
+        Wux = tf.Variable(tf.random_normal([self.n_hidden_recurrent, n_visible], stddev=0.01), name='Wux')
+        Wxu = tf.Variable(tf.random_normal([n_visible, self.n_hidden_recurrent], stddev=0.01), name='Wxu')
+        Wuu = tf.Variable(tf.random_normal([self.n_hidden_recurrent, self.n_hidden_recurrent], stddev=0.01), name='Wuu')
+        bu = tf.Variable(tf.zeros([1, self.n_hidden_recurrent]), name='bu')
+        u0 = tf.Variable(tf.zeros([1, self.n_hidden_recurrent]), name='u0')
+        bh = tf.Variable(tf.zeros([1, self.n_hidden]), name='bh')
+        bx = tf.Variable(tf.zeros([1, n_visible]), name='bx')
+        BH_t = tf.Variable(tf.zeros([1, self.n_hidden]), name='BH_t')
+        BX_t = tf.Variable(tf.zeros([1, n_visible]), name='BX_t')
 
         return W, Wuh, Wux, Wxu, Wuu, bu, u0, bh, bx, BH_t, BX_t
 
