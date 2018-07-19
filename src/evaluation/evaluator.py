@@ -6,7 +6,6 @@ import re
 import sys
 import traceback
 from textwrap import wrap
-from typing import Union
 
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as path_effects
@@ -24,10 +23,13 @@ from .config import init_logging
 
 
 class Evaluator:
-    def __init__(self, datasets: list, detectors: Union[list, callable], output_dir: {str} = None, seed: int = 42,
+    def __init__(self, datasets: list, detectors: callable, output_dir: {str} = None, seed: int = 42,
                  create_log_file=True):
-        # assert np.unique([x.name for x in datasets]).size == len(datasets), 'Some datasets have the same name!'
-        # assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
+        """
+        :param datasets: list of datasets
+        :param detectors: callable that returns list of detectors
+        """
+        assert np.unique([x.name for x in datasets]).size == len(datasets), 'Some datasets have the same name!'
         self.datasets = datasets
         self._detectors = detectors
         self.output_dir = output_dir or 'reports'
@@ -42,7 +44,9 @@ class Evaluator:
 
     @property
     def detectors(self):
-        return self._detectors if isinstance(self._detectors, list) else self._detectors()
+        detectors = self._detectors()
+        assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
+        return detectors
 
     def set_benchmark_results(self, benchmark_result):
         self.benchmark_results = benchmark_result
