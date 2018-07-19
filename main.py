@@ -17,9 +17,10 @@ RUNS = 2 if os.environ.get("CIRCLECI", False) else 10
 
 
 def main():
-    run_pipeline()
-    run_experiments()
-    # run_final_missing_experiment(outlier_type='extreme_1', runs=100, only_load=False)
+    # run_pipeline()
+    # run_experiments()
+    for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
+        run_final_missing_experiment(outlier_type=ot, runs=RUNS, only_load=False)
 
 
 def detectors():
@@ -136,7 +137,7 @@ def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=N
         run_missing_experiment(detectors, seeds, RUNS, outlier_type, output_dir=output_dir,
                                steps=steps, store_results=False)
     plotter = Plotter('reports', output_dir)
-    plotter.plot_experiment('missing on extreme_1')
+    plotter.plot_experiment(f'missing on {outlier_type}')
 
 
 def evaluate_on_real_world_data_sets(seed):
