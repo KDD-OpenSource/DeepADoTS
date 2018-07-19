@@ -1,3 +1,4 @@
+import gc
 import logging
 import os
 import pickle
@@ -22,11 +23,15 @@ from .config import init_logging
 
 
 class Evaluator:
-    def __init__(self, datasets: list, detectors: list, output_dir: {str} = None, seed: int = 42, create_log_file=True):
+    def __init__(self, datasets: list, detectors: callable, output_dir: {str} = None, seed: int = 42,
+                 create_log_file=True):
+        """
+        :param datasets: list of datasets
+        :param detectors: callable that returns list of detectors
+        """
         assert np.unique([x.name for x in datasets]).size == len(datasets), 'Some datasets have the same name!'
-        assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
         self.datasets = datasets
-        self.detectors = sorted(detectors, key=lambda x: x.framework)
+        self._detectors = detectors
         self.output_dir = output_dir or 'reports'
         self.results = dict()
         if create_log_file:
@@ -36,6 +41,12 @@ class Evaluator:
         self.benchmark_results = None
         # Last passed seed value in evaluate()
         self.seed = seed
+
+    @property
+    def detectors(self):
+        detectors = self._detectors()
+        assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
+        return detectors
 
     def set_benchmark_results(self, benchmark_result):
         self.benchmark_results = benchmark_result
@@ -64,7 +75,7 @@ class Evaluator:
         output_dir = os.path.join(self.output_dir, 'evaluators')
         path = os.path.join(output_dir, f'{name}.pkl')
         self.logger.info(f'Read evaluator results at {os.path.abspath(path)}')
-        with open(path, 'r') as f:
+        with open(path, 'rb') as f:
             save_dict = pickle.load(f)
 
         self.logger.debug(f'Importing detectors {"; ".join(save_dict["detectors"])}')
@@ -77,7 +88,7 @@ class Evaluator:
 
         self.benchmark_results = save_dict['benchmark_results']
         self.seed = save_dict['seed']
-        # self.results = save_dict['results']
+        self.results = save_dict['results']
 
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
@@ -127,6 +138,7 @@ class Evaluator:
                     self.logger.error(f"An exception occurred while training {det.name} on {ds}: {e}")
                     self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
+            gc.collect()
 
     def benchmarks(self) -> pd.DataFrame:
         df = pd.DataFrame()
@@ -157,6 +169,7 @@ class Evaluator:
             yield (anomaly.sum(), *metrics)
 
     def plot_scores(self, store=True):
+        detectors = self.detectors
         plt.close('all')
         figures = []
         for ds in self.datasets:
@@ -165,22 +178,22 @@ class Evaluator:
             fig = plt.figure(figsize=(15, 15))
             fig.canvas.set_window_title(ds.name)
 
-            sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, 1)
+            sp = fig.add_subplot((2 * len(detectors) + 3), 1, 1)
             sp.set_title("original training data", loc=subtitle_loc)
             for col in X_train.columns:
                 plt.plot(X_train[col])
-            sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, 2)
+            sp = fig.add_subplot((2 * len(detectors) + 3), 1, 2)
             sp.set_title("original test set", loc=subtitle_loc)
             for col in X_test.columns:
                 plt.plot(X_test[col])
 
-            sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, 3)
+            sp = fig.add_subplot((2 * len(detectors) + 3), 1, 3)
             sp.set_title("binary labels of test set", loc=subtitle_loc)
             plt.plot(y_test)
 
             subplot_num = 4
-            for det in self.detectors:
-                sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, subplot_num)
+            for det in detectors:
+                sp = fig.add_subplot((2 * len(detectors) + 3), 1, subplot_num)
                 sp.set_title(f"scores of {det.name}", loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
                 plt.plot(np.arange(len(score)), [x for x in score])
@@ -188,7 +201,7 @@ class Evaluator:
                 plt.plot([x for x in threshold_line])
                 subplot_num += 1
 
-                sp = fig.add_subplot((2 * len(self.detectors) + 3), 1, subplot_num)
+                sp = fig.add_subplot((2 * len(detectors) + 3), 1, subplot_num)
                 sp.set_title(f"binary labels of {det.name}", loc=subtitle_loc)
                 plt.plot(np.arange(len(score)),
                          [x for x in det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))])
@@ -201,16 +214,17 @@ class Evaluator:
         return figures
 
     def plot_threshold_comparison(self, steps=40, store=True):
+        detectors = self.detectors
         plt.close('all')
-        plots_shape = len(self.detectors), len(self.datasets)
-        fig, axes = plt.subplots(*plots_shape, figsize=(len(self.detectors) * 15, len(self.datasets) * 5))
+        plots_shape = len(detectors), len(self.datasets)
+        fig, axes = plt.subplots(*plots_shape, figsize=(len(detectors) * 15, len(self.datasets) * 5))
         # Ensure two dimensions for iteration
         axes = np.array(axes).reshape(*plots_shape).T
         plt.suptitle("Compare thresholds", fontsize=10)
         for ds, axes_row in zip(self.datasets, axes):
             _, _, X_test, y_test = ds.data()
 
-            for det, ax in zip(self.detectors, axes_row):
+            for det, ax in zip(detectors, axes_row):
                 score = np.array(self.results[(ds.name, det.name)])
 
                 anomalies, _, prec, rec, f_score, f01_score, thresh = self.get_optimal_threshold(
@@ -235,16 +249,17 @@ class Evaluator:
         return fig
 
     def plot_roc_curves(self, store=True):
+        detectors = self.detectors
         plt.close('all')
         figures = []
         for ds in self.datasets:
             _, _, _, y_test = ds.data()
             fig_scale = 3
-            fig = plt.figure(figsize=(fig_scale * len(self.detectors), fig_scale))
+            fig = plt.figure(figsize=(fig_scale * len(detectors), fig_scale))
             fig.canvas.set_window_title(ds.name + " ROC")
             fig.suptitle(f"ROC curve on {ds.name}", fontsize=14, y="1.1")
             subplot_count = 1
-            for det in self.detectors:
+            for det in detectors:
                 self.logger.info(f"Plotting ROC curve for {det.name} on {ds.name}")
                 score = self.results[(ds.name, det.name)]
                 if np.isnan(score).all():
@@ -253,7 +268,7 @@ class Evaluator:
                 score[np.isnan(score)] = np.nanmin(score) - sys.float_info.epsilon
                 fpr, tpr, _ = roc_curve(y_test, score)
                 roc_auc = auc(fpr, tpr)
-                plt.subplot(1, len(self.detectors), subplot_count)
+                plt.subplot(1, len(detectors), subplot_count)
                 plt.plot(fpr, tpr, color="darkorange",
                          lw=2, label="area = %0.2f" % roc_auc)
                 subplot_count += 1

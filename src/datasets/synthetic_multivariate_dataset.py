@@ -21,6 +21,7 @@ class SyntheticMultivariateDataset(Dataset):
                  group_size: int = None,
                  test_pollution: float = 0.5,
                  global_noise: float = 0.1,  # Noise added to all dimensions over the whole timeseries
+                 values_range: Tuple[int, int] = (0, 100),
                  file_name: str = 'synthetic_mv1.pkl'):
         super().__init__(f'{name} (f={anomaly_func.__name__})', file_name)
         self.length = length
@@ -32,7 +33,11 @@ class SyntheticMultivariateDataset(Dataset):
         self.labels_padding = labels_padding
         self.random_seed = random_seed
         self.test_pollution = test_pollution
+        self.values_range = values_range
+        assert features >= 2, 'At least two dimensions are required for generating MV outliers'
         self.features = features
+        assert group_size is None or (group_size <= features and group_size > 0), 'Group size may not be greater '\
+            'than amount of dimensions'
         self.group_size = group_size or self.features
         assert self.group_size <= self.features
         if self.features % self.group_size == 1:  # How many dimensions each correlated group has
@@ -74,15 +79,16 @@ class SyntheticMultivariateDataset(Dataset):
 
     def generate_correlated_group(self, dimensions, pollution):
         values = np.zeros((self.length, dimensions))
-        xaxis_distances = np.linspace(0, 100, dimensions)
+        xaxis_distances = np.linspace(*self.values_range, dimensions)
         for index in range(dimensions):
             values[:, index].fill(xaxis_distances[index])
         labels = np.zeros(self.length)
-        pos = self.create_pause()
 
         # First pos data points are noise (don't start directly with curve)
+        pos = self.create_pause()
         values[:pos, :] = self.add_global_noise(values[:pos])
 
+        # Keep space (20) at the end
         while pos < self.length - self.mean_curve_length - 20:
             # General outline for the repeating curves, varying height and length
             curve = self.get_random_curve()
@@ -118,11 +124,12 @@ class SyntheticMultivariateDataset(Dataset):
     """
     def insert_features(self, interval_values: np.ndarray, interval_labels: np.ndarray,
                         curve: np.ndarray, create_anomaly: bool):
-
-        anomaly_dim = np.random.randint(0, interval_values.shape[1])
+        # Randomly switch between dimensions for inserting the anomaly_func
+        anomaly_dim = np.random.randint(1, interval_values.shape[1])
 
         # Insert curve and pause in first dimension (after adding the global noise)
         for i in set(range(interval_values.shape[1])) - {anomaly_dim}:
+            # Add to interval_values because they already contain a shift based on the dimension
             interval_values[:len(curve), i] += self.add_global_noise(curve)
             interval_values[len(curve):, i] = self.add_global_noise(interval_values[len(curve):, i])
 
