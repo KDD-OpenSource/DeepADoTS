@@ -39,16 +39,18 @@ class RecurrentEBM(Algorithm, GPUWrapper):
         self.tf_session = None
 
     def fit(self, X, _):
+        X.interpolate(inplace=True)
+        X.bfill(inplace=True)
         with self.tf_device:
-            X.interpolate(inplace=True)
             self._build_model(X.shape[1])
             self.tf_session = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
             self._initialize_tf()
             self._train_model(X, self.batch_size)
 
     def predict(self, X):
+        X.interpolate(inplace=True)
+        X.bfill(inplace=True)
         with self.tf_device:
-            X.interpolate(inplace=True)
             scores = []
             labels = []
 

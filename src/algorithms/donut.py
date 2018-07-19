@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import pandas as pd
 import six
@@ -143,11 +145,13 @@ class Donut(Algorithm, GPUWrapper):
     is smaller than mean - std of the reconstruction probabilities for that feature. For each point
     in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
 
-    def __init__(self, num_epochs=256, framework=Algorithm.Frameworks.Tensorflow, gpu: int=0):
+    def __init__(self, num_epochs=256, framework=Algorithm.Frameworks.Tensorflow, gpu: int=0,
+                 batch_size=32, x_dims=120):
         Algorithm.__init__(self, __name__, 'Donut', framework)
         GPUWrapper.__init__(self, gpu)
         self.max_epoch = num_epochs
-        self.x_dims = 120
+        self.x_dims = x_dims
+        self.batch_size = batch_size
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
@@ -158,10 +162,10 @@ class Donut(Algorithm, GPUWrapper):
                 col = X.columns[col_idx]
                 tf_session = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
                 timestamps = X.index
-                features = X.loc[:, col].values
+                features = X.loc[:, col].interpolate().bfill().values
                 labels = y
                 timestamps, _, (features, labels) = complete_timestamp(timestamps, (features, labels))
-                missing = np.isnan(features)
+                missing = np.isnan(X.loc[:, col].values)
                 _, mean, std = standardize_kpi(features, excludes=np.logical_or(labels, missing))
 
                 with tf.variable_scope('model') as model_vs:
@@ -182,9 +186,11 @@ class Donut(Algorithm, GPUWrapper):
                         z_dims=5,
                     )
 
-                trainer = QuietDonutTrainer(model=model, model_vs=model_vs, max_epoch=self.max_epoch)
+                trainer = QuietDonutTrainer(model=model, model_vs=model_vs, max_epoch=self.max_epoch,
+                                            batch_size=self.batch_size, valid_batch_size=self.batch_size,
+                                            missing_data_injection_rate=0.0)
                 with tf_session.as_default():
-                    trainer.fit(features, labels, missing, mean, std, excludes=np.logical_or(labels, missing))
+                    trainer.fit(features, labels, missing, mean, std, valid_portion=0.25)
                 self.means.append(mean)
                 self.stds.append(std)
                 self.tf_sessions.append(tf_session)
@@ -207,6 +213,7 @@ class Donut(Algorithm, GPUWrapper):
                 test_score = -np.power(np.e, test_score)
                 test_scores[self.x_dims - 1:, col_idx] = test_score
             aggregated_test_scores = np.amax(test_scores, axis=1)
+            aggregated_test_scores[:self.x_dims - 1] = np.nanmin(aggregated_test_scores) - sys.float_info.epsilon
             return aggregated_test_scores
 
     def binarize(self, score, threshold=None):
