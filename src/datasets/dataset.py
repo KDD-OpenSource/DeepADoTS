@@ -14,7 +14,6 @@ class Dataset:
                                                            '../../data/processed/', file_name))
 
         self._data = None
-        self.logger = logging.getLogger(__name__)
 
     def __str__(self) -> str:
         return self.name
