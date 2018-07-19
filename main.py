@@ -27,7 +27,6 @@ def main():
 def evaluate_real_datasets():
     REAL_DATASET_GROUP_PATH = "data/raw/"
     real_dataset_groups = glob.glob(REAL_DATASET_GROUP_PATH + "*")
-    detectors = get_detectors()
     seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
     results = pd.DataFrame()
     datasets = [KDDCup(seed=1)]
