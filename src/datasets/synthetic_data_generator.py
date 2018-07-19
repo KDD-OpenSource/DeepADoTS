@@ -539,7 +539,8 @@ class SyntheticDataGenerator:
         }
         random_state = seed
 
-        return SyntheticDataset(name=f'Synthetic Multivariate Variance Outliers (dim={n})', file_name='mv_variance1.pkl',
+        return SyntheticDataset(name=f'Synthetic Multivariate Variance Outliers (dim={n})',
+                                file_name='mv_variance1.pkl',
                                 length=length, n=n, k=k,
                                 baseline_config=baseline_config, shift_config=shift_config,
                                 behavior=behavior, behavior_config=behavior_config,

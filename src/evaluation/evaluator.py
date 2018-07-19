@@ -359,8 +359,8 @@ class Evaluator:
         title = f'latex_merged{f"_{title_suffix}" if title_suffix else ""}'
         content = ''
         for ds in self.datasets:
-            content += f'''{ds.name}:\n\n{tabulate(results[results["dataset"] == ds.name],
-                                                   headers="keys", tablefmt="latex")}\n\n'''
+            content += f'''{ds.name}:\n\n{tabulate(results[results['dataset'] == ds.name],
+                                                   headers='keys', tablefmt='latex')}\n\n'''
         if store:
             self.store_text(content=content, title=title, extension='tex')
         return content
@@ -374,8 +374,8 @@ class Evaluator:
         title = f'latex_merged{f"_{title_suffix}" if title_suffix else ""}'
         content = ''
         for det in self.detectors:
-            content += f'''{det.name}:\n\n{tabulate(results[results["algorithm"] == det.name],
-                                   headers="keys", tablefmt="latex")}\n\n'''
+            content += f'''{det.name}:\n\n{tabulate(results[results['algorithm'] == det.name],
+                                   headers='keys', tablefmt='latex')}\n\n'''
         if store:
             self.store_text(content=content, title=title, extension='tex')
         return content
