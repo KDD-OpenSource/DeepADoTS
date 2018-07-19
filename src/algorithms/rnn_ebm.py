@@ -62,6 +62,8 @@ class RecurrentEBM(Algorithm, GPUWrapper):
             if self.min_energy is not None:
                 labels = np.where(scores >= self.min_energy)
 
+            scores = np.array(scores)
+
             return (labels, scores) if self.min_energy is not None else scores
 
     def _train_model(self, train_set, batch_size):
