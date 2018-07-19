@@ -38,6 +38,7 @@ class LSTMED(Algorithm, GPUWrapper):
 
     def fit(self, X: pd.DataFrame, _):
         X.interpolate(inplace=True)
+        X.bfill(inplace=True)
         data = X.values
 
         sequences = [data[i:i + self.sequence_length] for i in range(data.shape[0] - self.sequence_length + 1)]
@@ -76,6 +77,7 @@ class LSTMED(Algorithm, GPUWrapper):
 
     def predict(self, X: pd.DataFrame):
         X.interpolate(inplace=True)
+        X.bfill(inplace=True)
         data = X.values
         sequences = [data[i:i + self.sequence_length] for i in range(data.shape[0] - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=False, drop_last=False)
