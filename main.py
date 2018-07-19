@@ -28,7 +28,7 @@ def evaluate_real_datasets():
     REAL_DATASET_GROUP_PATH = "data/raw/"
     real_dataset_groups = glob.glob(REAL_DATASET_GROUP_PATH + "*")
     detectors = get_detectors()
-    seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=1, dtype="uint32")
+    seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=RUNS, dtype="uint32")
     results = pd.DataFrame()
     datasets = [KDDCup(seed=1)]
     for real_dataset_group in real_dataset_groups:
@@ -47,10 +47,11 @@ def evaluate_real_datasets():
         evaluator.plot_scores()
         results = results.append(result, ignore_index=True)
 
-    results.to_pickle("df_real_datasets")
+    avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
+    evaluator.set_benchmark_results(avg_results)
+    evaluator.export_results('run_real_datasets')
     evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=False)
     evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=True)
-    evaluator.export_results('real_datasets')
 
 
 def get_detectors():
