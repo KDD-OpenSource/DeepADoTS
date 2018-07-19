@@ -64,7 +64,7 @@ class Evaluator:
         output_dir = os.path.join(self.output_dir, 'evaluators')
         path = os.path.join(output_dir, f'{name}.pkl')
         self.logger.info(f'Read evaluator results at {os.path.abspath(path)}')
-        with open(path, 'r') as f:
+        with open(path, 'rb') as f:
             save_dict = pickle.load(f)
 
         self.logger.debug(f'Importing detectors {"; ".join(save_dict["detectors"])}')
@@ -77,7 +77,7 @@ class Evaluator:
 
         self.benchmark_results = save_dict['benchmark_results']
         self.seed = save_dict['seed']
-        # self.results = save_dict['results']
+        self.results = save_dict['results']
 
     @staticmethod
     def get_accuracy_precision_recall_fscore(y_true: list, y_pred: list):
