@@ -5,9 +5,11 @@ import pickle
 import re
 import sys
 import traceback
+from itertools import product
+from multiprocessing import Pool, cpu_count
 from textwrap import wrap
-from typing import Union
 
+import dill
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as path_effects
 from matplotlib.font_manager import FontProperties
@@ -15,12 +17,31 @@ import numpy as np
 import pandas as pd
 import progressbar
 import time
+
 from sklearn.metrics import accuracy_score, fbeta_score
 from sklearn.metrics import precision_recall_fscore_support as prf
 from sklearn.metrics import roc_curve, auc
 from tabulate import tabulate
 
 from .config import init_logging
+
+
+def _predict(ds, detectors, seed):
+    result = {}
+    for det in detectors():
+        logging.info(f'Training {det.name} on {ds.name} with seed {seed}')
+        X_train, y_train, X_test, y_test = ds.data()
+        try:
+            det.set_seed(seed)
+            det.fit(X_train.copy(), y_train.copy())
+            score = det.predict(X_test.copy())
+        except Exception as e:
+            logging.error(f'An exception occurred while training {det.name} on {ds}: {e}')
+            logging.error(traceback.format_exc())
+            score = np.zeros_like(y_test)
+        result[(ds.name, det.name)] = score
+        gc.collect()
+    return result
 
 
 class Evaluator:
@@ -48,6 +69,12 @@ class Evaluator:
         detectors = self._detectors()
         assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
         return detectors
+
+    def evaluate(self):
+        with Pool(processes=cpu_count()) as pool:
+            job_args = product(self.datasets, [self._detectors], [self.seed])
+            for score_dict in progressbar.progressbar(pool.starmap(_predict, job_args)):
+                self.results.update(score_dict)
 
     def set_benchmark_results(self, benchmark_result):
         self.benchmark_results = benchmark_result
@@ -124,22 +151,6 @@ class Evaluator:
             return anomalies, acc, prec, rec, f_score, f01_score, threshold
         else:
             return threshold[np.argmax(f_score)]
-
-    def evaluate(self):
-        for ds in progressbar.progressbar(self.datasets):
-            (X_train, y_train, X_test, y_test) = ds.data()
-            for det in progressbar.progressbar(self.detectors):
-                self.logger.info(f'Training {det.name} on {ds.name} with seed {self.seed}')
-                try:
-                    det.set_seed(self.seed)
-                    det.fit(X_train.copy(), y_train.copy())
-                    score = det.predict(X_test.copy())
-                    self.results[(ds.name, det.name)] = score
-                except Exception as e:
-                    self.logger.error(f'An exception occurred while training {det.name} on {ds}: {e}')
-                    self.logger.error(traceback.format_exc())
-                    self.results[(ds.name, det.name)] = np.zeros_like(y_test)
-            gc.collect()
 
     def benchmarks(self) -> pd.DataFrame:
         df = pd.DataFrame()
