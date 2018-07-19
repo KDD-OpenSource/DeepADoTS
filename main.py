@@ -30,7 +30,7 @@ def evaluate_real_datasets():
     detectors = get_detectors()
     seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=1, dtype="uint32")
     results = pd.DataFrame()
-    datasets = []
+    datasets = [KDDCup(seed=1)]
     for real_dataset_group in real_dataset_groups:
         for data_set_path in glob.glob(real_dataset_group + "/labeled/train/*"):
             data_set_name = data_set_path.split('/')[-1].replace('.pkl', '')
@@ -38,6 +38,7 @@ def evaluate_real_datasets():
             datasets.append(dataset)
 
     for seed in seeds:
+        datasets[0] = KDDCup(seed)
         evaluator = Evaluator(datasets, detectors, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
@@ -169,32 +170,6 @@ def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=N
                                steps=steps, store_results=False)
     plotter = Plotter('reports', output_dir)
     plotter.plot_experiment('missing on extreme_1')
-
-
-def evaluate_on_real_world_data_sets(seed):
-    dagmm = DAGMM()
-    dagmm.set_seed(seed)
-    # numpy expects a 32-bit unsigned integer
-    kdd_cup = KDDCup(seed)
-    X_train, y_train, X_test, y_test = kdd_cup.data()
-    dagmm.fit(X_train, y_train)
-    pred = dagmm.predict(X_test)
-    print(Evaluator.get_accuracy_precision_recall_fscore(y_test, pred))
-
-    donut = Donut()
-    donut.set_seed(seed)
-    air_quality = AirQuality().data()
-    X = air_quality.loc[:, [air_quality.columns[2], "timestamps"]]
-    X["timestamps"] = X.index
-    split_ratio = 0.8
-    split_point = int(split_ratio * len(X))
-    X_train = X[:split_point]
-    X_test = X[split_point:]
-    y_train = pd.Series(0, index=np.arange(len(X_train)))
-    donut.fit(X_train, y_train)
-    pred = donut.predict(X_test)
-    print("Donut results: ", pred)
-
 
 if __name__ == '__main__':
     main()
