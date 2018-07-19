@@ -13,7 +13,7 @@ class MultivariateAnomalyFunction:
     # Get a dataset by passing the method name as string. All following parameters
     # are passed through. Throws AttributeError if attribute was not found.
     @staticmethod
-    def get_multivariate_dataset(method, name=None, group_size=10, *args, **kwargs):
+    def get_multivariate_dataset(method, name=None, group_size=None, *args, **kwargs):
         name = name or f'Synthetic Multivariate {method} Curve Outliers'
         func = getattr(MultivariateAnomalyFunction, method)
         return SyntheticMultivariateDataset(anomaly_func=func,
@@ -43,16 +43,6 @@ class MultivariateAnomalyFunction:
             return values, 0, len(values)
 
     @staticmethod
-    def delayed(curve_values, anomalous, _):
-        if not anomalous:
-            return curve_values, -1, -1
-        else:
-            # The curve in the second dimension occurs a few timestamps later
-            nonce = np.zeros(len(curve_values) // 10)
-            values = np.concatenate([nonce, curve_values])
-            return values, 0, len(values)
-
-    @staticmethod
     def xor(curve_values, anomalous, interval_length):
         pause_length = interval_length - len(curve_values)
         if not anomalous:
@@ -64,8 +54,20 @@ class MultivariateAnomalyFunction:
         else:
             # Anomaly: curves overlap (at the same time or at least half overlapping)
             max_pause = min(len(curve_values) // 2, pause_length)
-            nonce = np.zeros(np.random.randint(max_pause))
-            return np.concatenate([nonce, curve_values]), len(nonce), len(nonce) + len(curve_values)
+            nonce = np.zeros(max_pause)
+            return np.concatenate([nonce, curve_values]), len(nonce), len(curve_values)
+
+    @staticmethod
+    def delayed(curve_values, anomalous, interval_length):
+        if not anomalous:
+            return curve_values, -1, -1
+        else:
+            # The curve in the second dimension occurs a few timestamps later
+            left_space = interval_length - len(curve_values)
+            delay = min(len(curve_values) // 2, left_space)
+            nonce = np.zeros(delay)
+            values = np.concatenate([nonce, curve_values])
+            return values, 0, len(values)
 
     @staticmethod
     def delayed_missing(curve_values, anomalous, interval_length):
