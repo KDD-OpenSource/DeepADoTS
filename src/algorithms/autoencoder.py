@@ -12,6 +12,8 @@ class NNAutoEncoder(AutoEncoder, GPUWrapper):
     def __init__(self, n_features=118, sequence_length=1, hidden_size=1, gpu=0):
         AutoEncoder.__init__(self)
         GPUWrapper.__init__(self, gpu)
+
+        # Each point is a flattened window and thus has as many features as sequence_length * features
         n_features = n_features * sequence_length
 
         layers = []
