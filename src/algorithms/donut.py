@@ -147,7 +147,7 @@ class Donut(Algorithm, GPUWrapper):
 
     def __init__(self, num_epochs=256, framework=Algorithm.Frameworks.Tensorflow, gpu: int=0,
                  batch_size=32, x_dims=120):
-        Algorithm.__init__(self, __name__, "Donut", framework)
+        Algorithm.__init__(self, __name__, 'Donut', framework)
         GPUWrapper.__init__(self, gpu)
         self.max_epoch = num_epochs
         self.x_dims = x_dims
