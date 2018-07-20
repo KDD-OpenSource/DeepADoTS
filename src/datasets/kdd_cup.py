@@ -26,7 +26,7 @@ class KDDCup(RealDataset):
         :return: (X_train, y_train), (X_test, y_test)
         """
         data = np.load(self.processed_path)
-        np.random.seed(seed=self.seed)
+        np.random.seed(self.seed)
 
         labels = data['kdd'][:, -1]
         features = data['kdd'][:, :-1]

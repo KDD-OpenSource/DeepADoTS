@@ -128,7 +128,8 @@ def run_experiments(steps=5):
         output_dir=os.path.join(output_dir, 'multi_dim_mv'))
 
     evaluators = [ev_pol, ev_mis, ev_extr, ev_mv, ev_dim, ev_mv_dim]
-    Evaluator.plot_heatmap(evaluators)
+    for ev in evaluators:
+        ev.plot_single_heatmap()
 
 
 def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=None, only_load=False, steps=5):

@@ -8,14 +8,20 @@ from src.evaluation.evaluator import Evaluator
 
 
 class DAGMMTestCase(unittest.TestCase):
-    def test_kdd_cup(self):
-        evaluator = Evaluator([KDDCup()], [DAGMM(num_epochs=10, sequence_length=1)])
+
+    @staticmethod
+    def test_kdd_cup():
+        def detectors():
+            return [DAGMM(num_epochs=10, sequence_length=1)]
+
+        evaluator = Evaluator([KDDCup(21), KDDCup(22), KDDCup(23), KDDCup(24), KDDCup(25)], detectors)
         df_evaluation = pd.DataFrame(
             columns=['dataset', 'algorithm', 'accuracy', 'precision', 'recall', 'F1-score', 'F0.1-score'])
-        for _ in range(5):
-            evaluator.evaluate()
-            df = evaluator.benchmarks()
-            df_evaluation = df_evaluation.append(df)
+
+        evaluator.evaluate()
+        df = evaluator.benchmarks()
+        df_evaluation = df_evaluation.append(df)
+
         print(df_evaluation.to_string())
         assert (df_evaluation == 0).sum().sum() == 0  # No zeroes in the DataFrame
         assert df_evaluation['F1-score'].std() > 0  # Not always the same value
