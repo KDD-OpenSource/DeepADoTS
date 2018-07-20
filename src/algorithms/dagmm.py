@@ -185,9 +185,8 @@ class DAGMM(Algorithm, GPUWrapper):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
-        # Each point is a flattened window and thus has as many features as sequence_length * features
-        multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
-        data_loader = DataLoader(dataset=multi_points, batch_size=self.batch_size, shuffle=True, drop_last=True)
+        sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
+        data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=True, drop_last=True)
         hidden_size = max(1, X.shape[1] // 20)
         autoencoder = self.autoencoder_type(n_features=X.shape[1], sequence_length=self.sequence_length,
                                             hidden_size=hidden_size, **self.autoencoder_args)
@@ -243,12 +242,12 @@ class DAGMM(Algorithm, GPUWrapper):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
-        multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
-        data_loader = DataLoader(dataset=multi_points, batch_size=1, shuffle=False)
+        sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
+        data_loader = DataLoader(dataset=sequences, batch_size=1, shuffle=False)
         test_energy = np.full((self.sequence_length, len(data)), np.nan)
 
-        for idx, multi_point in enumerate(data_loader):
-            _, _, z, _ = self.dagmm(self.to_var(multi_point).float())
+        for idx, sequence in enumerate(data_loader):
+            _, _, z, _ = self.dagmm(self.to_var(sequence).float())
             sample_energy, _ = self.dagmm.compute_energy(z, size_average=False)
             window_elements = np.arange(idx, idx + self.sequence_length, 1)
             test_energy[idx % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
