@@ -16,7 +16,7 @@ class DAGMMTestCase(unittest.TestCase):
 
         evaluator = Evaluator([KDDCup(21), KDDCup(22), KDDCup(23), KDDCup(24), KDDCup(25)], detectors)
         df_evaluation = pd.DataFrame(
-            columns=["dataset", "algorithm", "accuracy", "precision", "recall", "F1-score", "F0.1-score"])
+            columns=['dataset', 'algorithm', 'accuracy', 'precision', 'recall', 'F1-score', 'F0.1-score'])
 
         evaluator.evaluate()
         df = evaluator.benchmarks()

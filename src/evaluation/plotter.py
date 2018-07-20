@@ -68,10 +68,10 @@ class Plotter:
         self.store(fig, f'boxplot-experiment-{title}.pdf', bbox_inches='tight')
         return fig
 
-    def store(self, fig, title, extension="pdf", **kwargs):
-        timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+    def store(self, fig, title, extension='pdf', **kwargs):
+        timestamp = time.strftime('%Y-%m-%d-%H%M%S')
         output_dir = os.path.join(self.output_dir, 'figures')
         os.makedirs(output_dir, exist_ok=True)
-        path = os.path.join(output_dir, f"{title}-{timestamp}.{extension}")
+        path = os.path.join(output_dir, f'{title}-{timestamp}.{extension}')
         fig.savefig(path, **kwargs)
-        self.logger.info(f"Stored plot at {path}")
+        self.logger.info(f'Stored plot at {path}')

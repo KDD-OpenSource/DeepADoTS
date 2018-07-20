@@ -7,7 +7,7 @@ from .real_dataset import RealDataset
 class KDDCup(RealDataset):
     def __init__(self, seed):
         super().__init__(
-            name="KDD Cup '99", raw_path="kddcup-data_10_percent_corrected.txt", file_name="kdd_cup.npz"
+            name="KDD Cup '99", raw_path='kddcup-data_10_percent_corrected.txt', file_name='kdd_cup.npz'
         )
         self.seed = seed
 
@@ -28,8 +28,8 @@ class KDDCup(RealDataset):
         data = np.load(self.processed_path)
         np.random.seed(self.seed)
 
-        labels = data["kdd"][:, -1]
-        features = data["kdd"][:, :-1]
+        labels = data['kdd'][:, -1]
+        features = data['kdd'][:, :-1]
 
         normal_data = features[labels == 1]
         normal_labels = labels[labels == 1]
