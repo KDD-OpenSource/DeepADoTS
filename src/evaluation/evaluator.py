@@ -6,7 +6,6 @@ import re
 import sys
 import traceback
 from textwrap import wrap
-from typing import Union
 
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as path_effects
