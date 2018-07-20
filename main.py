@@ -1,13 +1,14 @@
+import glob
 import os
 
 import numpy as np
 import pandas as pd
 
-from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoEncoder
-from src.datasets import AirQuality, KDDCup, SyntheticDataGenerator
-from src.evaluation import Evaluator, Plotter
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
     run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
+from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoEncoder
+from src.datasets import KDDCup, SyntheticDataGenerator, RealPickledDataset
+from src.evaluation import Evaluator, Plotter
 
 # Add this line if you want to test the pipeline & experiments
 # os.environ['CIRCLECI'] = 'True'
@@ -20,6 +21,7 @@ def main():
     run_pipeline()
     run_experiments()
     # run_final_missing_experiment(outlier_type='extreme_1', runs=100, only_load=False)
+    # evaluate_real_datasets()
 
 
 def detectors():
@@ -143,28 +145,33 @@ def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=N
     plotter.plot_experiment('missing on extreme_1')
 
 
-def evaluate_on_real_world_data_sets(seed):
-    dagmm = DAGMM()
-    dagmm.set_seed(seed)
-    kdd_cup = KDDCup(seed)
-    X_train, y_train, X_test, y_test = kdd_cup.data()
-    dagmm.fit(X_train, y_train)
-    pred = dagmm.predict(X_test)
-    print(Evaluator.get_accuracy_precision_recall_fscore(y_test, pred))
+def evaluate_real_datasets():
+    REAL_DATASET_GROUP_PATH = 'data/raw/'
+    real_dataset_groups = glob.glob(REAL_DATASET_GROUP_PATH + "*")
+    seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
+    results = pd.DataFrame()
+    datasets = [KDDCup(seed=1)]
+    for real_dataset_group in real_dataset_groups:
+        for data_set_path in glob.glob(real_dataset_group + '/labeled/train/*'):
+            data_set_name = data_set_path.split('/')[-1].replace('.pkl', '')
+            dataset = RealPickledDataset(data_set_name, data_set_path)
+            datasets.append(dataset)
 
-    donut = Donut()
-    donut.set_seed(seed)
-    air_quality = AirQuality().data()
-    X = air_quality.loc[:, [air_quality.columns[2], 'timestamps']]
-    X['timestamps'] = X.index
-    split_ratio = 0.8
-    split_point = int(split_ratio * len(X))
-    X_train = X[:split_point]
-    X_test = X[split_point:]
-    y_train = pd.Series(0, index=np.arange(len(X_train)))
-    donut.fit(X_train, y_train)
-    pred = donut.predict(X_test)
-    print('Donut results: ', pred)
+    for seed in seeds:
+        datasets[0] = KDDCup(seed)
+        evaluator = Evaluator(datasets, detectors, seed=seed)
+        evaluator.evaluate()
+        result = evaluator.benchmarks()
+        evaluator.plot_roc_curves()
+        evaluator.plot_threshold_comparison()
+        evaluator.plot_scores()
+        results = results.append(result, ignore_index=True)
+
+    avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
+    evaluator.set_benchmark_results(avg_results)
+    evaluator.export_results('run_real_datasets')
+    evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=False)
+    evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=True)
 
 
 if __name__ == '__main__':

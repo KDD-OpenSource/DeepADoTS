@@ -84,7 +84,7 @@ class LSTMED(Algorithm, GPUWrapper):
 
         self.lstmed.eval()
 
-        mvnormal = multivariate_normal(mean=self.mean, cov=self.cov, allow_singular=False)
+        mvnormal = multivariate_normal(mean=self.mean, cov=self.cov, allow_singular=True)
         scores = []
         for idx, ts in enumerate(data_loader):
             output = self.lstmed(self.to_var(ts))
