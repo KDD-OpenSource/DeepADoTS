@@ -14,7 +14,7 @@ from src.evaluation import Evaluator, Plotter
 # os.environ['CIRCLECI'] = 'True'
 
 # min number of runs = 2 for std operation
-RUNS = 2 if os.environ.get('CIRCLECI', False) else 10
+RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
 
 
 def main():
@@ -91,6 +91,7 @@ def run_experiments(steps=5):
     # Set the seed manually for reproducibility.
     seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
 
+    evaluators = []
     for outlier_type in ['extreme_1', 'shift_1', 'variance_1', 'trend_1']:
         output_dir = os.path.join('reports/experiments', outlier_type)
 
@@ -98,6 +99,7 @@ def run_experiments(steps=5):
         ev_extr = run_extremes_experiment(
             detectors, seeds, RUNS, outlier_type, steps=10,
             output_dir=os.path.join(output_dir, 'extremes'))
+        evaluators.append(ev_extr)
 
         # CI: Keep the execution fast so stop after one experiment
         if os.environ.get('CIRCLECI', False):
@@ -108,28 +110,32 @@ def run_experiments(steps=5):
         ev_pol = run_pollution_experiment(
             detectors, seeds, RUNS, outlier_type, steps=steps,
             output_dir=os.path.join(output_dir, 'pollution'))
+        evaluators.append(ev_pol)
 
         announce_experiment('Missing Values')
         ev_mis = run_missing_experiment(
             detectors, seeds, RUNS, outlier_type, steps=steps,
             output_dir=os.path.join(output_dir, 'missing'))
+        evaluators.append(ev_mis)
 
         announce_experiment('High-dimensional normal outliers')
         ev_dim = run_multi_dim_experiment(
             detectors, outlier_type, RUNS, steps=20,
             output_dir=os.path.join(output_dir, 'multi_dim'))
+        evaluators.append(ev_dim)
 
     announce_experiment('Multivariate Datasets')
     ev_mv = run_multivariate_experiment(
         detectors, seeds, RUNS,
         output_dir=os.path.join(output_dir, 'multivariate'))
+    evaluators.append(ev_mv)
 
     announce_experiment('High-dimensional multivariate outliers')
     ev_mv_dim = run_multi_dim_multivariate_experiment(
         detectors, seeds, RUNS, steps=20,
         output_dir=os.path.join(output_dir, 'multi_dim_mv'))
+    evaluators.append(ev_mv_dim)
 
-    evaluators = [ev_pol, ev_mis, ev_extr, ev_mv, ev_dim, ev_mv_dim]
     for ev in evaluators:
         ev.plot_single_heatmap()
 
