@@ -120,7 +120,7 @@ def run_experiments(steps=5):
 
         announce_experiment('High-dimensional normal outliers')
         ev_dim = run_multi_dim_experiment(
-            detectors, outlier_type, RUNS, steps=20,
+            detectors, seeds, RUNS, outlier_type, steps=20,
             output_dir=os.path.join(output_dir, 'multi_dim'))
         evaluators.append(ev_dim)
 
