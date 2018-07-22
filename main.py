@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-    run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
+    run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, \
+    run_sine_experiment, announce_experiment
 from src.algorithms import DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoEncoder
 from src.datasets import KDDCup, SyntheticDataGenerator, RealPickledDataset
 from src.evaluation import Evaluator, Plotter
@@ -105,6 +106,12 @@ def run_experiments(steps=5):
         if os.environ.get('CIRCLECI', False):
             ev_extr.plot_single_heatmap()
             return
+
+        announce_experiment('Sine Outlier Height')
+        ev_sine = run_sine_experiment(
+            detectors, seeds, RUNS, outlier_type, steps=10,
+            output_dir=os.path.join(output_dir, 'sine'))
+        evaluators.append(ev_sine)
 
         announce_experiment('Pollution')
         ev_pol = run_pollution_experiment(

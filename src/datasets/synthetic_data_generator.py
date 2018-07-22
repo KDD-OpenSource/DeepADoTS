@@ -94,7 +94,7 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def extreme_1_extremeness(seed, extreme_value=10, n=1):
+    def extreme_1_extremeness(seed, extreme_value=8, n=1):
         """Full pollution -> All anomalies from test set are in train set"""
         dataset = SyntheticDataGenerator.extreme_1(seed, n)
 
@@ -109,6 +109,15 @@ class SyntheticDataGenerator:
         dataset.load()
         dataset.add_missing_values(missing_percentage=missing_percentage)
         dataset.name = f'Syn Extreme Outliers (mis={missing_percentage})'
+        return dataset
+
+    @staticmethod
+    def extreme_1_sine(seed, extreme_value=8):
+        dataset = SyntheticDataGenerator.extreme_1(seed)
+        dataset.behavior = sine_generator
+        dataset.behavior_config = {'cycle_duration': 150, 'phase_shift': 0, 'amplitude': 0.1}
+        dataset.outlier_config['extreme'][0]['factor'] = extreme_value
+        dataset.name = f'Syn Extreme Outliers (with sine behavior, extremeness={extreme_value})'
         return dataset
 
     @staticmethod
@@ -161,13 +170,22 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def shift_1_extremeness(seed, extreme_value=10, n=1):
+    def shift_1_extremeness(seed, extreme_value=8, n=1):
         """Full pollution -> All anomalies from test set are in train set"""
         dataset = SyntheticDataGenerator.shift_1(seed, n)
 
         dataset.outlier_config['shift'][0]['factor'] = extreme_value
 
         dataset.name = f'Syn Shift Outliers (extremeness={extreme_value})'
+        return dataset
+
+    @staticmethod
+    def shift_1_sine(seed, extreme_value=8):
+        dataset = SyntheticDataGenerator.shift_1(seed)
+        dataset.behavior = sine_generator
+        dataset.behavior_config = {'cycle_duration': 150, 'phase_shift': 0, 'amplitude': 0.1}
+        dataset.outlier_config['shift'][0]['factor'] = extreme_value
+        dataset.name = f'Syn Extreme Outliers (with sine behavior, extremeness={extreme_value})'
         return dataset
 
     @staticmethod
@@ -221,13 +239,22 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def variance_1_extremeness(seed, extreme_value=10, n=1):
+    def variance_1_extremeness(seed, extreme_value=8, n=1):
         """Full pollution -> All anomalies from test set are in train set"""
         dataset = SyntheticDataGenerator.variance_1(seed, n)
 
         dataset.outlier_config['variance'][0]['factor'] = extreme_value
 
         dataset.name = f'Syn Variance Outliers (extremeness={extreme_value})'
+        return dataset
+
+    @staticmethod
+    def variance_1_sine(seed, extreme_value=8):
+        dataset = SyntheticDataGenerator.variance_1(seed)
+        dataset.behavior = sine_generator
+        dataset.behavior_config = {'cycle_duration': 150, 'phase_shift': 0, 'amplitude': 0.1}
+        dataset.outlier_config['variance'][0]['factor'] = extreme_value
+        dataset.name = f'Syn Extreme Outliers (with sine behavior, extremeness={extreme_value})'
         return dataset
 
     @staticmethod
@@ -279,13 +306,22 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
-    def trend_1_extremeness(seed, extreme_value=10, n=1):
+    def trend_1_extremeness(seed, extreme_value=8, n=1):
         """Full pollution -> All anomalies from test set are in train set"""
         dataset = SyntheticDataGenerator.trend_1(seed, n)
 
         dataset.outlier_config['trend'][0]['factor'] = extreme_value
 
         dataset.name = f'Syn Trend Outliers (extremeness={extreme_value})'
+        return dataset
+
+    @staticmethod
+    def trend_1_sine(seed, extreme_value=8):
+        dataset = SyntheticDataGenerator.trend_1(seed)
+        dataset.behavior = sine_generator
+        dataset.behavior_config = {'cycle_duration': 150, 'phase_shift': 0, 'amplitude': 0.1}
+        dataset.outlier_config['trend'][0]['factor'] = extreme_value
+        dataset.name = f'Syn Extreme Outliers (with sine behavior, extremeness={extreme_value})'
         return dataset
 
     @staticmethod
