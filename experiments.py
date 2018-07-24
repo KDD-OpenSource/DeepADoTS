@@ -99,6 +99,9 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
         evaluator.export_results(f'experiment-run-{index}-{seed}')
         results = results.append(result, ignore_index=True)
 
+    if not store_results:
+        return
+
     # set average results from multiple pipeline runs for evaluation
     avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
     evaluator.set_benchmark_results(avg_results)
