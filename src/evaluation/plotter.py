@@ -38,6 +38,7 @@ class Plotter:
         all_results = []
         for dir_ in pickle_dirs:
             for path in os.listdir(os.path.join(dir_, 'evaluators')):
+                self.logger.debug("Importing evaluator from '{path}'")
                 with open(os.path.join(dir_, 'evaluators', path), 'rb') as f:
                     save_dict = pickle.load(f)
                 benchmark_results = save_dict['benchmark_results']
@@ -70,6 +71,16 @@ class Plotter:
         self.store(fig, f'boxplot-experiment-{title}', 'pdf', bbox_inches='tight')
         return fig
 
+    def lineplot(self, title):
+        self.logger.warn('Final lineplot function is not implemented')
+        pass
+
+    def heatmap(self, title):
+        self.logger.warn('Final heatmap function is not implemented')
+        pass
+
+    # --- Helper functions --------------------------------------------------- #
+
     def single_barplot(self, title):
         aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]
         aurocs_df = pd.concat(aurocs, axis=0, ignore_index=True)
@@ -84,16 +95,6 @@ class Plotter:
         fig.suptitle(f'Area under ROC for {final_det_name} (runs={len(self.results)})')
         self.store(fig, f'boxplot-{final_det_name}-{title}', 'pdf', bbox_inches='tight')
         return fig
-
-    def lineplot(self, title):
-        self.logger.warn('Final lineplot function is not implemented')
-        pass
-
-    def heatmap(self, title):
-        self.logger.warn('Final heatmap function is not implemented')
-        pass
-
-    # --- Helper functions --------------------------------------------------- #
 
     def _styled_boxplot(self, ax, aurocs_df, det):
         values = aurocs_df[aurocs_df['algorithm'] == det].drop(columns='algorithm')
