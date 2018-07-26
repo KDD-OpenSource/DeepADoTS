@@ -10,6 +10,15 @@ import pandas as pd
 from .evaluator import Evaluator
 
 
+# For supporting pickles from old versions we need to map them
+NAMES_TRANSLATION = {
+    'DAGMM_NNAutoEncoder_withWindow': 'DAGMM-NW',
+    'DAGMM_NNAutoEncoder_withoutWindow': 'DAGMM-NN',
+    'DAGMM_LSTMAutoEncoder_withWindow': 'DAGMM-LW',
+    'Recurrent EBM': 'REBM',
+}
+
+
 class Plotter:
     def __init__(self, output_dir, pickle_dirs=None, dataset_names=None, detector_names=None):
         self.output_dir = output_dir
@@ -43,12 +52,14 @@ class Plotter:
         return all_results
 
     # results is an array of benchmark_results (e.g. returned by get_results_for_runs)
-    def plot_experiment(self, title):
+    def barplots(self, title):
+        if len(self.detector_names) == 1:
+            return self.single_barplot(title)
         aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]
         aurocs_df = pd.concat(aurocs, axis=0, ignore_index=True)
 
         fig, axes = plt.subplots(
-            ncols=len(self.detector_names), figsize=(3*len(self.detector_names), 4), sharey=True)
+            ncols=len(self.detector_names), figsize=(1.5*len(self.detector_names), 4), sharey=True)
 
         if len(self.detector_names) == 1:
             axes = np.array(axes)
@@ -57,10 +68,15 @@ class Plotter:
             values = aurocs_df[aurocs_df['algorithm'] == det].drop(columns='algorithm')
             ds_groups = values.groupby('dataset')
             ax.boxplot([ds_groups.get_group(x)['auroc'].values for x in self.dataset_names],
-                       positions=np.linspace(0, 1, 5))
-            ax.set_xticklabels([f'{float(Evaluator.get_key_and_value(x)[1]):.2f}' for x in self.dataset_names])
+                       positions=np.linspace(0, 1, 5), widths=0.15,
+                       medianprops={'linewidth': 1},
+                       whiskerprops={'color': 'darkblue', 'linestyle':'--'},
+                       flierprops={'markersize': 3},
+                       boxprops={'color': 'darkblue'}
+            )
+            ax.set_xticklabels([f'{float(Evaluator.get_key_and_value(x)[1]):.2f}' for x in self.dataset_names], rotation=90)
 
-            ax.set_xlabel(det, rotation=15)
+            ax.set_xlabel(NAMES_TRANSLATION.get(det, det))
             ax.set_ylim((0, 1.05))
             ax.yaxis.grid(True)
             ax.set_xlim((-0.15, 1.15))
@@ -68,8 +84,38 @@ class Plotter:
 
         fig.subplots_adjust(wspace=0)
         fig.suptitle(f'Area under ROC for {title} (runs={len(self.results)})')
-        self.store(fig, f'boxplot-experiment-{title}.pdf', bbox_inches='tight')
+        self.store(fig, f'boxplot-experiment-{title}', 'pdf', bbox_inches='tight')
         return fig
+
+    def single_barplot(self, title):
+        aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]
+        aurocs_df = pd.concat(aurocs, axis=0, ignore_index=True)
+        det = self.detector_names[0]
+
+        fig, ax = plt.subplots(ncols=1, figsize=(4, 4))
+
+        values = aurocs_df[aurocs_df['algorithm'] == det].drop(columns='algorithm')
+        ds_groups = values.groupby('dataset')
+        ax.boxplot([ds_groups.get_group(x)['auroc'].values for x in self.dataset_names],
+                   positions=np.linspace(0, 1, 5), widths=0.15,
+                   medianprops={'linewidth': 1},
+                   whiskerprops={'color': 'darkblue', 'linestyle':'--'},
+                   flierprops={'markersize': 3},
+                   boxprops={'color': 'darkblue'}
+        )
+        ax.set_xticklabels([f'{float(Evaluator.get_key_and_value(x)[1]):.2f}' for x in self.dataset_names])
+
+        ax.set_ylim((0, 1.05))
+        ax.yaxis.grid(True)
+        ax.set_xlim((-0.15, 1.15))
+        ax.margins(0.05)
+
+        final_det_name = NAMES_TRANSLATION.get(det, det)
+        fig.subplots_adjust(wspace=0)
+        fig.suptitle(f'Area under ROC for {final_det_name} (runs={len(self.results)})')
+        self.store(fig, f'boxplot-{final_det_name}-{title}', 'pdf', bbox_inches='tight')
+        return fig
+
 
     def store(self, fig, title, extension='pdf', **kwargs):
         timestamp = time.strftime('%Y-%m-%d-%H%M%S')

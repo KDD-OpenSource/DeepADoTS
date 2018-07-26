@@ -14,15 +14,16 @@ from src.evaluation import Evaluator, Plotter
 # os.environ['CIRCLECI'] = 'True'
 
 # min number of runs = 2 for std operation
-RUNS = 2 if os.environ.get("CIRCLECI", False) else 15
+RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
 
 
 def main():
     run_pipeline()
     run_experiments()
     # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
-    #     run_final_missing_experiment(
-    #         outlier_type=ot, runs=2, only_load=len(sys.argv) > 1 and sys.argv[1] == 'load')
+    #     run_final_missing_experiment(outlier_type=ot, runs=2,
+    #         only_load=len(sys.argv) > 1 and sys.argv[1] == 'load',
+    #         output_dir=os.path.join('reports', sys.argv[2], ot) if len(sys.argv) > 2 else None)
 
 
 def detectors():
@@ -149,7 +150,7 @@ def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=N
             detectors, seeds, RUNS, outlier_type, steps=steps,
             output_dir=output_dir, store_results=False)
     plotter = Plotter('reports', output_dir)
-    plotter.plot_experiment(f'missing on {outlier_type}')
+    plotter.barplots(f'missing on {outlier_type}')
 
 
 def evaluate_real_datasets():
