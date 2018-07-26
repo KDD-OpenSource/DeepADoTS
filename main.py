@@ -15,7 +15,7 @@ from src.evaluation import Evaluator, Plotter
 # os.environ['CIRCLECI'] = 'True'
 
 # min number of runs = 2 for std operation
-RUNS = 2 if os.environ.get("CIRCLECI", False) else 2
+RUNS = 2 if os.environ.get('CIRCLECI', False) else 2
 
 
 def main():
