@@ -147,7 +147,7 @@ class DAGMM(Algorithm, GPUWrapper):
                  framework=Algorithm.Frameworks.PyTorch, gpu: int=0):
         window_name = 'W' if sequence_length > 1 else 'N'
         _autoencoder_name = "N" if autoencoder_type == NNAutoEncoder else "L"
-        Algorithm.__init__(self, __name__, f'DAGMM-{_autoencoder_name}_{window_name}', framework)
+        Algorithm.__init__(self, __name__, f'DAGMM-{_autoencoder_name}{window_name}', framework)
         GPUWrapper.__init__(self, gpu)
         self.num_epochs = num_epochs
         self.lambda_energy = lambda_energy
