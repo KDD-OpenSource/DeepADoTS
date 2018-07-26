@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 import sys
-=======
 import glob
->>>>>>> origin/master
 import os
 
 import numpy as np
@@ -18,8 +15,7 @@ from src.evaluation import Evaluator, Plotter
 # os.environ['CIRCLECI'] = 'True'
 
 # min number of runs = 2 for std operation
-<<<<<<< HEAD
-RUNS = 2 if os.environ.get("CIRCLECI", False) else 2
+RUNS = 2 if os.environ.get("CIRCLECI", False) else 15
 
 
 def main():
@@ -29,16 +25,6 @@ def main():
         # run_final_pollution_experiment(outlier_type=ot, runs=2,
         run_final_missing_experiment(outlier_type=ot, runs=2,
             only_load=len(sys.argv) > 1 and sys.argv[1] == 'load')
-=======
-RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
-
-
-def main():
-    run_pipeline()
-    run_experiments()
-    # run_final_missing_experiment(outlier_type='extreme_1', runs=100, only_load=False)
-    # evaluate_real_datasets()
->>>>>>> origin/master
 
 
 def detectors():
