@@ -11,7 +11,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 from .algorithm import Algorithm
-from .autoencoder import NNAutoEncoder, LSTMAutoEncoder
+from .autoencoder import NNAutoEncoder
 from .cuda_utils import GPUWrapper
 
 
@@ -185,9 +185,8 @@ class DAGMM(Algorithm, GPUWrapper):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
-        # Each point is a flattened window and thus has as many features as sequence_length * features
-        multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
-        data_loader = DataLoader(dataset=multi_points, batch_size=self.batch_size, shuffle=True, drop_last=True)
+        sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
+        data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=True, drop_last=True)
         hidden_size = max(1, X.shape[1] // 20)
         autoencoder = self.autoencoder_type(n_features=X.shape[1], sequence_length=self.sequence_length,
                                             hidden_size=hidden_size, **self.autoencoder_args)
@@ -218,24 +217,6 @@ class DAGMM(Algorithm, GPUWrapper):
 
             n += input_data.size(0)
 
-        train_phi = gamma_sum / n
-        train_mu = mu_sum / gamma_sum.unsqueeze(-1)
-        train_cov = cov_sum / gamma_sum.unsqueeze(-1).unsqueeze(-1)
-
-        train_length = len(data_loader) * self.batch_size + self.sequence_length - 1
-        train_energy = np.full((self.sequence_length, train_length), np.nan)
-        for i1, ts_batch in enumerate(data_loader):
-            ts_batch = self.to_var(ts_batch)
-            _, _, z, _ = self.dagmm(ts_batch.float())
-            sample_energies, _ = self.dagmm.compute_energy(z, phi=train_phi, mu=train_mu, cov=train_cov,
-                                                           size_average=False)
-
-            for i2, sample_energy in enumerate(sample_energies):
-                index = i1 * self.batch_size + i2
-                window_elements = list(range(index, index + self.sequence_length, 1))
-                train_energy[index % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
-        # self.train_energy = np.nanmean(train_energy, axis=0)
-
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
         given data."""
@@ -243,24 +224,17 @@ class DAGMM(Algorithm, GPUWrapper):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
-        multi_points = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
-        data_loader = DataLoader(dataset=multi_points, batch_size=1, shuffle=False)
+        sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
+        data_loader = DataLoader(dataset=sequences, batch_size=1, shuffle=False)
         test_energy = np.full((self.sequence_length, len(data)), np.nan)
 
-        for idx, multi_point in enumerate(data_loader):
-            _, _, z, _ = self.dagmm(self.to_var(multi_point).float())
+        for idx, sequence in enumerate(data_loader):
+            _, _, z, _ = self.dagmm(self.to_var(sequence).float())
             sample_energy, _ = self.dagmm.compute_energy(z, size_average=False)
             window_elements = np.arange(idx, idx + self.sequence_length, 1)
             test_energy[idx % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
 
         test_energy = np.nanmean(test_energy, axis=0)
-
-        if (self.autoencoder_type == LSTMAutoEncoder) or (self.sequence_length > 1):
-            test_energy = np.square(np.array(test_energy) - np.mean(test_energy))
-
-        # combined_energy = np.concatenate([self.train_energy, test_energy], axis=0)
-        # self._threshold = np.nanpercentile(combined_energy, self.normal_percentile)
-
         return test_energy
 
     def binarize(self, score, threshold=None):

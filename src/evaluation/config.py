@@ -12,7 +12,7 @@ CONSOLE_LOG_LEVEL = logging.INFO
 
 def init_logging(output_dir='reports/logs'):
     # Prepare directory and file path for storing the logs
-    timestamp = time.strftime("%Y-%m-%d-%H%M%S")
+    timestamp = time.strftime('%Y-%m-%d-%H%M%S')
     log_file_path = os.path.join(output_dir, '{}.log'.format(timestamp))
     os.makedirs(output_dir, exist_ok=True)
 
@@ -38,7 +38,7 @@ def init_logging(output_dir='reports/logs'):
 
     # Create logger instance for the config file
     logger = logging.getLogger(__name__)
-    logger.debug("Logger initialized")
+    logger.debug('Logger initialized')
 
 
 class DebugModuleFilter(logging.Filter):
