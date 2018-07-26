@@ -15,16 +15,15 @@ from src.evaluation import Evaluator, Plotter
 # os.environ['CIRCLECI'] = 'True'
 
 # min number of runs = 2 for std operation
-RUNS = 2 if os.environ.get("CIRCLECI", False) else 2
+RUNS = 2 if os.environ.get("CIRCLECI", False) else 15
 
 
 def main():
-    # run_pipeline()
-    # run_experiments()
-    for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
-        # run_final_pollution_experiment(outlier_type=ot, runs=2,
-        run_final_missing_experiment(outlier_type=ot, runs=2,
-            only_load=len(sys.argv) > 1 and sys.argv[1] == 'load')
+    run_pipeline()
+    run_experiments()
+    # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
+    #     run_final_missing_experiment(
+    #         outlier_type=ot, runs=2, only_load=len(sys.argv) > 1 and sys.argv[1] == 'load')
 
 
 def detectors():
