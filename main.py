@@ -21,6 +21,7 @@ def main():
     # run_pipeline()
     # run_experiments()
     for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
+        # run_final_pollution_experiment(outlier_type=ot, runs=2,
         run_final_missing_experiment(outlier_type=ot, runs=2,
             only_load=len(sys.argv) > 1 and sys.argv[1] == 'load')
 
@@ -30,7 +31,6 @@ def detectors():
         dets = [RecurrentEBM(num_epochs=2), Donut(num_epochs=5, x_dims=30), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        return [Donut(x_dims=30)]
         dets = [RecurrentEBM(num_epochs=15), Donut(x_dims=30), LSTMAD(), LSTMED(num_epochs=40),
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
@@ -133,7 +133,7 @@ def run_experiments(steps=5):
 
 
 def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=None, only_load=False):
-    output_dir = output_dir or os.path.join('reports/experiments', outlier_type)
+    output_dir = output_dir or os.path.join('reports/experiments/missing', outlier_type)
     steps = 5
     seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=runs, dtype="uint32")
     if not only_load:
@@ -141,6 +141,18 @@ def run_final_missing_experiment(outlier_type='extreme_1', runs=25, output_dir=N
                                steps=steps, store_results=False)
     plotter = Plotter('reports', output_dir)
     plotter.plot_experiment(f'missing on {outlier_type}')
+
+
+def run_final_pollution_experiment(outlier_type='extreme_1', runs=25, output_dir=None, only_load=False):
+    output_dir = output_dir or os.path.join('reports/experiments/pollution', outlier_type)
+    steps = 5
+    seeds = np.random.randint(low=0, high=2 ** 32 - 1, size=runs, dtype="uint32")
+    if not only_load:
+        run_pollution_experiment(detectors, seeds, RUNS, outlier_type, output_dir=output_dir,
+                               steps=steps, store_results=False)
+    plotter = Plotter('reports', output_dir)
+    plotter.plot_experiment(f'pollution on {outlier_type}')
+
 
 
 def evaluate_on_real_world_data_sets(seed):
