@@ -10,6 +10,7 @@ import pandas as pd
 from .evaluator import Evaluator
 
 
+# For supporting pickles from old versions we need to map them
 NAMES_TRANSLATION = {
     'DAGMM_NNAutoEncoder_withWindow': 'DAGMM-NW',
     'DAGMM_NNAutoEncoder_withoutWindow': 'DAGMM-NN',
