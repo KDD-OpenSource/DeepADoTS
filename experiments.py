@@ -40,6 +40,12 @@ def run_extremes_experiment(detectors, seeds, runs, outlier_type='extreme_1', ou
                                      store_results=store_results)
 
 
+def run_sine_experiment(detectors, seeds, runs, outlier_type='extreme_1', output_dir=None, steps=10,
+                        store_results=True):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, 'sine', steps, outlier_type,
+                                     store_results=store_results)
+
+
 def run_multivariate_experiment(detectors, seeds, runs, output_dir=None, store_results=True):
     return run_experiment_evaluation(detectors, seeds, runs, output_dir, 'multivariate', store_results=store_results)
 
@@ -56,6 +62,9 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
     for seed in seeds:
         if anomaly_type == 'extreme':
             yield [SyntheticDataGenerator.get(f'{outlier_type}_extremeness', seed, extreme)
+                   for extreme in np.logspace(4, -5, num=steps, base=2)]
+        elif anomaly_type == 'sine':
+            yield [SyntheticDataGenerator.get(f'{outlier_type}_sine', seed, extreme)
                    for extreme in np.logspace(4, -5, num=steps, base=2)]
         elif anomaly_type == 'missing':
             yield [SyntheticDataGenerator.get(f'{outlier_type}_missing', seed, missing)
