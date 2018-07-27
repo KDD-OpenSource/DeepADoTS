@@ -70,7 +70,7 @@ class LSTMED(Algorithm, GPUWrapper):
         for ts_batch in train_gaussian_loader:
             output = self.lstmed(self.to_var(ts_batch))
             error = nn.L1Loss(reduce=False)(output, self.to_var(ts_batch.float()))
-            error_vectors += list(error.view(ts_batch.size(0), -1).data.cpu().numpy())
+            error_vectors += list(error.view(-1, X.shape[1]).data.cpu().numpy())
 
         self.mean = np.mean(error_vectors, axis=0)
         self.cov = np.cov(error_vectors, rowvar=False)
@@ -90,8 +90,8 @@ class LSTMED(Algorithm, GPUWrapper):
             output = self.lstmed(self.to_var(ts))
 
             error = nn.L1Loss(reduce=False)(output, self.to_var(ts.float()))
-            score = -mvnormal.logpdf(error.view(ts.shape[0], -1).data.cpu().numpy())
-            scores.append(score)
+            score = -mvnormal.logpdf(error.view(-1, X.shape[1]).data.cpu().numpy())
+            scores.append(score.reshape(ts.size(0), self.sequence_length, X.shape[1]))
 
         # stores seq_len-many scores per timestamp and averages them
         scores = np.concatenate(scores)

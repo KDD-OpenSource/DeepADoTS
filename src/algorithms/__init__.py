@@ -1,4 +1,4 @@
-from .autoencoder import NNAutoEncoder, LSTMAutoEncoder
+from .dagmm_autoencoder import NNAutoEncoder, LSTMAutoEncoder
 from .dagmm import DAGMM
 from .donut import Donut
 from .lstm_ad import LSTMAD
