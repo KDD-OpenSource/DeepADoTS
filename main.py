@@ -14,14 +14,16 @@ from src.evaluation import Evaluator, Plotter
 # Add this line if you want to test the pipeline & experiments
 # os.environ['CIRCLECI'] = 'True'
 
-RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
+RUNS = 2 if os.environ.get('CIRCLECI', False) else 1
 
 
 def main():
     run_pipeline()
     run_experiments()
     # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
-    #     run_final_missing_experiment(outlier_type=ot, runs=2)
+    #     run_final_missing_experiment(outlier_type=ot, runs=RUNS)
+    for ot in ['extreme_1']:
+        run_final_pollution_experiment(outlier_type=ot, runs=RUNS)
     # evaluate_real_datasets()
 
 
@@ -30,6 +32,7 @@ def detectors():
         dets = [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
+        return [RecurrentEBM(num_epochs=15)]
         dets = [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40),
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
@@ -141,9 +144,23 @@ def run_experiments(steps=5):
         ev.plot_single_heatmap()
 
 
+def run_final_pollution_experiment(outlier_type='extreme_1', runs=25, steps=5):
+    only_load = len(sys.argv) > 1 and sys.argv[1] == 'load'
+    output_dir = os.path.join('reports/experiment_pollution', outlier_type)
+    if len(sys.argv) > 2:
+        output_dir = os.path.join('reports', sys.argv[2], outlier_type)
+    seeds = np.random.randint(np.iinfo(np.uint32).max, size=runs, dtype=np.uint32)
+    if not only_load:
+        run_missing_experiment(
+            detectors, seeds, RUNS, outlier_type, steps=steps,
+            output_dir=output_dir, store_results=False)
+    plotter = Plotter('reports', output_dir)
+    plotter.algorithm_heatmaps(f'cross pollution on {outlier_type}')
+
+
 def run_final_missing_experiment(outlier_type='extreme_1', runs=25, steps=5):
     only_load = len(sys.argv) > 1 and sys.argv[1] == 'load'
-    output_dir = os.path.join('reports/experiments', outlier_type)
+    output_dir = os.path.join('reports/experiment_missing', outlier_type)
     if len(sys.argv) > 2:
         output_dir = os.path.join('reports', sys.argv[2], outlier_type)
     seeds = np.random.randint(np.iinfo(np.uint32).max, size=runs, dtype=np.uint32)

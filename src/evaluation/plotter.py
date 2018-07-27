@@ -4,6 +4,7 @@ import logging
 import time
 
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
 import numpy as np
 import pandas as pd
 
@@ -78,6 +79,52 @@ class Plotter:
     def heatmap(self, title):
         self.logger.warn('Final heatmap function is not implemented')
         pass
+
+    # Can only be used for the pollution experiment where we have two axes for
+    # dataset parameters (train pollution, test anomaly percentage)
+    def algorithm_heatmaps(self, title):
+        aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]
+        aurocs_df = pd.concat(aurocs, axis=0, ignore_index=True)
+        det_groups = aurocs_df.groupby('algorithm')
+
+        for det in self.detector_names:
+            fig, ax = plt.subplots(figsize=(4, 4))
+            det_values = det_groups.get_group(det).drop(columns='algorithm')
+            auroc_per_ds = det_values.groupby('dataset').mean()
+            self.logger.info(auroc_per_ds)
+            # Example ds name: Syn Extreme Outliers (pol=0.3, anom=0.5)
+            auroc_matrix = pd.DataFrame(
+                auroc_per_ds.dataset
+                .str.replace(r'^([^(]+)\(', '')     # Remove dataset name
+                .str.replace(')', '')               # Remove closing bracket
+                .str.replace(r'[\w]+=', '')         # Remove variable names
+                .str.split(', ')                    # Extract values
+                .tolist(), columns=['pol', 'anom']) \
+                .assign(auroc=auroc_per_ds.aurocs.values) \
+                .pivot(index='pol', columns='anom', values='auroc')
+            self.logger.info(auroc_matrix)
+
+            im = ax.imshow(auroc_matrix, cmap=plt.get_cmap('YlOrRd'), vmin=0, vmax=1)
+            plt.colorbar(im)
+
+            ax.set_xticks(np.arange(len(auroc_matrix.columns)))
+            ax.set_xticklabels(auroc_matrix.columns)
+            ax.set_xlabel('Anomaly percentage')
+            # plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
+
+            ax.set_yticks(np.arange(len(auroc_matrix.index)))
+            ax.set_yticklabels(auroc_matrix.index)
+            ax.set_ylabel('Training pollution')
+
+            # Loop over data dimensions and create text annotations.
+            for i in range(len(auroc_matrix.index)):
+                for j in range(len(auroc_matrix.columns)):
+                    ax.text(i, j, f'{auroc_matrix.iloc[j, i]:.2f}', ha='center', va='center', color='w',
+                            path_effects=[path_effects.withSimplePatchShadow(
+                                offset=(1, -1), shadow_rgbFace='b', alpha=0.9)])
+
+            ax.set_title(f'Pollution Experiment: AUROC for {det}')
+            self.store(fig, f'heatmap-pollution-{det}', 'pdf', bbox_inches='tight')
 
     # --- Helper functions --------------------------------------------------- #
 
