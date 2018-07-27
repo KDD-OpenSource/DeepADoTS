@@ -118,23 +118,16 @@ class AutoEncoderModule(nn.Module, GPUWrapper):
         super().__init__()
         input_length = n_features * sequence_length
 
-        layers = [nn.Linear(input_length, 60),
-                  nn.Tanh(),
-                  nn.Linear(60, 30),
-                  nn.Tanh(),
-                  nn.Linear(30, 10),
-                  nn.Tanh(),
-                  nn.Linear(10, hidden_size)]
+        # creates powers of two between eight and the next smaller power from the input_length
+        dec_steps = 2 ** np.arange(max(np.ceil(np.log2(hidden_size)), 2), np.log2(input_length))[1:]
+        dec_setup = np.concatenate([[hidden_size], dec_steps.repeat(2), [input_length]])
+        enc_setup = dec_setup[::-1]
+
+        layers = np.array([[nn.Linear(int(a), int(b)), nn.Tanh()] for a, b in enc_setup.reshape(-1, 2)]).flatten()[:-1]
         self._encoder = nn.Sequential(*layers)
         self.to_device(self._encoder)
 
-        layers = [nn.Linear(hidden_size, 10),
-                  nn.Tanh(),
-                  nn.Linear(10, 30),
-                  nn.Tanh(),
-                  nn.Linear(30, 60),
-                  nn.Tanh(),
-                  nn.Linear(60, input_length)]
+        layers = np.array([[nn.Linear(int(a), int(b)), nn.Tanh()] for a, b in dec_setup.reshape(-1, 2)]).flatten()[:-1]
         self._decoder = nn.Sequential(*layers)
         self.to_device(self._decoder)
 
