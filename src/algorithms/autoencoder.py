@@ -34,14 +34,14 @@ class AutoEncoder(Algorithm, GPUWrapper):
         X.bfill(inplace=True)
         data = X.values
 
-        multi_points = [data[i:i + self.sequence_length].flatten() for i in
+        sequences = [data[i:i + self.sequence_length] for i in
                         range(data.shape[0] - self.sequence_length + 1)]
-        indices = np.random.permutation(len(multi_points))
-        split_point = int(0.75 * len(multi_points))  # magic number
+        indices = np.random.permutation(len(sequences))
+        split_point = int(0.75 * len(sequences))  # magic number
 
-        train_loader = DataLoader(dataset=multi_points, batch_size=self.batch_size, drop_last=True,
+        train_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, drop_last=True,
                                   sampler=SubsetRandomSampler(indices[:split_point]), pin_memory=True)
-        train_gaussian_loader = DataLoader(dataset=multi_points, batch_size=self.batch_size, drop_last=True,
+        train_gaussian_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, drop_last=True,
                                            sampler=SubsetRandomSampler(indices[split_point:]), pin_memory=True)
 
         self.aed = AutoEncoderModule(X.shape[1], self.sequence_length, self.hidden_size)
@@ -63,7 +63,7 @@ class AutoEncoder(Algorithm, GPUWrapper):
         for ts_batch in train_gaussian_loader:
             output = self.aed(self.to_var(ts_batch))
             error = nn.L1Loss(reduce=False)(output, self.to_var(ts_batch.float()))
-            error_vectors += list(error.view(ts_batch.size(0), -1).data.cpu().numpy())
+            error_vectors += list(error.view(-1, X.shape[1]).data.cpu().numpy())
 
         self.mean = np.mean(error_vectors, axis=0)
         self.cov = np.cov(error_vectors, rowvar=False)
@@ -72,9 +72,9 @@ class AutoEncoder(Algorithm, GPUWrapper):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
-        multi_points = [data[i:i + self.sequence_length].flatten() for i in
-                        range(data.shape[0] - self.sequence_length + 1)]
-        data_loader = DataLoader(dataset=multi_points, batch_size=self.batch_size, shuffle=False, drop_last=False)
+        sequences = [data[i:i + self.sequence_length] for i in
+                     range(data.shape[0] - self.sequence_length + 1)]
+        data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=False, drop_last=False)
 
         self.aed.eval()
         mvnormal = multivariate_normal(mean=self.mean, cov=self.cov, allow_singular=True)
@@ -83,8 +83,8 @@ class AutoEncoder(Algorithm, GPUWrapper):
             output = self.aed(self.to_var(ts))
 
             error = nn.L1Loss(reduce=False)(output, self.to_var(ts.float()))
-            score = -mvnormal.logpdf(error.view(ts.shape[0], -1).data.cpu().numpy())
-            scores.append(score)
+            score = -mvnormal.logpdf(error.view(-1, X.shape[1]).data.cpu().numpy())
+            scores.append(score.reshape(ts.size(0), self.sequence_length, X.shape[1]))
 
         # stores seq_len-many scores per timestamp and averages them
         scores = np.concatenate(scores)
@@ -125,7 +125,6 @@ class AutoEncoderModule(nn.Module, GPUWrapper):
                   nn.Linear(30, 10),
                   nn.Tanh(),
                   nn.Linear(10, hidden_size)]
-
         self._encoder = nn.Sequential(*layers)
         self.to_device(self._encoder)
 
@@ -136,12 +135,12 @@ class AutoEncoderModule(nn.Module, GPUWrapper):
                   nn.Linear(30, 60),
                   nn.Tanh(),
                   nn.Linear(60, input_length)]
-
         self._decoder = nn.Sequential(*layers)
         self.to_device(self._decoder)
 
-    def forward(self, x):
-        enc = self._encoder(x)
+    def forward(self, ts_batch):
+        flattened_sequence = ts_batch.view(ts_batch.size(0), -1)
+        enc = self._encoder(flattened_sequence.float())
         dec = self._decoder(enc)
-
-        return dec
+        reconstructed_sequence = dec.view(ts_batch.size())
+        return reconstructed_sequence
