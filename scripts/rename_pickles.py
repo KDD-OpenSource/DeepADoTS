@@ -28,12 +28,19 @@ def add_relative_pollution_param(pickles_dir):
         with open(os.path.join(pickles_dir, path), 'rb') as f:
             save_dict = pickle.load(f)
 
+        # save_dict['datasets'] = [remove_duplicate_bracket(x) for x in save_dict['datasets']]
         # save_dict['datasets'] = [translate_pollution_percentage(x) for x in save_dict['datasets']]
         # save_dict['benchmark_results']['dataset'] = [
         #     translate_pollution_percentage(x) for x in save_dict['benchmark_results']['dataset']]
 
         with open(os.path.join(pickles_dir, path), 'wb') as f:
             pickle.dump(save_dict, f)
+
+
+def remove_duplicate_bracket(dataset_name):
+    if dataset_name[-2:] == '))':
+        return dataset_name[:-1]
+    return dataset_name
 
 
 def translate_pollution_percentage(dataset_name, steps=5):
