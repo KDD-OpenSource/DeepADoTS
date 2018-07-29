@@ -91,7 +91,7 @@ class Plotter:
             fig, ax = plt.subplots(figsize=(4, 4))
             det_values = det_groups.get_group(det).drop(columns='algorithm')
             auroc_per_ds = det_values.groupby('dataset').mean().reset_index()
-            # print(auroc_per_ds.dataset)
+
             # Example ds name: Syn Extreme Outliers (pol=0.3, anom=0.5)
             auroc_matrix = pd.DataFrame(
                 auroc_per_ds.dataset
@@ -102,7 +102,6 @@ class Plotter:
                 .tolist(), columns=['pol', 'anom']) \
                 .assign(auroc=auroc_per_ds.auroc.values) \
                 .pivot(index='pol', columns='anom', values='auroc')
-            # print(auroc_matrix)
 
             im = ax.imshow(auroc_matrix, cmap=plt.get_cmap('YlOrRd'), vmin=0, vmax=1)
             plt.colorbar(im)
@@ -123,7 +122,8 @@ class Plotter:
                             path_effects=[path_effects.withSimplePatchShadow(
                                 offset=(1, -1), shadow_rgbFace='b', alpha=0.9)])
 
-            ax.set_title(f'Pollution Experiment: AUROC for {det}')
+            fig.suptitle(title.title())
+            ax.set_title(f'AUROC for {det}')
             self.store(fig, f'heatmap-pollution-{det}', 'pdf', bbox_inches='tight')
 
     # --- Helper functions --------------------------------------------------- #
