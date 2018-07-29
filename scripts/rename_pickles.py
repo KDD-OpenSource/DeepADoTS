@@ -35,8 +35,8 @@ def add_relative_pollution_param(pickles_dir):
         # save_dict['benchmark_results']['dataset'] = [
         #     remove_duplicate_bracket(x) for x in save_dict['benchmark_results']['dataset']]
 
-        with open(os.path.join(pickles_dir, path), 'wb') as f:
-            pickle.dump(save_dict, f)
+        # with open(os.path.join(pickles_dir, path), 'wb') as f:
+        #     pickle.dump(save_dict, f)
 
 
 def remove_duplicate_bracket(dataset_name):
