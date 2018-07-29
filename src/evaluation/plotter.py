@@ -43,12 +43,6 @@ class Plotter:
                 with open(os.path.join(dir_, 'evaluators', path), 'rb') as f:
                     save_dict = pickle.load(f)
                 benchmark_results = save_dict['benchmark_results']
-                if not self.dataset_names is None and not np.array_equal(self.dataset_names, save_dict['datasets']):
-                    for a, b in zip(self.dataset_names, save_dict['datasets']):
-                        print(a, b, a == b)
-                    # print('\n - '.join(save_dict['datasets']))
-                    # print('-')
-                    # print('\n - '.join(self.dataset_names))
                 assert self.dataset_names is None or np.array_equal(self.dataset_names, save_dict['datasets']), \
                     'Runs should be executed on same datasets'
                 self.dataset_names = save_dict['datasets']
