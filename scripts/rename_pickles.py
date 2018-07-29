@@ -28,12 +28,12 @@ def add_relative_pollution_param(pickles_dir):
         with open(os.path.join(pickles_dir, path), 'rb') as f:
             save_dict = pickle.load(f)
 
+        save_dict['datasets'] = [translate_pollution_percentage(x) for x in save_dict['datasets']]
+        save_dict['benchmark_results']['dataset'] = [
+            translate_pollution_percentage(x) for x in save_dict['benchmark_results']['dataset']]
         # save_dict['datasets'] = [remove_duplicate_bracket(x) for x in save_dict['datasets']]
         # save_dict['benchmark_results']['dataset'] = [
         #     remove_duplicate_bracket(x) for x in save_dict['benchmark_results']['dataset']]
-        # save_dict['datasets'] = [translate_pollution_percentage(x) for x in save_dict['datasets']]
-        # save_dict['benchmark_results']['dataset'] = [
-        #     translate_pollution_percentage(x) for x in save_dict['benchmark_results']['dataset']]
 
         with open(os.path.join(pickles_dir, path), 'wb') as f:
             pickle.dump(save_dict, f)
@@ -59,5 +59,5 @@ def translate_pollution_percentage(dataset_name, steps=5):
 
 
 if __name__ == '__main__':
-    path = os.path.join('reports', 'experiment_pollution', 'variance_1', 'evaluators')
+    path = os.path.join('reports', 'experiment_pollution', 'shift_1', 'evaluators')
     add_relative_pollution_param(path)

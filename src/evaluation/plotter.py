@@ -124,9 +124,10 @@ class Plotter:
                             path_effects=[path_effects.withSimplePatchShadow(
                                 offset=(1, -1), shadow_rgbFace='b', alpha=0.9)])
 
+            final_det_name = NAMES_TRANSLATION.get(det, det)
             fig.suptitle(f'{title.title()} (runs={runs})')
-            ax.set_title(f'AUROC for {det}')
-            self.store(fig, f'heatmap-{det}-{title}', 'pdf', bbox_inches='tight')
+            ax.set_title(f'AUROC for {final_det_name}')
+            self.store(fig, f'heatmap-{final_det_name}-{title}', 'pdf', bbox_inches='tight')
 
     # --- Helper functions --------------------------------------------------- #
 
