@@ -103,8 +103,8 @@ class Plotter:
                 .tolist(), columns=['pol', 'anom']) \
                 .assign(auroc=auroc_per_ds.auroc.values) \
                 .pivot(index='pol', columns='anom', values='auroc')
+            auroc_matrix = auroc_matrix.reindex(index=auroc_matrix.index[::-1])
 
-            print(auroc_matrix)
             im = ax.imshow(auroc_matrix, cmap=plt.get_cmap('YlOrRd'), vmin=0, vmax=1)
             plt.colorbar(im)
 
