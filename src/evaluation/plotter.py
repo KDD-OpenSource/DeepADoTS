@@ -72,8 +72,28 @@ class Plotter:
         self.store(fig, f'boxplot-experiment-{title}', 'pdf', bbox_inches='tight')
         return fig
 
-    def lineplot(self, title):
-        self.logger.warn('Final lineplot function is not implemented')
+    def lineplot(self, title, xlabel=''):
+        aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]
+        aurocs_df = pd.concat(aurocs, axis=0, ignore_index=True)
+
+        fig, ax = plt.subplots(figsize=(4, 4))
+        for det in self.detector_names:
+            values = aurocs_df[aurocs_df['algorithm'] == det].drop(columns='algorithm')
+            ds_groups = values.groupby('dataset')
+            final_det_name = NAMES_TRANSLATION.get(det, det)
+            ax.plot([ds_groups.get_group(x)['auroc'].median() for x in self.dataset_names],
+                    label=final_det_name)
+
+        ax.set_xticks(list(range(len(self.dataset_names))))
+        ax.set_xticklabels([f'{int(Evaluator.get_key_and_value(x)[1])}' for x in self.dataset_names])
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel('AUROC')
+        ax.set_ylim((0, 1.05))
+        ax.yaxis.grid(True)
+        ax.legend()
+        fig.subplots_adjust(wspace=0)
+        fig.suptitle(f'Area under ROC for {title} (runs={len(self.results)})')
+        self.store(fig, f'lineplot-experiment-{title}', 'pdf', bbox_inches='tight')
         pass
 
     def heatmap(self, title):
