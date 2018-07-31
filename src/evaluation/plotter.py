@@ -1,4 +1,5 @@
 import os
+import re
 import pickle
 import logging
 import time
@@ -18,6 +19,8 @@ NAMES_TRANSLATION = {
     'DAGMM_LSTMAutoEncoder_withWindow': 'DAGMM-LW',
     'Recurrent EBM': 'REBM',
 }
+
+POLUTTION_REGEX = r'^([^(]+)\(pol=(\d\.\d+), anom=(\d\.\d+)\)'
 
 
 class Plotter:
@@ -85,7 +88,7 @@ class Plotter:
                     label=final_det_name)
 
         ax.set_xticks(list(range(len(self.dataset_names))))
-        ax.set_xticklabels([f'{int(Evaluator.get_key_and_value(x)[1])}' for x in self.dataset_names])
+        ax.set_xticklabels([f'{Evaluator.get_key_and_value(x)[1]}' for x in self.dataset_names])
         ax.set_xlabel(xlabel)
         ax.set_ylabel('AUROC')
         ax.set_ylim((0, 1.05))
@@ -113,17 +116,7 @@ class Plotter:
             auroc_per_ds = det_values.groupby('dataset').mean().reset_index()
             runs = len(det_values) // len(auroc_per_ds)
 
-            # Example ds name: Syn Extreme Outliers (pol=0.3, anom=0.5)
-            auroc_matrix = pd.DataFrame(
-                auroc_per_ds.dataset
-                .str.replace(r'^([^(]+)\(', '')     # Remove dataset name
-                .str.replace(')', '')               # Remove closing bracket
-                .str.replace(r'[\w]+=', '')         # Remove variable names
-                .str.split(', ')                    # Extract values
-                .tolist(), columns=['pol', 'anom']) \
-                .assign(auroc=auroc_per_ds.auroc.values) \
-                .pivot(index='pol', columns='anom', values='auroc')
-            auroc_matrix = auroc_matrix.reindex(index=auroc_matrix.index[::-1])
+            auroc_matrix = Plotter.transform_to_pollution_matrix(auroc_per_ds)
 
             im = ax.imshow(auroc_matrix, cmap=plt.get_cmap('YlOrRd'), vmin=0, vmax=1)
             plt.colorbar(im)
@@ -150,6 +143,34 @@ class Plotter:
             self.store(fig, f'heatmap-{final_det_name}-{title}', 'pdf', bbox_inches='tight')
 
     # --- Helper functions --------------------------------------------------- #
+
+    @staticmethod
+    def transform_to_pollution_matrix(auroc_per_ds_avg):
+        # Aurocs should be already averaged for each datase
+        # Example ds name: Syn Extreme Outliers (pol=0.3, anom=0.5)
+        auroc_matrix = pd.DataFrame(
+            auroc_per_ds_avg.dataset
+            # Remove dataset name
+            .str.replace(POLUTTION_REGEX, '\\2-\\3')
+            # Extract values
+            .str.split('-')
+            .tolist(), columns=['pol', 'anom']) \
+            .assign(auroc=auroc_per_ds_avg.auroc.values) \
+            .pivot(index='pol', columns='anom', values='auroc')
+        return auroc_matrix.reindex(index=auroc_matrix.index[::-1])
+
+    # Selects the greatest anomaly percentage and thereby filters entries
+    def fix_anomaly_percentage(self):
+        anom_percs = self.results[0].dataset.str.replace(POLUTTION_REGEX, '\\3').astype(float)
+        sel_anom = max(anom_percs)
+        for i in range(len(self.results)):
+            # Filter out results for other anomoly_percentage values
+            self.results[i] = self.results[i][self.results[i]['dataset'].str.contains(f'anom={sel_anom}')]
+            # Rename dataset names so they don't contain the anomoly_percentage anymore
+            self.results[i].loc[:, 'dataset'] = self.results[i]['dataset'].str.replace(POLUTTION_REGEX, '\\1(pol=\\2)')
+        # Adapt dataset names accordingly
+        self.dataset_names = self.results[0].dataset.unique()
+        return sel_anom
 
     def single_barplot(self, title):
         aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]

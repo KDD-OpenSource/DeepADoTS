@@ -156,6 +156,8 @@ def run_final_pollution_experiment(outlier_type='extreme_1', runs=25, steps=5):
             output_dir=output_dir, store_results=False)
     plotter = Plotter('reports', output_dir)
     plotter.algorithm_heatmaps(f'cross pollution on {outlier_type}')
+    anom = plotter.fix_anomaly_percentage()
+    plotter.lineplot(f'pollution on {outlier_type}, anom={anom}', 'Pollution in training set')
 
 
 def run_final_missing_experiment(outlier_type='extreme_1', runs=25, steps=5):
