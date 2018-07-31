@@ -60,6 +60,7 @@ class Plotter:
 
     # results is an array of benchmark_results (e.g. returned by get_results_for_runs)
     def barplots(self, title):
+        plt.close('all')
         if len(self.detector_names) == 1:
             return self.single_barplot(title)
         aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]
@@ -76,6 +77,7 @@ class Plotter:
         return fig
 
     def lineplot(self, title, xlabel=''):
+        plt.close('all')
         aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]
         aurocs_df = pd.concat(aurocs, axis=0, ignore_index=True)
 
@@ -106,6 +108,7 @@ class Plotter:
     # Can only be used for the pollution experiment where we have two axes for
     # dataset parameters (train pollution, test anomaly percentage)
     def algorithm_heatmaps(self, title):
+        plt.close('all')
         aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]
         aurocs_df = pd.concat(aurocs, axis=0, ignore_index=True)
         det_groups = aurocs_df.groupby('algorithm')
