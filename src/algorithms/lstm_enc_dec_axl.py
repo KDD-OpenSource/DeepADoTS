@@ -83,7 +83,6 @@ class LSTMED(Algorithm, GPUWrapper):
         data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=False, drop_last=False)
 
         self.lstmed.eval()
-
         mvnormal = multivariate_normal(mean=self.mean, cov=self.cov, allow_singular=True)
         scores = []
         for idx, ts in enumerate(data_loader):
@@ -91,18 +90,14 @@ class LSTMED(Algorithm, GPUWrapper):
 
             error = nn.L1Loss(reduce=False)(output, self.to_var(ts.float()))
             score = -mvnormal.logpdf(error.view(-1, X.shape[1]).data.cpu().numpy())
-            scores.append(score.reshape(ts.size(0), self.sequence_length, X.shape[1]))
+            scores.append(score.reshape(ts.size(0), self.sequence_length))
 
         # stores seq_len-many scores per timestamp and averages them
         scores = np.concatenate(scores)
-        scores = np.pad(scores, (0, self.sequence_length + -len(scores) % self.sequence_length),
-                        'constant', constant_values=np.nan)
-        scores = np.reshape(scores, (self.sequence_length, -1), 'F')
-        scores = np.repeat(scores, self.sequence_length, axis=1)
-        scores = np.array([np.roll(row, i) for i, row in enumerate(scores)])
-        scores[np.tril_indices(self.sequence_length, k=-1)] = np.nan
-        scores = scores[:, :data.shape[0]]
-        scores = np.nanmean(scores, axis=0)
+        lattice = np.full((self.sequence_length, data.shape[0]), np.nan)
+        for i, score in enumerate(scores):
+            lattice[i % self.sequence_length, i:i + self.sequence_length] = score
+        scores = np.nanmean(lattice, axis=0)
 
         return scores
 
