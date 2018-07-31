@@ -2,7 +2,7 @@
 
 set +e
 
-for EXE_RUN in {1..14}
+for EXE_RUN in {1..10}
 do
 	echo ""
  	echo ""

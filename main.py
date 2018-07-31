@@ -14,16 +14,16 @@ from src.evaluation import Evaluator, Plotter
 # Add this line if you want to test the pipeline & experiments
 # os.environ['CIRCLECI'] = 'True'
 
-RUNS = 2 if os.environ.get('CIRCLECI', False) else 1
+RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
 
 
 def main():
-    # run_pipeline()
-    # run_experiments()
+    run_pipeline()
+    run_experiments()
     # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
     #     run_final_missing_experiment(outlier_type=ot, runs=RUNS)
-    for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
-        run_final_pollution_experiment(outlier_type=ot, runs=RUNS)
+    # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
+    #     run_final_pollution_experiment(outlier_type=ot, runs=RUNS)
     # evaluate_real_datasets()
 
 
@@ -32,8 +32,7 @@ def detectors():
         dets = [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
                 LSTMED(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
-        return [LSTMAD()]
-        dets = [RecurrentEBM(num_epochs=15), Donut(), LSTMED(num_epochs=40),  # LSTMAD(),
+        dets = [RecurrentEBM(num_epochs=15), Donut(), LSTMED(num_epochs=40), LSTMAD(),
                 DAGMM(sequence_length=1), DAGMM(sequence_length=15),
                 DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
     return sorted(dets, key=lambda x: x.framework)
