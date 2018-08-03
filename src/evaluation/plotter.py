@@ -100,7 +100,7 @@ class Plotter:
         values = aurocs_df[aurocs_df['algorithm'] == det].drop(columns='algorithm')
         ds_groups = values.groupby('dataset')
         ax.boxplot([ds_groups.get_group(x)['auroc'].values for x in self.dataset_names],
-                   positions=np.linspace(0, 1, 5), widths=0.15,
+                   positions=np.linspace(0, 1, len(self.dataset_names)), widths=0.15,
                    medianprops={'linewidth': 1},
                    whiskerprops={'color': 'darkblue', 'linestyle': '--'},
                    flierprops={'markersize': 3},
