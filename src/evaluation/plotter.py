@@ -24,7 +24,7 @@ POLUTTION_REGEX = r'^([^(]+)\(pol=(\d\.\d+), anom=(\d\.\d+)\)'
 
 
 class Plotter:
-    def __init__(self, output_dir, pickle_dirs=None, dataset_names=None, detector_names=None):
+    def __init__(self, output_dir, pickle_dirs=None, dataset_names=None, detector_names=[]):
         self.output_dir = output_dir
         self.dataset_names = dataset_names
         self.detector_names = detector_names
@@ -42,18 +42,21 @@ class Plotter:
         all_results = []
         for dir_ in pickle_dirs:
             for path in os.listdir(os.path.join(dir_, 'evaluators')):
-                self.logger.debug("Importing evaluator from '{path}'")
-                with open(os.path.join(dir_, 'evaluators', path), 'rb') as f:
-                    save_dict = pickle.load(f)
-                benchmark_results = save_dict['benchmark_results']
-                assert self.dataset_names is None or np.array_equal(self.dataset_names, save_dict['datasets']), \
-                    'Runs should be executed on same datasets'
-                self.dataset_names = save_dict['datasets']
-                self.detector_names = save_dict['detectors']
-                if benchmark_results is not None:
-                    all_results.append(benchmark_results)
-                else:
-                    self.logger.warn('benchmark_results was None')
+                # ignore hidden files, e.g. .DS_Store on macOS
+                if not path.startswith('.'):
+                    self.logger.debug("Importing evaluator from '{path}'")
+                    with open(os.path.join(dir_, 'evaluators', path), 'rb') as f:
+                        save_dict = pickle.load(f)
+                    benchmark_results = save_dict['benchmark_results']
+                    assert self.dataset_names is None or np.array_equal(self.dataset_names, save_dict['datasets']), \
+                        'Runs should be executed on same datasets'
+                    self.dataset_names = save_dict['datasets']
+                    self.detector_names.extend(save_dict['detectors'])
+                    self.detector_names = list(set(self.detector_names))
+                    if benchmark_results is not None:
+                        all_results.append(benchmark_results)
+                    else:
+                        self.logger.warn('benchmark_results was None')
         return all_results
 
     # --- Final plot functions ----------------------------------------------- #
@@ -153,7 +156,7 @@ class Plotter:
 
     @staticmethod
     def transform_to_pollution_matrix(auroc_per_ds_avg):
-        # Aurocs should be already averaged for each datase
+        # Aurocs should be already averaged for each dataset
         # Example ds name: Syn Extreme Outliers (pol=0.3, anom=0.5)
         auroc_matrix = pd.DataFrame(
             auroc_per_ds_avg.dataset
@@ -198,7 +201,7 @@ class Plotter:
         values = aurocs_df[aurocs_df['algorithm'] == det].drop(columns='algorithm')
         ds_groups = values.groupby('dataset')
         ax.boxplot([ds_groups.get_group(x)['auroc'].values for x in self.dataset_names],
-                   positions=np.linspace(0, 1, 5), widths=0.15,
+                   positions=np.linspace(0, 1, len(self.dataset_names)), widths=0.15,
                    medianprops={'linewidth': 1},
                    whiskerprops={'color': 'darkblue', 'linestyle': '--'},
                    flierprops={'markersize': 3},
