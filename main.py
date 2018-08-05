@@ -18,12 +18,13 @@ RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
 
 
 def main():
-    run_pipeline()
-    run_experiments()
+    # run_pipeline()
+    # run_experiments()
     # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
     #     run_final_missing_experiment(outlier_type=ot, runs=RUNS)
     # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
     #     run_final_pollution_experiment(outlier_type=ot, runs=RUNS)
+    run_final_pollution_experiment(outlier_type='shift_1', runs=RUNS)
     # evaluate_real_datasets()
 
 
@@ -158,9 +159,9 @@ def run_final_pollution_experiment(outlier_type='extreme_1', runs=25, steps=5):
     # plotter.algorithm_heatmaps(f'cross pollution on {outlier_type}')
     anom = plotter.fix_anomaly_percentage()
     plotter.latex_lineplot(
-        title='Pollution',
+        title=f'Pollution_{outlier_type}',
         x_label='Pollution In Training Data',
-        caption='Comparison of the presented approaches on \\textbf{shift} anomalies with varying '
+        caption=f'Comparison of the presented approaches on \\textbf{{{outlier_type[:-2]}}} anomalies with varying '
         'pollution levels for the training dataset. The anomaly percentage for the test dataset is '
         f'fixed to {int(anom*100)}~%.',
         latex_label='pollution_lineplot',
