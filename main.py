@@ -166,8 +166,8 @@ def run_final_pollution_experiment(outlier_type='extreme_1', runs=25, steps=5):
         f'fixed to {int(anom*100)}~\%.',
         latex_label='pollution_lineplot',
     )
-    # plotter.lineplot(f'pollution on {outlier_type}, anom={anom}', 'Pollution in training set')
-    # plotter.barplots(f'pollution on {outlier_type}, anom={anom}')
+    plotter.lineplot(f'pollution on {outlier_type}, anom={anom}', 'Pollution in training set')
+    plotter.barplots(f'pollution on {outlier_type}, anom={anom}')
 
 
 def run_final_missing_experiment(outlier_type='extreme_1', runs=25, steps=5):

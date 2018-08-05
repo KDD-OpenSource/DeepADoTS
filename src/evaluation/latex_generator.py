@@ -41,7 +41,6 @@ NAMES_TRANSLATION = {
     'DAGMM_NNAutoEncoder_withWindow': '\\dagmm',
     'DAGMM_LSTMAutoEncoder_withWindow': '\\lstmdagmm',
     'AutoEncoder': '\\nnae',
-    'DAGMM_NNAutoEncoder_withoutWindow': 'OLD-DAGMM-NN',
 }
 
 
@@ -51,7 +50,7 @@ class LatexGenerator:
     def generate_lineplot(title, x_ticks, detector_names, lines,
                           x_label='Dataset', caption='Some caption', latex_label='sample_label'):
         x_max = f'{float(x_ticks[-1]) * 1.1:.2f}'
-        legend_entries = ', '.join([NAMES_TRANSLATION.get(x, x) for x in detector_names])
+        legend_entries = ', '.join([NAMES_TRANSLATION.get(x, x) for x in detector_names if x in NAMES_TRANSLATION])
         return LINEPLOT_TEMPLATE  \
             .replace('#TITLE#', title) \
             .replace('#X_LABEL#', x_label) \
@@ -60,12 +59,15 @@ class LatexGenerator:
             .replace('#LEGEND_ENTRIES#', legend_entries) \
             .replace('#CAPTION#', caption) \
             .replace('#LATEX_LABEL#', latex_label) \
-            .replace('#CONTENT#', LatexGenerator._get_lines_coordinates(lines))
+            .replace('#CONTENT#', LatexGenerator._get_lines_coordinates(lines, detector_names))
 
     @staticmethod
-    def _get_lines_coordinates(lines: List[List[Tuple[str, float]]]):
+    def _get_lines_coordinates(lines: List[List[Tuple[str, float]]], detector_names: List[str]):
         output = ''
-        for line in lines:
+        for line, det in zip(lines, detector_names):
+            # e.g. skip DAGMM_NNAutoEncoder_withoutWindow
+            if det not in NAMES_TRANSLATION:
+                continue
             output += '\t\\addplot coordinates'
             output += f'{{{" ".join([f"({pollution}, {value:.2f})" for pollution, value in line])}}};'
             output += '\n'

@@ -14,9 +14,11 @@ from src.evaluation import Evaluator, LatexGenerator
 # For supporting pickles from old versions we need to map them
 NAMES_TRANSLATION = {
     'DAGMM_NNAutoEncoder_withWindow': 'DAGMM',
-    'DAGMM_NNAutoEncoder_withoutWindow': 'DAGMM-NN',
+    'DAGMM_NNAutoEncoder_withoutWindow': 'old-dagmm',
     'DAGMM_LSTMAutoEncoder_withWindow': 'LSTM-DAGMM',
+    'LSTMED': 'LSTM-ED',
     'Recurrent EBM': 'REBM',
+    'AutoEncoder': 'AE',
 }
 
 POLUTTION_REGEX = r'^([^(]+)\(pol=(\d\.\d+), anom=(\d\.\d+)\)'
@@ -79,8 +81,8 @@ class Plotter:
         return fig
 
     # We only use latex code for generating lineplotsin the paper
-    @DeprecationWarning
     def lineplot(self, title, xlabel=''):
+        self.logger.warn('For the paper please use the latex visualization')
         plt.close('all')
         aurocs = self._get_grouped_results()
 
