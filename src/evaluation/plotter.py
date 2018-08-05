@@ -1,5 +1,4 @@
 import os
-import re
 import pickle
 import logging
 import time
@@ -9,14 +8,14 @@ import matplotlib.patheffects as path_effects
 import numpy as np
 import pandas as pd
 
-from .evaluator import Evaluator
+from src.evaluation import Evaluator, LatexGenerator
 
 
 # For supporting pickles from old versions we need to map them
 NAMES_TRANSLATION = {
-    'DAGMM_NNAutoEncoder_withWindow': 'DAGMM-NW',
+    'DAGMM_NNAutoEncoder_withWindow': 'DAGMM',
     'DAGMM_NNAutoEncoder_withoutWindow': 'DAGMM-NN',
-    'DAGMM_LSTMAutoEncoder_withWindow': 'DAGMM-LW',
+    'DAGMM_LSTMAutoEncoder_withWindow': 'LSTM-DAGMM',
     'Recurrent EBM': 'REBM',
 }
 
@@ -79,18 +78,16 @@ class Plotter:
         self.store(fig, f'boxplot-experiment-{title}', 'pdf', bbox_inches='tight')
         return fig
 
+    # We only use latex code for generating lineplotsin the paper
+    @DeprecationWarning
     def lineplot(self, title, xlabel=''):
         plt.close('all')
-        aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]
-        aurocs_df = pd.concat(aurocs, axis=0, ignore_index=True)
+        aurocs = self._get_grouped_results()
 
         fig, ax = plt.subplots(figsize=(4, 4))
         for det in self.detector_names:
-            values = aurocs_df[aurocs_df['algorithm'] == det].drop(columns='algorithm')
-            ds_groups = values.groupby('dataset')
             final_det_name = NAMES_TRANSLATION.get(det, det)
-            ax.plot([ds_groups.get_group(x)['auroc'].median() for x in self.dataset_names],
-                    label=final_det_name)
+            ax.plot([aurocs.loc[ds, det] for ds in self.dataset_names], label=final_det_name)
 
         ax.set_xticks(list(range(len(self.dataset_names))))
         ax.set_xticklabels([f'{Evaluator.get_key_and_value(x)[1]}' for x in self.dataset_names])
@@ -107,6 +104,16 @@ class Plotter:
         fig.suptitle(f'Area under ROC for {title} (runs={len(self.results)})')
         self.store(fig, f'lineplot-experiment-{title}', 'pdf', bbox_inches='tight')
         pass
+
+    def latex_lineplot(self, title, **kwargs):
+        aurocs = self._get_grouped_results()
+        x_ticks = [f'{float(Evaluator.get_key_and_value(x)[1]):.2f}' for x in self.dataset_names]
+        lines = [[(pol_value, aurocs.loc[ds, det])
+                  for pol_value, ds in zip(x_ticks, self.dataset_names)]
+                 for det in self.detector_names]
+        latex_output = LatexGenerator.generate_lineplot(title, x_ticks, self.detector_names, lines, **kwargs)
+        self.store(latex_output, f'lineplot-{title}', extension='tex')
+        return latex_output
 
     def heatmap(self, title):
         self.logger.warn('Final heatmap function is not implemented')
@@ -154,6 +161,17 @@ class Plotter:
 
     # --- Helper functions --------------------------------------------------- #
 
+    def _get_grouped_results(self):
+        results = pd.DataFrame(index=self.dataset_names, columns=self.detector_names)
+        aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]
+        aurocs_df = pd.concat(aurocs, axis=0, ignore_index=True)
+        for det in self.detector_names:
+            values = aurocs_df[aurocs_df['algorithm'] == det].drop(columns='algorithm')
+            ds_groups = values.groupby('dataset')
+            for ds in self.dataset_names:
+                results.loc[ds, det] = ds_groups.get_group(ds)['auroc'].mean()
+        return results
+
     @staticmethod
     def transform_to_pollution_matrix(auroc_per_ds_avg):
         # Aurocs should be already averaged for each dataset
@@ -170,9 +188,9 @@ class Plotter:
         return auroc_matrix.reindex(index=auroc_matrix.index[::-1])
 
     # Selects the greatest anomaly percentage and thereby filters entries
-    def fix_anomaly_percentage(self):
+    def fix_anomaly_percentage(self, anom_perc_idx=-2):
         anom_percs = self.results[0].dataset.str.replace(POLUTTION_REGEX, '\\3').astype(float).unique()
-        sel_anom = anom_percs[-1]  # max(anom_percs)
+        sel_anom = anom_percs[anom_perc_idx]  # max(anom_percs)
         for i in range(len(self.results)):
             # Filter out results for other anomoly_percentage values
             self.results[i] = self.results[i][self.results[i]['dataset'].str.contains(f'anom={sel_anom}')]
@@ -215,10 +233,14 @@ class Plotter:
         ax.set_xlim((-0.15, 1.15))
         ax.margins(0.05)
 
-    def store(self, fig, title, extension='pdf', **kwargs):
+    def store(self, fig_or_content, title, extension='pdf', **kwargs):
         timestamp = time.strftime('%Y-%m-%d-%H%M%S')
         output_dir = os.path.join(self.output_dir, 'figures')
         os.makedirs(output_dir, exist_ok=True)
         path = os.path.join(output_dir, f'{title}-{timestamp}.{extension}')
-        fig.savefig(path, **kwargs)
+        if extension in ('pdf', 'png'):
+            fig_or_content.savefig(path, **kwargs)
+        else:
+            with open(path, 'w') as f:
+                f.write(fig_or_content)
         self.logger.info(f'Stored plot at {path}')
