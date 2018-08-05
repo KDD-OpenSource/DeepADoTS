@@ -59,6 +59,7 @@ class LatexGenerator:
             .replace('#X_MAX#', x_max) \
             .replace('#LEGEND_ENTRIES#', legend_entries) \
             .replace('#CAPTION#', caption) \
+            .replace('#LATEX_LABEL#', latex_label) \
             .replace('#CONTENT#', LatexGenerator._get_lines_coordinates(lines))
 
     @staticmethod
@@ -66,6 +67,6 @@ class LatexGenerator:
         output = ''
         for line in lines:
             output += '\t\\addplot coordinates'
-            output += f'{{{" ".join([f"({pollution}, {value:.2f})" for pollution, value in line])}}}'
+            output += f'{{{" ".join([f"({pollution}, {value:.2f})" for pollution, value in line])}}};'
             output += '\n'
         return output

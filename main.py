@@ -163,7 +163,7 @@ def run_final_pollution_experiment(outlier_type='extreme_1', runs=25, steps=5):
         x_label='Pollution In Training Data',
         caption=f'Comparison of the presented approaches on \\textbf{{{outlier_type[:-2]}}} anomalies with varying '
         'pollution levels for the training dataset. The anomaly percentage for the test dataset is '
-        f'fixed to {int(anom*100)}~%.',
+        f'fixed to {int(anom*100)}~\%.',
         latex_label='pollution_lineplot',
     )
     # plotter.lineplot(f'pollution on {outlier_type}, anom={anom}', 'Pollution in training set')
