@@ -61,8 +61,9 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
             yield [SyntheticDataGenerator.get(f'{outlier_type}_missing', seed, missing)
                    for missing in np.logspace(-6.5, -0.15, num=steps, base=2)]
         elif anomaly_type == 'polluted':
-            anomaly_percentages = [0.01, 0.023, 0.05, 0.2, 0.5] if outlier_type == 'extreme_1' \
-                                   else [0.05, 0.1, 0.2, 0.4, 0.8]
+            anomaly_percentages = [0.05, 0.1, 0.4]
+            # anomaly_percentages = [0.01, 0.023, 0.05, 0.2, 0.5] if outlier_type == 'extreme_1' \
+            #                        else [0.05, 0.1, 0.2, 0.4, 0.8]
             yield [SyntheticDataGenerator.get(f'{outlier_type}_polluted', seed, pollution, anomaly_percentage=anomalies)
                    for pollution, anomalies in product(np.linspace(0, 1, steps), anomaly_percentages)]
         elif anomaly_type == 'multivariate':

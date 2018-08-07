@@ -14,8 +14,11 @@ from src.evaluation import Evaluator, LatexGenerator
 # For supporting pickles from old versions we need to map them
 NAMES_TRANSLATION = {
     'DAGMM_NNAutoEncoder_withWindow': 'DAGMM',
-    'DAGMM_NNAutoEncoder_withoutWindow': 'old-dagmm',
+    'DAGMM-NW': 'DAGMM',
+    'DAGMM_NNAutoEncoder_withoutWindow': None,
+    'DAGMM-NN': None,
     'DAGMM_LSTMAutoEncoder_withWindow': 'LSTM-DAGMM',
+    'DAGMM-LW': 'LSTM-DAGMM',
     'LSTMED': 'LSTM-ED',
     'Recurrent EBM': 'REBM',
     'AutoEncoder': 'AE',
@@ -73,7 +76,8 @@ class Plotter:
         fig, axes = plt.subplots(
             ncols=len(self.detector_names), figsize=(1.5*len(self.detector_names), 4), sharey=True)
         for ax, det in zip(axes.flat, self.detector_names):
-            self._styled_boxplot(ax, aurocs_df, det)
+            if NAMES_TRANSLATION.get(det, det):
+                self._styled_boxplot(ax, aurocs_df, det)
 
         fig.subplots_adjust(wspace=0)
         fig.suptitle(f'Area under ROC for {title} (runs={len(self.results)})')
@@ -89,7 +93,8 @@ class Plotter:
         fig, ax = plt.subplots(figsize=(4, 4))
         for det in self.detector_names:
             final_det_name = NAMES_TRANSLATION.get(det, det)
-            ax.plot([aurocs.loc[ds, det] for ds in self.dataset_names], label=final_det_name)
+            if final_det_name:
+                ax.plot([aurocs.loc[ds, det] for ds in self.dataset_names], label=final_det_name)
 
         ax.set_xticks(list(range(len(self.dataset_names))))
         ax.set_xticklabels([f'{Evaluator.get_key_and_value(x)[1]}' for x in self.dataset_names])
