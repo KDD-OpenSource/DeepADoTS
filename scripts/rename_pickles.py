@@ -59,5 +59,5 @@ def translate_pollution_percentage(dataset_name, steps=5):
 
 
 if __name__ == '__main__':
-    path = os.path.join('reports', 'experiment_pollution', 'extreme_1', 'additional_evaluators')
+    path = os.path.join('reports', 'experiment_pollution', 'trend_1', 'additional_evaluators_lstmed_ae')
     add_relative_pollution_param(path)
