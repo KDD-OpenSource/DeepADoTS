@@ -31,7 +31,7 @@ class Plotter:
     def __init__(self, output_dir, pickle_dirs=None, dataset_names=None, detector_names=[]):
         self.output_dir = output_dir
         self.dataset_names = dataset_names
-        self.detector_names = detector_names
+        self.detector_names = [x for x in detector_names if NAMES_TRANSLATION.get(x, x) is not None]
         self.results = None
         self.logger = logging.getLogger(__name__)
         if pickle_dirs is not None:
@@ -56,7 +56,8 @@ class Plotter:
                         'Runs should be executed on same datasets'
                     self.dataset_names = save_dict['datasets']
                     self.detector_names.extend(save_dict['detectors'])
-                    self.detector_names = list(set(self.detector_names))
+                    self.detector_names = [x for x in set(self.detector_names)
+                                           if NAMES_TRANSLATION.get(x, x) is not None]
                     if benchmark_results is not None:
                         all_results.append(benchmark_results)
                     else:
@@ -76,8 +77,7 @@ class Plotter:
         fig, axes = plt.subplots(
             ncols=len(self.detector_names), figsize=(1.5*len(self.detector_names), 4), sharey=True)
         for ax, det in zip(axes.flat, self.detector_names):
-            if NAMES_TRANSLATION.get(det, det):
-                self._styled_boxplot(ax, aurocs_df, det)
+            self._styled_boxplot(ax, aurocs_df, det)
 
         fig.subplots_adjust(wspace=0)
         fig.suptitle(f'Area under ROC for {title} (runs={len(self.results)})')
@@ -93,8 +93,7 @@ class Plotter:
         fig, ax = plt.subplots(figsize=(4, 4))
         for det in self.detector_names:
             final_det_name = NAMES_TRANSLATION.get(det, det)
-            if final_det_name:
-                ax.plot([aurocs.loc[ds, det] for ds in self.dataset_names], label=final_det_name)
+            ax.plot([aurocs.loc[ds, det] for ds in self.dataset_names], label=final_det_name)
 
         ax.set_xticks(list(range(len(self.dataset_names))))
         ax.set_xticklabels([f'{Evaluator.get_key_and_value(x)[1]}' for x in self.dataset_names])
