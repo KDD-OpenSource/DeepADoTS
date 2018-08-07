@@ -11,7 +11,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 from .algorithm import Algorithm
-from .autoencoder import NNAutoEncoder
+from .dagmm_autoencoder import NNAutoEncoder
 from .cuda_utils import GPUWrapper
 
 
