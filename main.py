@@ -22,9 +22,9 @@ def main():
     # run_experiments()
     # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
     #     run_final_missing_experiment(outlier_type=ot, runs=RUNS)
-    # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
-    #     run_final_pollution_experiment(outlier_type=ot, runs=RUNS)
-    run_final_pollution_experiment(outlier_type='shift_1', runs=RUNS)
+    for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
+        run_final_pollution_experiment(outlier_type=ot, runs=RUNS)
+    # run_final_pollution_experiment(outlier_type='extreme_1', runs=RUNS)
     # evaluate_real_datasets()
 
 
@@ -157,17 +157,17 @@ def run_final_pollution_experiment(outlier_type='extreme_1', runs=25, steps=5):
     plotter = Plotter('reports', output_dir)
     # execute algorithm_heatmaps before fix_anomaly_percentage!
     # plotter.algorithm_heatmaps(f'cross pollution on {outlier_type}')
-    anom = plotter.fix_anomaly_percentage(anom_perc_idx=-3)
-    plotter.latex_lineplot(
-        title=f'Pollution_{outlier_type}',
-        x_label='Pollution In Training Data',
-        caption=f'Comparison of the presented approaches on \\textbf{{{outlier_type[:-2]}}} anomalies with varying '
-        'pollution levels for the training dataset. The anomaly percentage for the test dataset is '
-        f'fixed to {int(anom*100)}~\%.',
-        latex_label='pollution_lineplot',
-    )
-    plotter.lineplot(f'pollution on {outlier_type}, anom={anom}', 'Pollution in training set')
-    plotter.barplots(f'pollution on {outlier_type}, anom={anom}')
+    # anom = plotter.fix_anomaly_percentage(anom_perc_idx=-2)
+    # plotter.latex_lineplot(
+    #     title=f'Pollution_{outlier_type}',
+    #     x_label='Pollution In Training Data',
+    #     caption=f'Comparison of the presented approaches on \\textbf{{{outlier_type[:-2]}}} anomalies with varying '
+    #     'pollution levels for the training dataset. The anomaly percentage for the test dataset is '
+    #     f'fixed to {int(anom*100)}~\%.',
+    #     latex_label='pollution_lineplot',
+    # )
+    # plotter.lineplot(f'pollution on {outlier_type}, anom={anom}', 'Pollution in training set')
+    # plotter.barplots(f'pollution on {outlier_type}, anom={anom}')
 
 
 def run_final_missing_experiment(outlier_type='extreme_1', runs=25, steps=5):

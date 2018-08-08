@@ -7,7 +7,7 @@ do
 	echo ""
  	echo ""
 	echo "---> EXECUTION $EXE_RUN <---"
-	python3 main.py
+	python main.py
 done
 
 set -e
