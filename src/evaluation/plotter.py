@@ -1,3 +1,4 @@
+import re
 import os
 import pickle
 import logging
@@ -24,7 +25,7 @@ NAMES_TRANSLATION = {
     'AutoEncoder': 'AE',
 }
 
-POLUTTION_REGEX = r'^([^(]+)\(pol=(\d\.\d+), anom=(\d\.\d+)\)'
+POLLUTION_REGEX = r'^([^(]+)\(pol=(\d\.\d+), anom=(\d\.\d+)\)'
 
 
 class Plotter:
@@ -185,7 +186,7 @@ class Plotter:
         auroc_matrix = pd.DataFrame(
             auroc_per_ds_avg.dataset
             # Remove dataset name
-            .str.replace(POLUTTION_REGEX, '\\2-\\3')
+            .str.replace(POLLUTION_REGEX, '\\2-\\3')
             # Extract values
             .str.split('-')
             .tolist(), columns=['pol', 'anom']) \
@@ -195,16 +196,26 @@ class Plotter:
 
     # Selects the greatest anomaly percentage and thereby filters entries
     def fix_anomaly_percentage(self, anom_perc_idx=-2):
-        anom_percs = self.results[0].dataset.str.replace(POLUTTION_REGEX, '\\3').astype(float).unique()
+        anom_percs = self.results[0].dataset.str.replace(POLLUTION_REGEX, '\\3').astype(float).unique()
         sel_anom = anom_percs[anom_perc_idx]  # max(anom_percs)
         for i in range(len(self.results)):
             # Filter out results for other anomoly_percentage values
             self.results[i] = self.results[i][self.results[i]['dataset'].str.contains(f'anom={sel_anom}')]
             # Rename dataset names so they don't contain the anomoly_percentage anymore
-            self.results[i].loc[:, 'dataset'] = self.results[i]['dataset'].str.replace(POLUTTION_REGEX, '\\1(pol=\\2)')
+            self.results[i].loc[:, 'dataset'] = self.results[i]['dataset'].str.replace(POLLUTION_REGEX, '\\1(pol=\\2)')
+            self.results[i].loc[:, 'dataset'] = [
+                self._use_absolute_pollution(x, sel_anom) for x in self.results[i]['dataset']]
         # Adapt dataset names accordingly
         self.dataset_names = self.results[0].dataset.unique()
         return sel_anom
+
+    def _use_absolute_pollution(dataset_name, anomaly_percentage):
+        name_regex = re.compile(r'^([^(]+)\(pol=(\d\.\d+)\)')
+        match = name_regex.match(dataset_name)
+        assert match is not None, 'Dataset needs to be polluted'
+        rel_pollution = float(match.group(2))
+        abs_pollution = rel_pollution * anomaly_percentage
+        return f'{match.group(1)}(pol={abs_pollution})'
 
     def single_barplot(self, title):
         aurocs = [x[['algorithm', 'dataset', 'auroc']] for x in self.results]
