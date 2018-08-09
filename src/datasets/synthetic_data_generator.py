@@ -80,7 +80,7 @@ class SyntheticDataGenerator:
         """Full pollution -> All anomalies from test set are in train set"""
         np.random.seed(seed)
         dataset = SyntheticDataGenerator.extreme_1(seed, n, anomaly_percentage=anomaly_percentage)
-        pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
+        # pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
         train_size = int(dataset.length * dataset.train_split)
         timestamps = [(t,) for t in np.random.randint(0, train_size, int(pollution_percentage * train_size))]
@@ -148,7 +148,7 @@ class SyntheticDataGenerator:
     def shift_1_polluted(seed, pollution_percentage=0.2, n=1, anomaly_percentage=0.2):
         np.random.seed(seed)
         dataset = SyntheticDataGenerator.shift_1(seed, n, anomaly_percentage=anomaly_percentage)
-        pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
+        # pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
         timestamps = generate_timestamps(0, int(dataset.train_split * dataset.length), pollution_percentage)
 
@@ -208,7 +208,7 @@ class SyntheticDataGenerator:
     def variance_1_polluted(seed, pollution_percentage=0.2, n=1, anomaly_percentage=0.2):
         np.random.seed(seed)
         dataset = SyntheticDataGenerator.variance_1(seed, n, anomaly_percentage=anomaly_percentage)
-        pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
+        # pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
         timestamps = generate_timestamps(0, int(dataset.train_split * dataset.length), pollution_percentage)
 
@@ -266,7 +266,7 @@ class SyntheticDataGenerator:
     def trend_1_polluted(seed, pollution_percentage=0.2, n=1, anomaly_percentage=0.2):
         np.random.seed(seed)
         dataset = SyntheticDataGenerator.trend_1(seed, n, anomaly_percentage=anomaly_percentage)
-        pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
+        # pollution_percentage = pollution_percentage * anomaly_percentage  # Pollution as fraction of test set anomalies
 
         timestamps = generate_timestamps(0, int(dataset.train_split * dataset.length), pollution_percentage)
 
