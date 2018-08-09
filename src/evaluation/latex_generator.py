@@ -13,7 +13,7 @@ LINEPLOT_TEMPLATE = """
         xmin=0, xmax={#X_MAX#},
         ymin=0, ymax=1,
         xtick={#X_TICKS#},
-        ytick={0.0, 0.2, 0.4, 0.6, 0.8, 1.0},
+        ytick={0.0, 0.25, 0.5, 0.75, 1.0},
         legend entries={#LEGEND_ENTRIES#},
         legend pos = outer north east,
         ymajorgrids=true,
