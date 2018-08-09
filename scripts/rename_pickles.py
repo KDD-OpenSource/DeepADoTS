@@ -74,5 +74,5 @@ def translate_pollution_percentage(dataset_name, steps=5):
 
 
 if __name__ == '__main__':
-    path = os.path.join('reports', 'experiment_pollution/trend_1/all_except_0.2_old_ds')
+    path = os.path.join('reports', 'experiment_pollution/trend_1/lstmad_except_0.2_old_ds')
     add_relative_pollution_param(path)

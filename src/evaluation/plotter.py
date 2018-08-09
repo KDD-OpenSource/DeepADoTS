@@ -155,8 +155,8 @@ class Plotter:
             ax.set_ylabel('Training pollution')
 
             # Loop over data dimensions and create text annotations.
-            for j in range(len(auroc_matrix.columns)):
-                for i in range(len(auroc_matrix.index)):
+            for i in range(len(auroc_matrix.columns)):
+                for j in range(len(auroc_matrix.index)):
                     ax.text(i, j, f'{auroc_matrix.iloc[j, i]:.2f}', ha='center', va='center', color='w',
                             path_effects=[path_effects.withSimplePatchShadow(
                                 offset=(1, -1), shadow_rgbFace='b', alpha=0.9)])
@@ -209,7 +209,7 @@ class Plotter:
         self.dataset_names = self.results[0].dataset.unique()
         return sel_anom
 
-    def _use_absolute_pollution(dataset_name, anomaly_percentage):
+    def _use_absolute_pollution(self, dataset_name, anomaly_percentage):
         name_regex = re.compile(r'^([^(]+)\(pol=(\d\.\d+)\)')
         match = name_regex.match(dataset_name)
         assert match is not None, 'Dataset needs to be polluted'
