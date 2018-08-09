@@ -97,7 +97,7 @@ class Plotter:
             ax.plot([aurocs.loc[ds, det] for ds in self.dataset_names], label=final_det_name)
 
         ax.set_xticks(list(range(len(self.dataset_names))))
-        ax.set_xticklabels([f'{Evaluator.get_key_and_value(x)[1]}' for x in self.dataset_names])
+        ax.set_xticklabels([f'{float(Evaluator.get_key_and_value(x)[1]):.2f}' for x in self.dataset_names])
         ax.set_xlabel(xlabel)
         ax.set_ylabel('AUROC')
         ax.set_ylim((0, 1.05))

@@ -24,7 +24,7 @@ def main():
     #     run_final_missing_experiment(outlier_type=ot, runs=RUNS)
     # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
     #     run_final_pollution_experiment(outlier_type=ot, runs=RUNS)
-    run_final_pollution_experiment(outlier_type='trend_1', runs=RUNS)
+    run_final_pollution_experiment(outlier_type='extreme_1', runs=RUNS)
     # evaluate_real_datasets()
 
 
