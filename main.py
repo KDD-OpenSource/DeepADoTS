@@ -16,6 +16,7 @@ from src.evaluation import Evaluator, Plotter
 
 RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
 
+ANOM_CONST = 0
 
 def main():
     # run_pipeline()
@@ -24,7 +25,7 @@ def main():
     #     run_final_missing_experiment(outlier_type=ot, runs=RUNS)
     # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
     #     run_final_pollution_experiment(outlier_type=ot, runs=RUNS)
-    run_final_pollution_experiment(outlier_type='extreme_1', runs=RUNS)
+    run_final_pollution_experiment(outlier_type='variance_1', runs=RUNS)
     # evaluate_real_datasets()
 
 
@@ -156,8 +157,8 @@ def run_final_pollution_experiment(outlier_type='extreme_1', runs=25, steps=5):
             output_dir=output_dir, store_results=False)
     plotter = Plotter('reports', output_dir)
     # execute algorithm_heatmaps before fix_anomaly_percentage!
-    plotter.algorithm_heatmaps(f'cross pollution on {outlier_type}')
-    anom = plotter.fix_anomaly_percentage(anom_perc_idx=-1)
+    # plotter.algorithm_heatmaps(f'cross pollution on {outlier_type}')
+    anom = plotter.fix_anomaly_percentage(anom_perc_idx=ANOM_CONST)
     plotter.latex_lineplot(
         title=f'Pollution_{outlier_type}',
         x_label='Pollution In Training Data',

@@ -196,7 +196,7 @@ class Plotter:
 
     # Selects the greatest anomaly percentage and thereby filters entries
     def fix_anomaly_percentage(self, anom_perc_idx=-2):
-        anom_percs = self.results[0].dataset.str.replace(POLLUTION_REGEX, '\\3').astype(float).unique()
+        anom_percs = sorted(self.results[0].dataset.str.replace(POLLUTION_REGEX, '\\3').astype(float).unique())
         sel_anom = anom_percs[anom_perc_idx]  # max(anom_percs)
         for i in range(len(self.results)):
             # Filter out results for other anomoly_percentage values
