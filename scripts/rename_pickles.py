@@ -73,6 +73,10 @@ def translate_pollution_percentage(dataset_name, steps=5):
     return f'{match.group(1)}(pol={relative_pollution}, anom={anomaly_percentage})'
 
 
+paths = [
+    'experiment_pollution/extreme_1/all/0.2',
+]
+
 if __name__ == '__main__':
-    path = os.path.join('reports', 'experiment_pollution/trend_1/lstmad_except_0.2_old_ds')
-    add_relative_pollution_param(path)
+    for path in paths:
+        add_relative_pollution_param(os.path.join('reports', path))
