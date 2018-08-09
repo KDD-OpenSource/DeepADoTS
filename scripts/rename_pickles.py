@@ -1,6 +1,7 @@
 import pickle
 import os
 import re
+from collections import defaultdict
 
 import numpy as np
 
@@ -23,6 +24,7 @@ def add_relative_pollution_param(pickles_dir):
     '(pol=0.30000000000000004, anom=0.4)',
     '(pol=0.6000000000000001, anom=0.8)',
     """
+    is_first_time = True
     for path in os.listdir(pickles_dir):
         print(f"Importing evaluator from '{path}'")
         with open(os.path.join(pickles_dir, path), 'rb') as f:
@@ -35,14 +37,26 @@ def add_relative_pollution_param(pickles_dir):
         save_dict['benchmark_results']['dataset'] = [
             remove_duplicate_bracket(x) for x in save_dict['benchmark_results']['dataset']]
 
-        # with open(os.path.join(pickles_dir, path), 'wb') as f:
-        #     pickle.dump(save_dict, f)
+        if is_first_time:
+            is_first_time = False
+            print('\n'.join(save_dict['datasets']))
+
+        # Sanity check: Each relative pollution should occure the same amount of times
+        # This might fail if you execute the script on already relative pollution values
+        assert all([counter[x] == counter[list(counter)[0]] for x in counter]), str(counter)
+
+        with open(os.path.join(pickles_dir, path), 'wb') as f:
+            pickle.dump(save_dict, f)
 
 
 def remove_duplicate_bracket(dataset_name):
     if dataset_name[-2:] == '))':
         return dataset_name[:-1]
     return dataset_name
+
+
+# Count occurences of relative pollution levels (for sanity check later)
+counter = defaultdict(lambda: 0)
 
 
 def translate_pollution_percentage(dataset_name, steps=5):
@@ -55,9 +69,10 @@ def translate_pollution_percentage(dataset_name, steps=5):
     relative_pollution = absolute_pollution / anomaly_percentage if absolute_pollution > 0 else 0.0
     # To avoid rounding errors select from the only possible values by lowest distance
     relative_pollution = possible_values[np.argmin(abs(possible_values - relative_pollution))]
+    counter[relative_pollution] += 1
     return f'{match.group(1)}(pol={relative_pollution}, anom={anomaly_percentage})'
 
 
 if __name__ == '__main__':
-    path = os.path.join('reports', 'experiment_pollution', 'trend_1', 'additional_evaluators_lstmed_ae')
+    path = os.path.join('reports', 'experiment_pollution/trend_1/all_except_0.2_old_ds')
     add_relative_pollution_param(path)
