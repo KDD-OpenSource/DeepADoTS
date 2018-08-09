@@ -74,7 +74,9 @@ def translate_pollution_percentage(dataset_name, steps=5):
 
 
 paths = [
-    'experiment_pollution/extreme_1/all/0.2',
+    'experiment_pollution/variance_1/all_other_old_ds',
+    'experiment_pollution/variance_1/lstmad_other_old_ds',
+    'experiment_pollution/variance_1/lstmed_other_old_ds',
 ]
 
 if __name__ == '__main__':
