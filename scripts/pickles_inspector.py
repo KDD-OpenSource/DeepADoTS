@@ -91,6 +91,7 @@ def inspect_results(save_dict, ds_name, det):
 
     score = save_dict['results'][ds_name, det]
     plot_score(axes[2], score, y_test)
+    axes[2].set_title(f'Scores for {det}')
 
     plot_roc_curve(axes[3], score, y_test)
 

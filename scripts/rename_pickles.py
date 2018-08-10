@@ -26,24 +26,27 @@ def add_relative_pollution_param(pickles_dir):
     """
     is_first_time = True
     for path in os.listdir(pickles_dir):
-        print(f"Importing evaluator from '{path}'")
+        print(f"Importing evaluator from '{pickles_dir}/{path}'")
         with open(os.path.join(pickles_dir, path), 'rb') as f:
             save_dict = pickle.load(f)
 
-        save_dict['datasets'] = [translate_pollution_percentage(x) for x in save_dict['datasets']]
-        save_dict['benchmark_results']['dataset'] = [
-            translate_pollution_percentage(x) for x in save_dict['benchmark_results']['dataset']]
+        if is_first_time:
+            print('->Before:', *save_dict['datasets'], sep='\n')
+
+        # save_dict['datasets'] = [translate_pollution_percentage(x) for x in save_dict['datasets']]
+        # save_dict['benchmark_results']['dataset'] = [
+        #     translate_pollution_percentage(x) for x in save_dict['benchmark_results']['dataset']]
         save_dict['datasets'] = [remove_duplicate_bracket(x) for x in save_dict['datasets']]
         save_dict['benchmark_results']['dataset'] = [
             remove_duplicate_bracket(x) for x in save_dict['benchmark_results']['dataset']]
 
         if is_first_time:
             is_first_time = False
-            print('\n'.join(save_dict['datasets']))
+            print('->After:', *save_dict['datasets'], sep='\n')
 
         # Sanity check: Each relative pollution should occure the same amount of times
         # This might fail if you execute the script on already relative pollution values
-        assert all([counter[x] == counter[list(counter)[0]] for x in counter]), str(counter)
+        # assert all([counter[x] == counter[list(counter)[0]] for x in counter]), str(counter)
 
         with open(os.path.join(pickles_dir, path), 'wb') as f:
             pickle.dump(save_dict, f)
@@ -74,9 +77,21 @@ def translate_pollution_percentage(dataset_name, steps=5):
 
 
 paths = [
-    'experiment_pollution/variance_1/all_other_old_ds',
-    'experiment_pollution/variance_1/lstmad_other_old_ds',
-    'experiment_pollution/variance_1/lstmed_other_old_ds',
+    'experiment_pollution/extreme_1/LSTM-AD',
+    'experiment_pollution/extreme_1/LSTM-ED',
+    'experiment_pollution/extreme_1/rest',
+    'experiment_pollution/shift_1/alle_algorithmen_0.05, 0.1, 0.2',
+    'experiment_pollution/shift_1/LSTM-AD/0.01, 0.5',
+    'experiment_pollution/shift_1/LSTM-ED/0.01, 0.5',
+    'experiment_pollution/shift_1/rest/0.01, 0.5',
+    'experiment_pollution/trend_1/alle_algorithmen_0.05, 0.1, 0.2',
+    'experiment_pollution/trend_1/LSTM-AD/0.01, 0.5',
+    'experiment_pollution/trend_1/LSTM-ED/0.01, 0.5',
+    'experiment_pollution/trend_1/rest/0.01, 0.5',
+    'experiment_pollution/variance_1/alle_algorithmen_0.05, 0.1, 0.2',
+    'experiment_pollution/variance_1/LSTM-AD/0.01, 0.5',
+    'experiment_pollution/variance_1/LSTM-ED/0.01, 0.5',
+    'experiment_pollution/variance_1/rest/0.01, 0.5',
 ]
 
 if __name__ == '__main__':
