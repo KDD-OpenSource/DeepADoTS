@@ -28,11 +28,9 @@ SEEDS = [
 def main():
     # run_pipeline()
     # run_experiments()
-    # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
-    #     run_final_missing_experiment(outlier_type=ot)
-    # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
-    #     run_final_pollution_experiment(outlier_type=ot)
-    run_final_pollution_experiment(outlier_type='extreme_1')
+    for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
+        run_final_pollution_experiment(outlier_type=ot)
+    # run_final_pollution_experiment(outlier_type='extreme_1')
     # evaluate_real_datasets()
 
 
@@ -48,24 +46,24 @@ def get_seeds():
 
 def run_final_pollution_experiment(outlier_type='extreme_1', steps=5):
     only_load = len(sys.argv) > 1 and sys.argv[1] == 'load'
-    output_dir = os.path.join('reports/experiment_pollution_results', outlier_type)
+    output_dir = os.path.join('reports/experiment_pollution', outlier_type)
     seeds = get_seeds()
     if not only_load:
         run_pollution_experiment(
             detectors, seeds, RUNS, outlier_type, steps=steps,
             output_dir=output_dir, store_results=False)
-    plotter = Plotter('reports', output_dir)
+    # plotter = Plotter('reports', output_dir)
     # execute algorithm_heatmaps before fix_anomaly_percentage!
     # plotter.algorithm_heatmaps(f'cross pollution on {outlier_type}')
-    anom = plotter.fix_anomaly_percentage(anom_perc_idx=ANOM_CONST)
-    plotter.latex_lineplot(
-        title=f'Pollution_{outlier_type}',
-        x_label='Pollution In Training Data',
-        caption=f'Comparison of the presented approaches on \\textbf{{{outlier_type[:-2]}}} anomalies with varying '
-        'pollution levels for the training dataset. The anomaly percentage for the test dataset is '
-        f'fixed to {int(anom*100)}~\%.',
-        latex_label='pollution_lineplot',
-    )
+    # anom = plotter.fix_anomaly_percentage(anom_perc_idx=ANOM_CONST)
+    # plotter.latex_lineplot(
+    #     title=f'Pollution_{outlier_type}',
+    #     x_label='Pollution In Training Data',
+    #     caption=f'Comparison of the presented approaches on \\textbf{{{outlier_type[:-2]}}} anomalies with varying '
+    #     'pollution levels for the training dataset. The anomaly percentage for the test dataset is '
+    #     f'fixed to {int(anom*100)}~\%.',
+    #     latex_label='pollution_lineplot',
+    # )
     # plotter.lineplot(f'pollution on {outlier_type}, anom={anom}', 'Pollution in training set')
     # plotter.barplots(f'pollution on {outlier_type}, anom={anom}')
 
