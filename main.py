@@ -18,6 +18,7 @@ RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
 
 ANOM_CONST = 0
 
+
 def main():
     # run_pipeline()
     # run_experiments()
