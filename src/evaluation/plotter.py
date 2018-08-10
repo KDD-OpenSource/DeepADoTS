@@ -90,10 +90,12 @@ class Plotter:
         self.logger.warn('For the paper please use the latex visualization')
         plt.close('all')
         aurocs = self._get_grouped_results()
+        self.dataset_names = sorted(self.dataset_names, key=lambda x: float(Evaluator.get_key_and_value(x)[1]))
 
         fig, ax = plt.subplots(figsize=(4, 4))
         for det in self.detector_names:
             final_det_name = NAMES_TRANSLATION.get(det, det)
+            print(*[(ds, aurocs.loc[ds, det]) for ds in self.dataset_names], sep='\n')
             ax.plot([aurocs.loc[ds, det] for ds in self.dataset_names], label=final_det_name)
 
         ax.set_xticks(list(range(len(self.dataset_names))))

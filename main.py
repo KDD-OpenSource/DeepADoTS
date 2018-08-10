@@ -62,8 +62,7 @@ def detectors():
                 LSTMED(num_epochs=2), AutoEncoder(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
         dets = [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40), AutoEncoder(num_epochs=40),
-                DAGMM(sequence_length=1), DAGMM(sequence_length=15),
-                DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
+                DAGMM(sequence_length=15), DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
     return sorted(dets, key=lambda x: x.framework)
 
 
