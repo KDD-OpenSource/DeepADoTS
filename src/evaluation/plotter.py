@@ -90,7 +90,6 @@ class Plotter:
         self.logger.warn('For the paper please use the latex visualization')
         plt.close('all')
         aurocs = self._get_grouped_results()
-        self.dataset_names = sorted(self.dataset_names, key=lambda x: float(Evaluator.get_key_and_value(x)[1]))
 
         fig, ax = plt.subplots(figsize=(4, 4))
         for det in self.detector_names:
@@ -208,6 +207,7 @@ class Plotter:
                 self._use_absolute_pollution(x, sel_anom) for x in self.results[i]['dataset']]
         # Adapt dataset names accordingly
         self.dataset_names = self.results[0].dataset.unique()
+        self.dataset_names = sorted(self.dataset_names, key=lambda x: float(Evaluator.get_key_and_value(x)[1]))
         return sel_anom
 
     def _use_absolute_pollution(self, dataset_name, anomaly_percentage):

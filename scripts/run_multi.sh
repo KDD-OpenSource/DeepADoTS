@@ -2,12 +2,12 @@
 
 set +e
 
-for EXE_RUN in {1..5}
+for EXE_RUN in {1..15}
 do
 	echo ""
  	echo ""
 	echo "---> EXECUTION $EXE_RUN <---"
-	python main.py
+	python main.py $(($EXE_RUN - 1))
 done
 
 set -e

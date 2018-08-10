@@ -38,7 +38,9 @@ NAMES_TRANSLATION = {
     'LSTM-AD': '\\lstmad',
     'LSTMED': '\\lstmed',
     'Donut': '\\donut',
+    'DAGMM-NW': '\\dagmm',
     'DAGMM_NNAutoEncoder_withWindow': '\\dagmm',
+    'DAGMM-LW': '\\lstmdagmm',
     'DAGMM_LSTMAutoEncoder_withWindow': '\\lstmdagmm',
     'AutoEncoder': '\\nnae',
 }
