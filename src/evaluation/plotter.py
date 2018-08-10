@@ -95,7 +95,6 @@ class Plotter:
         fig, ax = plt.subplots(figsize=(4, 4))
         for det in self.detector_names:
             final_det_name = NAMES_TRANSLATION.get(det, det)
-            print(*[(ds, aurocs.loc[ds, det]) for ds in self.dataset_names], sep='\n')
             ax.plot([aurocs.loc[ds, det] for ds in self.dataset_names], label=final_det_name)
 
         ax.set_xticks(list(range(len(self.dataset_names))))
@@ -216,7 +215,8 @@ class Plotter:
         match = name_regex.match(dataset_name)
         assert match is not None, 'Dataset needs to be polluted'
         rel_pollution = float(match.group(2))
-        abs_pollution = rel_pollution * anomaly_percentage
+        # abs_pollution = rel_pollution * anomaly_percentage
+        abs_pollution = rel_pollution
         return f'{match.group(1)}(pol={abs_pollution})'
 
     def single_barplot(self, title):
