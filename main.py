@@ -16,13 +16,8 @@ from src.evaluation import Evaluator, Plotter
 
 RUNS = 2 if os.environ.get('CIRCLECI', False) else 1
 
-ANOM_CONST = 0
-
-SEEDS = [
-    30168933, 54589666, 564345062, 606363029, 873869323,
-    1869886895, 1883951163, 1978540718, 2044193268, 2072265710,
-    2131486770, 2490641692, 2783667191, 2817051435, 4219714032,
-]
+# Which anomaly percentage should be used for fixing pollution results
+ANOM_PERCENTAGE_IDX = 0
 
 
 def main():
@@ -38,9 +33,13 @@ def get_seeds():
     if len(sys.argv) > 1 and sys.argv[1].isdigit():
         assert RUNS == 1, 'YOU shall only execute one run with a passed seed!'
         idx = int(sys.argv[1])
-        seeds = [SEEDS[idx]]
-        print(f'Running with seed #{idx}: {seeds[0]}')
-        return seeds
+        # Always start with a generator using the same seed
+        generator = np.random.RandomState(42)
+        # Starts with 1608637542, 1273642419, 1935803228
+        seeds = generator.randint(np.iinfo(int).max, size=idx+1)
+        seed = seeds[-1]
+        print(f'Running with seed #{idx}: {seed}')
+        return [seed]
     return np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
 
 
@@ -55,7 +54,7 @@ def run_final_pollution_experiment(outlier_type='extreme_1', steps=5):
     # plotter = Plotter('reports', output_dir)
     # execute algorithm_heatmaps before fix_anomaly_percentage!
     # plotter.algorithm_heatmaps(f'cross pollution on {outlier_type}')
-    # anom = plotter.fix_anomaly_percentage(anom_perc_idx=ANOM_CONST)
+    # anom = plotter.fix_anomaly_percentage(anom_perc_idx=ANOM_PERCENTAGE_IDX)
     # plotter.latex_lineplot(
     #     title=f'Pollution_{outlier_type}',
     #     x_label='Pollution In Training Data',
