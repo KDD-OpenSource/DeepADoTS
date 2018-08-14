@@ -35,8 +35,8 @@ def get_seeds():
         idx = int(sys.argv[1])
         # Always start with a generator using the same seed
         generator = np.random.RandomState(42)
-        # Starts with 1608637542, 1273642419, 1935803228
-        seeds = generator.randint(np.iinfo(int).max, size=idx+1)
+        # Starts with 1608637542, 3421126067, 4083286876,  787846414, 3143890026
+        seeds = generator.randint(np.iinfo(np.uint32).max, size=idx+1, dtype=np.uint32)
         seed = seeds[-1]
         print(f'Running with seed #{idx}: {seed}')
         return [seed]
