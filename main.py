@@ -28,11 +28,9 @@ SEEDS = [
 def main():
     # run_pipeline()
     # run_experiments()
-    # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
-    #     run_final_missing_experiment(outlier_type=ot)
-    # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
-    #     run_final_pollution_experiment(outlier_type=ot)
-    run_final_pollution_experiment(outlier_type='extreme_1')
+    for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
+        run_final_pollution_experiment(outlier_type=ot)
+    # run_final_pollution_experiment(outlier_type='extreme_1')
     # evaluate_real_datasets()
 
 
@@ -48,7 +46,7 @@ def get_seeds():
 
 def run_final_pollution_experiment(outlier_type='extreme_1', steps=5):
     only_load = len(sys.argv) > 1 and sys.argv[1] == 'load'
-    output_dir = os.path.join('reports/experiment_pollution_results', outlier_type)
+    output_dir = os.path.join('reports/experiment_pollution', outlier_type)
     seeds = get_seeds()
     if not only_load:
         run_pollution_experiment(
