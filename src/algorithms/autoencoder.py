@@ -15,8 +15,8 @@ from .cuda_utils import GPUWrapper
 
 class AutoEncoder(Algorithm, GPUWrapper):
     def __init__(self, hidden_size: int=5, sequence_length: int=30, batch_size: int=20, num_epochs: int=10,
-                 lr: float=0.1, framework: int=Algorithm.Frameworks.PyTorch, gpu: int=0):
-        Algorithm.__init__(self, __name__, 'AutoEncoder', framework)
+                 lr: float=0.1, gpu: int=0):
+        Algorithm.__init__(self, __name__, 'AutoEncoder', Algorithm.Frameworks.PyTorch)
         GPUWrapper.__init__(self, gpu)
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length
@@ -52,7 +52,7 @@ class AutoEncoder(Algorithm, GPUWrapper):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in train_loader:
                 output = self.aed(self.to_var(ts_batch))
-                loss = nn.MSELoss(reduce=False)(output, self.to_var(ts_batch.float())).sum()
+                loss = nn.MSELoss(reduction='sum')(output, self.to_var(ts_batch.float()))
                 self.aed.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -61,7 +61,7 @@ class AutoEncoder(Algorithm, GPUWrapper):
         error_vectors = []
         for ts_batch in train_gaussian_loader:
             output = self.aed(self.to_var(ts_batch))
-            error = nn.L1Loss(reduce=False)(output, self.to_var(ts_batch.float()))
+            error = nn.L1Loss(reduction='none')(output, self.to_var(ts_batch.float()))
             error_vectors += list(error.view(-1, X.shape[1]).data.cpu().numpy())
 
         self.mean = np.mean(error_vectors, axis=0)
@@ -80,7 +80,7 @@ class AutoEncoder(Algorithm, GPUWrapper):
         for idx, ts in enumerate(data_loader):
             output = self.aed(self.to_var(ts))
 
-            error = nn.L1Loss(reduce=False)(output, self.to_var(ts.float()))
+            error = nn.L1Loss(reduction='none')(output, self.to_var(ts.float()))
             score = -mvnormal.logpdf(error.view(-1, X.shape[1]).data.cpu().numpy())
             scores.append(score.reshape(ts.size(0), self.sequence_length))
 
@@ -107,9 +107,10 @@ class AutoEncoder(Algorithm, GPUWrapper):
 
 
 class AutoEncoderModule(nn.Module, GPUWrapper):
-    def __init__(self, n_features: int, sequence_length: int, hidden_size: int):
+    def __init__(self, n_features: int, sequence_length: int, hidden_size: int, gpu: int=0):
         # Each point is a flattened window and thus has as many features as sequence_length * features
         super().__init__()
+        GPUWrapper.__init__(self, gpu)
         input_length = n_features * sequence_length
 
         # creates powers of two between eight and the next smaller power from the input_length
@@ -125,9 +126,9 @@ class AutoEncoderModule(nn.Module, GPUWrapper):
         self._decoder = nn.Sequential(*layers)
         self.to_device(self._decoder)
 
-    def forward(self, ts_batch):
+    def forward(self, ts_batch, return_latent: bool=False):
         flattened_sequence = ts_batch.view(ts_batch.size(0), -1)
         enc = self._encoder(flattened_sequence.float())
         dec = self._decoder(enc)
         reconstructed_sequence = dec.view(ts_batch.size())
-        return reconstructed_sequence
+        return (reconstructed_sequence, enc) if return_latent else reconstructed_sequence

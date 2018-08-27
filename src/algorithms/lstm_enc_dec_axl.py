@@ -16,8 +16,8 @@ from .cuda_utils import GPUWrapper
 class LSTMED(Algorithm, GPUWrapper):
     def __init__(self, hidden_size: int=5, sequence_length: int=30, batch_size: int=20, num_epochs: int=10,
                  n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
-                 lr: float=0.1, weight_decay: float=1e-4, framework: int=Algorithm.Frameworks.PyTorch, gpu: int=0):
-        Algorithm.__init__(self, __name__, 'LSTMED', framework)
+                 lr: float=0.1, weight_decay: float=1e-4, gpu: int=0):
+        Algorithm.__init__(self, __name__, 'LSTM-ED', Algorithm.Frameworks.PyTorch)
         GPUWrapper.__init__(self, gpu)
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length
@@ -60,7 +60,7 @@ class LSTMED(Algorithm, GPUWrapper):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in train_loader:
                 output = self.lstmed(self.to_var(ts_batch))
-                loss = nn.MSELoss(reduce=False)(output, self.to_var(ts_batch.float())).sum()
+                loss = nn.MSELoss(reduction='sum')(output, self.to_var(ts_batch.float()))
                 self.lstmed.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -69,7 +69,7 @@ class LSTMED(Algorithm, GPUWrapper):
         error_vectors = []
         for ts_batch in train_gaussian_loader:
             output = self.lstmed(self.to_var(ts_batch))
-            error = nn.L1Loss(reduce=False)(output, self.to_var(ts_batch.float()))
+            error = nn.L1Loss(reduction='none')(output, self.to_var(ts_batch.float()))
             error_vectors += list(error.view(-1, X.shape[1]).data.cpu().numpy())
 
         self.mean = np.mean(error_vectors, axis=0)
@@ -88,7 +88,7 @@ class LSTMED(Algorithm, GPUWrapper):
         for idx, ts in enumerate(data_loader):
             output = self.lstmed(self.to_var(ts))
 
-            error = nn.L1Loss(reduce=False)(output, self.to_var(ts.float()))
+            error = nn.L1Loss(reduction='none')(output, self.to_var(ts.float()))
             score = -mvnormal.logpdf(error.view(-1, X.shape[1]).data.cpu().numpy())
             scores.append(score.reshape(ts.size(0), self.sequence_length))
 
@@ -134,26 +134,25 @@ class LSTMEDModule(nn.Module, GPUWrapper):
         self.hidden2output = nn.Linear(self.hidden_size, self.n_features)
         self.to_device(self.hidden2output)
 
-    def init_hidden(self, batch_size):
-        return (self.to_var(torch.zeros(1, batch_size, self.hidden_size)),  # first is no of layer.
-                self.to_var(torch.zeros(1, batch_size, self.hidden_size)))
+    def _init_hidden(self, batch_size):
+        return (self.to_var(torch.Tensor(self.n_layers[0], batch_size, self.hidden_size)),
+                self.to_var(torch.Tensor(self.n_layers[0], batch_size, self.hidden_size)))
 
-    def forward(self, ts_batch, return_hidden=False):
+    def forward(self, ts_batch, return_latent: bool=False):
         batch_size = ts_batch.shape[0]
 
         # 1. Encode the timeseries to make use of the last hidden state.
-        enc_hidden = self.init_hidden(batch_size)  # initialization with zero
-        _, enc_hidden = self.encoder(self.to_var(ts_batch.float()),
-                                     enc_hidden)  # .float() here or .double() for the model
+        enc_hidden = self._init_hidden(batch_size)  # initialization with zero
+        _, enc_hidden = self.encoder(ts_batch.float(), enc_hidden)  # .float() here or .double() for the model
 
         # 2. Use hidden state as initialization for our Decoder-LSTM
-        dec_hidden = (enc_hidden[0], self.to_var(torch.zeros(1, batch_size, self.hidden_size)))
+        dec_hidden = (enc_hidden[0], self.to_var(torch.Tensor(self.n_layers[1], batch_size, self.hidden_size)))
 
         # 3. Also, use this hidden state to get the first output aka the last point of the reconstructed timeseries
         # 4. Reconstruct timeseries backwards
         #    * Use true data for training decoder
         #    * Use hidden2output for prediction
-        output = self.to_var(torch.zeros(ts_batch.size()))
+        output = self.to_var(torch.Tensor(ts_batch.size()))
         for i in reversed(range(ts_batch.shape[1])):
             output[:, i, :] = self.hidden2output(dec_hidden[0][0, :])
 
@@ -162,4 +161,4 @@ class LSTMEDModule(nn.Module, GPUWrapper):
             else:
                 _, dec_hidden = self.decoder(output[:, i].unsqueeze(1), dec_hidden)
 
-        return (output, enc_hidden) if return_hidden else output
+        return (output, enc_hidden[0][-1]) if return_latent else output

@@ -12,8 +12,8 @@ class RecurrentEBM(Algorithm, GPUWrapper):
     """
 
     def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100,
-                 min_lr=0.01, min_energy=None, batch_size=10, framework=Algorithm.Frameworks.Tensorflow, gpu: int=0):
-        Algorithm.__init__(self, __name__, 'Recurrent EBM', framework)
+                 min_lr=0.01, min_energy=None, batch_size=10, gpu: int=0):
+        Algorithm.__init__(self, __name__, 'Recurrent EBM', Algorithm.Frameworks.Tensorflow)
         GPUWrapper.__init__(self, gpu)
         self.num_epochs = num_epochs
         self.n_hidden = n_hidden  # Size of RBM's hidden layer
