@@ -9,15 +9,14 @@ from scipy.stats import multivariate_normal
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
-from .algorithm import Algorithm
-from .cuda_utils import GPUWrapper
+from .algorithm_utils import Algorithm, PyTorchUtils
 
 
-class AutoEncoder(Algorithm, GPUWrapper):
+class AutoEncoder(Algorithm, PyTorchUtils):
     def __init__(self, hidden_size: int=5, sequence_length: int=30, batch_size: int=20, num_epochs: int=10,
-                 lr: float=0.1, gpu: int=0):
-        Algorithm.__init__(self, __name__, 'AutoEncoder', Algorithm.Frameworks.PyTorch)
-        GPUWrapper.__init__(self, gpu)
+                 lr: float=0.1, seed: int=None, gpu: int=None):
+        Algorithm.__init__(self, __name__, 'AutoEncoder', seed)
+        PyTorchUtils.__init__(self, seed, gpu)
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length
         self.batch_size = batch_size
@@ -43,7 +42,7 @@ class AutoEncoder(Algorithm, GPUWrapper):
         train_gaussian_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, drop_last=True,
                                            sampler=SubsetRandomSampler(indices[split_point:]), pin_memory=True)
 
-        self.aed = AutoEncoderModule(X.shape[1], self.sequence_length, self.hidden_size)
+        self.aed = AutoEncoderModule(X.shape[1], self.sequence_length, self.hidden_size, seed=self.seed, gpu=self.gpu)
         self.to_device(self.aed)
         optimizer = torch.optim.Adam(self.aed.parameters(), lr=self.lr)
 
@@ -93,24 +92,12 @@ class AutoEncoder(Algorithm, GPUWrapper):
 
         return scores
 
-    def binarize(self, score, threshold=None):
-        threshold = threshold if threshold is not None else self.threshold(score)
-        score = np.where(np.isnan(score), np.nanmin(score) - sys.float_info.epsilon, score)
-        return np.where(score >= threshold, 1, 0)
 
-    def threshold(self, score):
-        return np.nanmean(score) + 2 * np.nanstd(score)
-
-    def set_seed(self, seed):
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-
-
-class AutoEncoderModule(nn.Module, GPUWrapper):
-    def __init__(self, n_features: int, sequence_length: int, hidden_size: int, gpu: int=0):
+class AutoEncoderModule(nn.Module, PyTorchUtils):
+    def __init__(self, n_features: int, sequence_length: int, hidden_size: int, seed: int, gpu: int):
         # Each point is a flattened window and thus has as many features as sequence_length * features
         super().__init__()
-        GPUWrapper.__init__(self, gpu)
+        PyTorchUtils.__init__(self, seed, gpu)
         input_length = n_features * sequence_length
 
         # creates powers of two between eight and the next smaller power from the input_length

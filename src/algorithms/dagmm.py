@@ -10,23 +10,22 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
-from .algorithm import Algorithm
+from .algorithm_utils import Algorithm, PyTorchUtils
 from .autoencoder import AutoEncoderModule
-from .cuda_utils import GPUWrapper
 from .lstm_enc_dec_axl import LSTMEDModule
 
 
-class DAGMM(Algorithm, GPUWrapper):
+class DAGMM(Algorithm, PyTorchUtils):
     class AutoEncoder:
         NN = AutoEncoderModule
         LSTM = LSTMEDModule
 
     def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-2, batch_size=50, gmm_k=3,
                  normal_percentile=80, sequence_length=15, autoencoder_type=AutoEncoderModule, autoencoder_args=None,
-                 gpu: int=0):
+                 seed: int=None, gpu: int=None):
         _name = 'LSTM-DAGMM' if autoencoder_type == LSTMEDModule else 'DAGMM'
-        Algorithm.__init__(self, __name__, _name, Algorithm.Frameworks.PyTorch)
-        GPUWrapper.__init__(self, gpu)
+        Algorithm.__init__(self, __name__, _name, seed)
+        PyTorchUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
         self.lambda_energy = lambda_energy
         self.lambda_cov_diag = lambda_cov_diag
@@ -37,9 +36,10 @@ class DAGMM(Algorithm, GPUWrapper):
         self.normal_percentile = normal_percentile  # Up to which percentile data should be considered normal
         self.autoencoder_type = autoencoder_type
         if autoencoder_type == AutoEncoderModule:
-            self.autoencoder_args = ({'sequence_length': self.sequence_length, 'gpu': gpu})
+            self.autoencoder_args = ({'sequence_length': self.sequence_length})
         elif autoencoder_type == LSTMEDModule:
-            self.autoencoder_args = ({'n_layers': (3, 3), 'use_bias': (True, True), 'dropout': (0.3, 0.3), 'gpu': gpu})
+            self.autoencoder_args = ({'n_layers': (3, 3), 'use_bias': (True, True), 'dropout': (0.3, 0.3)})
+        self.autoencoder_args.update({'seed': seed, 'gpu': gpu})
         if autoencoder_args is not None:
             self.autoencoder_args.update(autoencoder_args)
 
@@ -71,9 +71,10 @@ class DAGMM(Algorithm, GPUWrapper):
         data = X.values
         sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=True, drop_last=True)
-        hidden_size = np.ceil(X.shape[1] / 20)
+        hidden_size = int(np.ceil(X.shape[1] / 20))
         autoencoder = self.autoencoder_type(n_features=X.shape[1], hidden_size=hidden_size, **self.autoencoder_args)
-        self.dagmm = DAGMMModule(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size + 2, gpu=self.gpu)
+        self.dagmm = DAGMMModule(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size + 2,
+                                 seed=self.seed, gpu=self.gpu)
         self.to_device(self.dagmm)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
 
@@ -120,25 +121,13 @@ class DAGMM(Algorithm, GPUWrapper):
         test_energy = np.nanmean(test_energy, axis=0)
         return test_energy
 
-    def binarize(self, score, threshold=None):
-        if threshold is None:
-            threshold = self.threshold(score)
-        return np.where(score >= threshold, 1, 0)
 
-    def threshold(self, score):
-        return np.nanmean(score) + np.nanstd(score)
-
-    def set_seed(self, seed):
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-
-
-class DAGMMModule(nn.Module, GPUWrapper):
+class DAGMMModule(nn.Module, PyTorchUtils):
     """Residual Block."""
 
-    def __init__(self, autoencoder, n_gmm=2, latent_dim=3, gpu=0):
+    def __init__(self, autoencoder, n_gmm, latent_dim, seed: int, gpu: int):
         super(DAGMMModule, self).__init__()
-        GPUWrapper.__init__(self, gpu)
+        PyTorchUtils.__init__(self, seed, gpu)
 
         self.add_module('autoencoder', autoencoder)
 

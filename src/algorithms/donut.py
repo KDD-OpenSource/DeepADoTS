@@ -14,8 +14,7 @@ from tfsnippet.utils import (get_default_session_or_error,
                              ensure_variables_initialized)
 from tqdm import trange
 
-from .algorithm import Algorithm
-from .cuda_utils import GPUWrapper
+from .algorithm_utils import Algorithm, TensorflowUtils
 
 
 class QuietDonutTrainer(DonutTrainer):
@@ -140,22 +139,22 @@ class QuietDonutTrainer(DonutTrainer):
                     lr *= self._lr_anneal_factor
 
 
-class Donut(Algorithm, GPUWrapper):
+class Donut(Algorithm, TensorflowUtils):
     """For each feature, the anomaly score is set to 1 for a point if its reconstruction probability
     is smaller than mean - std of the reconstruction probabilities for that feature. For each point
     in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
 
-    def __init__(self, num_epochs=256, gpu: int=0,
-                 batch_size=32, x_dims=120):
-        Algorithm.__init__(self, __name__, 'Donut', Algorithm.Frameworks.Tensorflow)
-        GPUWrapper.__init__(self, gpu)
+    def __init__(self, num_epochs=256, batch_size=32, x_dims=120,
+                 seed: int=None, gpu: int=None):
+        Algorithm.__init__(self, __name__, 'Donut', seed)
+        TensorflowUtils.__init__(self, seed, gpu)
         self.max_epoch = num_epochs
         self.x_dims = x_dims
         self.batch_size = batch_size
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
-        with self.tf_device:
+        with self.device:
             # Reset all results from last run to avoid reusing variables
             self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
             for col_idx in trange(len(X.columns)):
@@ -199,7 +198,7 @@ class Donut(Algorithm, GPUWrapper):
     def predict(self, X: pd.DataFrame):
         """Since we predict the anomaly scores for each feature independently, we already return a binarized one-
         dimensional anomaly score array."""
-        with self.tf_device:
+        with self.device:
             test_scores = np.zeros_like(X)
             for col_idx, col in enumerate(X.columns):
                 mean, std, tf_session, model = \
@@ -215,14 +214,3 @@ class Donut(Algorithm, GPUWrapper):
             aggregated_test_scores = np.amax(test_scores, axis=1)
             aggregated_test_scores[:self.x_dims - 1] = np.nanmin(aggregated_test_scores) - sys.float_info.epsilon
             return aggregated_test_scores
-
-    def binarize(self, score, threshold=None):
-        if threshold is None:
-            threshold = self.threshold(score)
-        return np.where(score >= threshold, 1, 0)
-
-    def threshold(self, score):
-        return np.nanmean(score) + np.nanstd(score)
-
-    def set_seed(self, seed):
-        tf.set_random_seed(seed)

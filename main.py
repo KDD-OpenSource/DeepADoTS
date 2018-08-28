@@ -25,15 +25,17 @@ def main():
     # evaluate_real_datasets()
 
 
-def detectors():
+def detectors(seed):
     if os.environ.get('CIRCLECI', False):
-        dets = [AutoEncoder(num_epochs=2), DAGMM(num_epochs=2),
-                DAGMM(num_epochs=2, autoencoder_type=DAGMM.AutoEncoder.LSTM),
-                Donut(num_epochs=5), LSTMAD(num_epochs=5), LSTMED(num_epochs=2), RecurrentEBM(num_epochs=2)]
+        dets = [AutoEncoder(num_epochs=2, seed=seed), DAGMM(num_epochs=2, seed=seed),
+                DAGMM(num_epochs=2, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
+                Donut(num_epochs=5, seed=seed), LSTMAD(num_epochs=5, seed=seed), LSTMED(num_epochs=2, seed=seed),
+                RecurrentEBM(num_epochs=2, seed=seed)]
     else:
-        dets = [AutoEncoder(num_epochs=40), DAGMM(sequence_length=15),
-                DAGMM(sequence_length=15, autoencoder_type=DAGMM.AutoEncoder.LSTM),
-                Donut(), LSTMAD(), LSTMED(num_epochs=40), RecurrentEBM(num_epochs=15)]
+        dets = [AutoEncoder(num_epochs=40, seed=seed), DAGMM(sequence_length=15, seed=seed),
+                DAGMM(sequence_length=15, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
+                Donut(seed=seed), LSTMAD(seed=seed), LSTMED(num_epochs=40, seed=seed),
+                RecurrentEBM(num_epochs=15, seed=seed)]
     return sorted(dets, key=lambda x: x.framework)
 
 
