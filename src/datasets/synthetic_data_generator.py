@@ -157,7 +157,7 @@ class SyntheticDataGenerator:
                                        [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
         dataset.pollution_config = pollution_config
 
-        dataset.name = f'Syn Shift Outliers (pol={pollution_percentage}, anom={anomaly_percentage}))'
+        dataset.name = f'Syn Shift Outliers (pol={pollution_percentage}, anom={anomaly_percentage})'
         return dataset
 
     @staticmethod
@@ -217,7 +217,7 @@ class SyntheticDataGenerator:
                                           [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
         dataset.pollution_config = pollution_config
 
-        dataset.name = f'Syn Variance Outliers (pol={pollution_percentage}, anom={anomaly_percentage}))'
+        dataset.name = f'Syn Variance Outliers (pol={pollution_percentage}, anom={anomaly_percentage})'
         return dataset
 
     @staticmethod
@@ -275,7 +275,7 @@ class SyntheticDataGenerator:
                                        [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
         dataset.pollution_config = pollution_config
 
-        dataset.name = f'Syn Trend Outliers (pol={pollution_percentage}, anom={anomaly_percentage}))'
+        dataset.name = f'Syn Trend Outliers (pol={pollution_percentage}, anom={anomaly_percentage})'
         return dataset
 
     @staticmethod

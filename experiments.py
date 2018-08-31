@@ -1,3 +1,4 @@
+import sys
 from itertools import product
 
 import numpy as np
@@ -90,10 +91,13 @@ def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, 
         evaluator = Evaluator(datasets[index], detectors, output_dir, seed=seed)
         evaluator.evaluate()
         result = evaluator.benchmarks()
-        evaluator.plot_roc_curves(store=store_results)
-        evaluator.plot_threshold_comparison(store=store_results)
-        evaluator.plot_scores(store=store_results)
+        if store_results:
+            evaluator.plot_roc_curves()
+            evaluator.plot_threshold_comparison()
+            evaluator.plot_scores()
         evaluator.set_benchmark_results(result)
+        if len(seeds) == 1 and len(sys.argv) > 1 and sys.argv[1].isdigit():
+            index = int(sys.argv[1])
         evaluator.export_results(f'experiment-run-{index}-{seed}')
         results = results.append(result, ignore_index=True)
 

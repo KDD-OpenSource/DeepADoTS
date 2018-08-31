@@ -112,11 +112,11 @@ class Evaluator:
         fpr, tpr, _ = roc_curve(y_test, score_nonan)
         return auc(fpr, tpr)
 
-    def get_optimal_threshold(self, det, y_test, score, steps=100, return_metrics=False):
+    def get_optimal_threshold(self, y_test, score, steps=100, return_metrics=False):
         maximum = np.nanmax(score)
         minimum = np.nanmin(score)
         threshold = np.linspace(minimum, maximum, steps)
-        metrics = list(self.get_metrics_by_thresholds(det, y_test, score, threshold))
+        metrics = list(self.get_metrics_by_thresholds(y_test, score, threshold))
         metrics = np.array(metrics).T
         anomalies, acc, prec, rec, f_score, f01_score = metrics
         if return_metrics:
@@ -146,7 +146,7 @@ class Evaluator:
             _, _, _, y_test = ds.data()
             for det in self.detectors:
                 score = self.results[(ds.name, det.name)]
-                y_pred = det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))
+                y_pred = det.binarize(score, self.get_optimal_threshold(y_test, np.array(score)))
                 acc, prec, rec, f1_score, f01_score = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
                 score = self.results[(ds.name, det.name)]
                 auroc = self.get_auroc(det, ds, score)
@@ -162,9 +162,14 @@ class Evaluator:
         return df
 
     @staticmethod
-    def get_metrics_by_thresholds(det, y_test: list, score: list, thresholds: list):
+    def binarize(score, threshold):
+        score = np.where(np.isnan(score), np.nanmin(score) - sys.float_info.epsilon, score)
+        return np.where(score >= threshold, 1, 0)
+
+    @staticmethod
+    def get_metrics_by_thresholds(y_test: list, score: list, thresholds: list):
         for threshold in thresholds:
-            anomaly = det.binarize(score, threshold=threshold)
+            anomaly = Evaluator.binarize(score, threshold)
             metrics = Evaluator.get_accuracy_precision_recall_fscore(y_test, anomaly)
             yield (anomaly.sum(), *metrics)
 
@@ -197,14 +202,14 @@ class Evaluator:
                 sp.set_title(f'scores of {det.name}', loc=subtitle_loc)
                 score = self.results[(ds.name, det.name)]
                 plt.plot(np.arange(len(score)), [x for x in score])
-                threshold_line = len(score) * [self.get_optimal_threshold(det, y_test, np.array(score))]
+                threshold_line = len(score) * [self.get_optimal_threshold(y_test, np.array(score))]
                 plt.plot([x for x in threshold_line])
                 subplot_num += 1
 
                 sp = fig.add_subplot((2 * len(detectors) + 3), 1, subplot_num)
                 sp.set_title(f'binary labels of {det.name}', loc=subtitle_loc)
                 plt.plot(np.arange(len(score)),
-                         [x for x in det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))])
+                         [x for x in det.binarize(score, self.get_optimal_threshold(y_test, np.array(score)))])
                 subplot_num += 1
             fig.subplots_adjust(top=0.9, hspace=0.4)
             fig.tight_layout()
@@ -228,7 +233,7 @@ class Evaluator:
                 score = np.array(self.results[(ds.name, det.name)])
 
                 anomalies, _, prec, rec, f_score, f01_score, thresh = self.get_optimal_threshold(
-                    det, y_test, score, return_metrics=True)
+                    y_test, score, return_metrics=True)
 
                 ax.plot(thresh, anomalies / len(y_test),
                         label=fr'anomalies ({len(y_test)} $\rightarrow$ 1)')

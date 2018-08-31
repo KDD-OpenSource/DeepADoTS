@@ -14,15 +14,57 @@ from src.evaluation import Evaluator, Plotter
 # Add this line if you want to test the pipeline & experiments
 # os.environ['CIRCLECI'] = 'True'
 
-RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
+RUNS = 2 if os.environ.get('CIRCLECI', False) else 1
+
+# Which anomaly percentage should be used for fixing pollution results
+ANOM_PERCENTAGE_IDX = 0
 
 
 def main():
-    run_pipeline()
-    run_experiments()
-    # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
-    #     run_final_missing_experiment(outlier_type=ot, runs=2)
+    # run_pipeline()
+    # run_experiments()
+    for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
+        run_final_pollution_experiment(outlier_type=ot)
+    # run_final_pollution_experiment(outlier_type='extreme_1')
     # evaluate_real_datasets()
+
+
+def get_seeds():
+    if len(sys.argv) > 1 and sys.argv[1].isdigit():
+        assert RUNS == 1, 'YOU shall only execute one run with a passed seed!'
+        idx = int(sys.argv[1])
+        # Always start with a generator using the same seed
+        generator = np.random.RandomState(42)
+        # Starts with 1608637542, 3421126067, 4083286876,  787846414, 3143890026
+        seeds = generator.randint(np.iinfo(np.uint32).max, size=idx+1, dtype=np.uint32)
+        seed = seeds[-1]
+        print(f'Running with seed #{idx}: {seed}')
+        return [seed]
+    return np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
+
+
+def run_final_pollution_experiment(outlier_type='extreme_1', steps=5):
+    only_load = len(sys.argv) > 1 and sys.argv[1] == 'load'
+    output_dir = os.path.join('reports/experiment_pollution', outlier_type)
+    seeds = get_seeds()
+    if not only_load:
+        run_pollution_experiment(
+            detectors, seeds, RUNS, outlier_type, steps=steps,
+            output_dir=output_dir, store_results=False)
+    # plotter = Plotter('reports', output_dir)
+    # execute algorithm_heatmaps before fix_anomaly_percentage!
+    # plotter.algorithm_heatmaps(f'cross pollution on {outlier_type}')
+    # anom = plotter.fix_anomaly_percentage(anom_perc_idx=ANOM_PERCENTAGE_IDX)
+    # plotter.latex_lineplot(
+    #     title=f'Pollution_{outlier_type}',
+    #     x_label='Pollution In Training Data',
+    #     caption=f'Comparison of the presented approaches on \\textbf{{{outlier_type[:-2]}}} anomalies with varying '
+    #     'pollution levels for the training dataset. The anomaly percentage for the test dataset is '
+    #     f'fixed to {int(anom*100)}~\%.',
+    #     latex_label='pollution_lineplot',
+    # )
+    # plotter.lineplot(f'pollution on {outlier_type}, anom={anom}', 'Pollution in training set')
+    # plotter.barplots(f'pollution on {outlier_type}, anom={anom}')
 
 
 def detectors():
@@ -31,8 +73,7 @@ def detectors():
                 LSTMED(num_epochs=2), AutoEncoder(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
     else:
         dets = [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40), AutoEncoder(num_epochs=40),
-                DAGMM(sequence_length=1), DAGMM(sequence_length=15),
-                DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
+                DAGMM(sequence_length=15), DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
     return sorted(dets, key=lambda x: x.framework)
 
 
@@ -53,7 +94,7 @@ def pipeline_datasets(seed):
 def run_pipeline():
     # Perform multiple pipeline runs for more robust end results.
     # Set the seed manually for reproducibility.
-    seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
+    seeds = get_seeds()
     results = pd.DataFrame()
     evaluator = None
 
@@ -90,7 +131,7 @@ def run_pipeline():
 
 def run_experiments(steps=5):
     # Set the seed manually for reproducibility.
-    seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
+    seeds = get_seeds()
 
     evaluators = []
     for outlier_type in ['extreme_1', 'shift_1', 'variance_1', 'trend_1']:
@@ -143,7 +184,7 @@ def run_experiments(steps=5):
 
 def run_final_missing_experiment(outlier_type='extreme_1', runs=25, steps=5):
     only_load = len(sys.argv) > 1 and sys.argv[1] == 'load'
-    output_dir = os.path.join('reports/experiments', outlier_type)
+    output_dir = os.path.join('reports/experiment_missing', outlier_type)
     if len(sys.argv) > 2:
         output_dir = os.path.join('reports', sys.argv[2], outlier_type)
     seeds = np.random.randint(np.iinfo(np.uint32).max, size=runs, dtype=np.uint32)
@@ -158,7 +199,7 @@ def run_final_missing_experiment(outlier_type='extreme_1', runs=25, steps=5):
 def evaluate_real_datasets():
     REAL_DATASET_GROUP_PATH = 'data/raw/'
     real_dataset_groups = glob.glob(REAL_DATASET_GROUP_PATH + "*")
-    seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
+    seeds = get_seeds()
     results = pd.DataFrame()
     datasets = [KDDCup(seed=1)]
     for real_dataset_group in real_dataset_groups:
