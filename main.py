@@ -1,6 +1,9 @@
 import sys
 import glob
 import os
+import pickle
+import time
+from itertools import product
 
 import numpy as np
 import pandas as pd
@@ -20,6 +23,7 @@ RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
 def main():
     run_pipeline()
     run_experiments()
+    run_hyperparam_experiment()
     # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
     #     run_final_missing_experiment(outlier_type=ot, runs=2)
     # evaluate_real_datasets()
@@ -142,6 +146,35 @@ def run_experiments(steps=5):
 
     for ev in evaluators:
         ev.plot_single_heatmap()
+
+
+def detectors_lr(lr):
+    def detectors(seed):
+        dets = [AutoEncoder(num_epochs=5, seed=seed, lr=lr),
+                DAGMM(num_epochs=5, sequence_length=15, seed=seed, lr=lr),
+                DAGMM(num_epochs=5, sequence_length=15, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed, lr=lr),
+                # Donut(seed=seed),
+                LSTMAD(num_epochs=5, seed=seed, lr=lr),
+                LSTMED(num_epochs=5, seed=seed, lr=lr),
+                RecurrentEBM(num_epochs=5, seed=seed, lr=lr)]
+        return sorted(dets, key=lambda x: x.framework)
+    return detectors
+
+
+def run_hyperparam_experiment():
+    for lr in [1e-4, 3e-4, 1e-3, 5e-3, 1e-2, 5e-2]:
+        dets = detectors_lr(lr=lr)
+        seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
+        dataset_funcs = [SyntheticDataGenerator.extreme_1]
+
+        for seed, ds_func in product(seeds, dataset_funcs):
+            ds = ds_func(seed)
+            evaluator = Evaluator([ds], dets, 'reports/experiments/hyperparam', seed=seed, evaluate_convergence=True)
+            epoch_stats = evaluator.evaluate()
+            evaluator.plot_epoch_stats(epoch_stats, ds.name, lr)
+            ts = time.strftime('%Y-%m-%d-%H%M%S')
+            with open(os.path.join(evaluator.output_dir, f'convergence_ds={ds.name}|lr={lr}|{ts}.pickle'), 'wb') as f:
+                pickle.dump(epoch_stats, f)
 
 
 def run_final_missing_experiment(outlier_type='extreme_1', runs=25, steps=5):

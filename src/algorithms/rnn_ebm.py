@@ -11,14 +11,14 @@ class RecurrentEBM(Algorithm, TensorflowUtils):
     """
 
     def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100,
-                 min_lr=0.01, min_energy=None, batch_size=10,
+                 lr=0.01, min_energy=None, batch_size=10,
                  seed: int=None, gpu: int=None):
         Algorithm.__init__(self, __name__, 'Recurrent EBM', seed)
         TensorflowUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
         self.n_hidden = n_hidden  # Size of RBM's hidden layer
         self.n_hidden_recurrent = n_hidden_recurrent  # Size of RNN's hidden layer
-        self.min_lr = min_lr
+        self.min_lr = lr
         self.min_energy = min_energy  # Threshold for anomaly
         self.batch_size = batch_size
 
