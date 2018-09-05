@@ -63,7 +63,7 @@ class DAGMM(Algorithm, PyTorchUtils):
         self.optimizer.step()
         return total_loss, sample_energy, recon_error, cov_diag
 
-    def fit(self, X: pd.DataFrame, _):
+    def fit(self, X: pd.DataFrame):
         """Learn the mixture probability, mean and covariance for each component k.
         Store the computed energy based on the training data and the aforementioned parameters."""
         X.interpolate(inplace=True)

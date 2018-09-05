@@ -64,7 +64,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
         self.mean = None
         self.cov = None
 
-    def fit(self, X, _):
+    def fit(self, X):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         self.batch_size = 1

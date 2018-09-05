@@ -27,7 +27,7 @@ class AutoEncoder(Algorithm, PyTorchUtils):
         self.mean = None
         self.cov = None
 
-    def fit(self, X: pd.DataFrame, _):
+    def fit(self, X: pd.DataFrame):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
@@ -50,7 +50,7 @@ class AutoEncoder(Algorithm, PyTorchUtils):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in train_loader:
                 output = self.aed(self.to_var(ts_batch))
-                loss = nn.MSELoss(reduce='sum')(output, self.to_var(ts_batch.float()))
+                loss = nn.MSELoss(size_average=False)(output, self.to_var(ts_batch.float()))
                 self.aed.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -59,7 +59,7 @@ class AutoEncoder(Algorithm, PyTorchUtils):
         error_vectors = []
         for ts_batch in train_gaussian_loader:
             output = self.aed(self.to_var(ts_batch))
-            error = nn.L1Loss(reduction='none')(output, self.to_var(ts_batch.float()))
+            error = nn.L1Loss(reduce=False)(output, self.to_var(ts_batch.float()))
             error_vectors += list(error.view(-1, X.shape[1]).data.cpu().numpy())
 
         self.mean = np.mean(error_vectors, axis=0)
@@ -78,7 +78,7 @@ class AutoEncoder(Algorithm, PyTorchUtils):
         for idx, ts in enumerate(data_loader):
             output = self.aed(self.to_var(ts))
 
-            error = nn.L1Loss(reduction='none')(output, self.to_var(ts.float()))
+            error = nn.L1Loss(reduce=False)(output, self.to_var(ts.float()))
             score = -mvnormal.logpdf(error.view(-1, X.shape[1]).data.cpu().numpy())
             scores.append(score.reshape(ts.size(0), self.sequence_length))
 

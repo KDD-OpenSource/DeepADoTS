@@ -153,7 +153,7 @@ class Donut(Algorithm, TensorflowUtils):
         self.batch_size = batch_size
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
-    def fit(self, X: pd.DataFrame, y: pd.Series):
+    def fit(self, X: pd.DataFrame):
         with self.device:
             # Reset all results from last run to avoid reusing variables
             self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
@@ -162,7 +162,7 @@ class Donut(Algorithm, TensorflowUtils):
                 tf_session = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
                 timestamps = X.index
                 features = X.loc[:, col].interpolate().bfill().values
-                labels = y
+                labels = pd.Series(0, X.index)
                 timestamps, _, (features, labels) = complete_timestamp(timestamps, (features, labels))
                 missing = np.isnan(X.loc[:, col].values)
                 _, mean, std = standardize_kpi(features, excludes=np.logical_or(labels, missing))

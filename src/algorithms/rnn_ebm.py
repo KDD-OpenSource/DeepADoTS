@@ -38,7 +38,7 @@ class RecurrentEBM(Algorithm, TensorflowUtils):
 
         self.tf_session = None
 
-    def fit(self, X, _):
+    def fit(self, X):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         with self.device:

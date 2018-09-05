@@ -22,7 +22,7 @@ class Algorithm(metaclass=abc.ABCMeta):
         return self.name
 
     @abc.abstractmethod
-    def fit(self, X, y):
+    def fit(self, X):
         """
         Train the algorithm on the given dataset
         """
