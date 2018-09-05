@@ -4,11 +4,11 @@ import torch
 from scipy.stats import multivariate_normal
 from torch.autograd import Variable
 
-from .algorithm import Algorithm
-from .cuda_utils import GPUWrapper
+from .algorithm_utils import Algorithm, PyTorchUtils
 
 
 class LSTMSequence(torch.nn.Module):
+    # ToDo: cuda support
     def __init__(self, d, batch_size: int, len_in=1, len_out=10):
         super().__init__()
         self.d = d  # input and output feature dimensionality
@@ -43,15 +43,15 @@ class LSTMSequence(torch.nn.Module):
         return outputs.view(input.size(0), input.size(1), self.d, self.len_out)
 
 
-class LSTMAD(Algorithm, GPUWrapper):
+class LSTMAD(Algorithm, PyTorchUtils):
     """ LSTM-AD implementation using PyTorch.
     The interface of the class is sklearn-like.
     """
 
     def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1, optimizer=torch.optim.Rprop,
-                 framework=Algorithm.Frameworks.PyTorch, gpu: int=0):
-        Algorithm.__init__(self, __name__, 'LSTM-AD', framework)
-        GPUWrapper.__init__(self, gpu)
+                 seed: int=None, gpu: int=None):
+        Algorithm.__init__(self, __name__, 'LSTM-AD', seed)
+        PyTorchUtils.__init__(self, seed, gpu)
         self.len_in = len_in
         self.len_out = len_out
 
@@ -64,7 +64,7 @@ class LSTMAD(Algorithm, GPUWrapper):
         self.mean = None
         self.cov = None
 
-    def fit(self, X, _):
+    def fit(self, X):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         self.batch_size = 1
@@ -142,18 +142,3 @@ class LSTMAD(Algorithm, GPUWrapper):
         loss_train = self.loss(output_data, target_data)
         loss_train.backward()
         return loss_train
-
-    def binarize(self, score, threshold=None):
-        if threshold:
-            threshold = threshold
-        else:
-            threshold = self.threshold(score)
-        score = np.where(np.isnan(score), threshold - 1, score)
-        return np.where(score >= threshold, 1, 0)
-
-    def threshold(self, score):
-        return np.nanmean(score) + 1.5 * np.nanstd(score)
-
-    def set_seed(self, seed):
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)

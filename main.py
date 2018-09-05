@@ -7,7 +7,7 @@ import pandas as pd
 
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
     run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
-from src.algorithms import AutoEncoder, DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED, LSTMAutoEncoder
+from src.algorithms import AutoEncoder, DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED
 from src.datasets import KDDCup, SyntheticDataGenerator, RealPickledDataset
 from src.evaluation import Evaluator, Plotter
 
@@ -25,14 +25,17 @@ def main():
     # evaluate_real_datasets()
 
 
-def detectors():
+def detectors(seed):
     if os.environ.get('CIRCLECI', False):
-        dets = [RecurrentEBM(num_epochs=2), Donut(num_epochs=5), LSTMAD(num_epochs=5), DAGMM(num_epochs=2),
-                LSTMED(num_epochs=2), AutoEncoder(num_epochs=2), DAGMM(num_epochs=2, autoencoder_type=LSTMAutoEncoder)]
+        dets = [AutoEncoder(num_epochs=2, seed=seed), DAGMM(num_epochs=2, seed=seed),
+                DAGMM(num_epochs=2, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
+                Donut(num_epochs=5, seed=seed), LSTMAD(num_epochs=5, seed=seed), LSTMED(num_epochs=2, seed=seed),
+                RecurrentEBM(num_epochs=2, seed=seed)]
     else:
-        dets = [RecurrentEBM(num_epochs=15), Donut(), LSTMAD(), LSTMED(num_epochs=40), AutoEncoder(num_epochs=40),
-                DAGMM(sequence_length=1), DAGMM(sequence_length=15),
-                DAGMM(sequence_length=15, autoencoder_type=LSTMAutoEncoder)]
+        dets = [AutoEncoder(num_epochs=40, seed=seed), DAGMM(sequence_length=15, seed=seed),
+                DAGMM(sequence_length=15, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
+                Donut(seed=seed), LSTMAD(seed=seed), LSTMED(num_epochs=40, seed=seed),
+                RecurrentEBM(num_epochs=15, seed=seed)]
     return sorted(dets, key=lambda x: x.framework)
 
 
@@ -157,7 +160,7 @@ def run_final_missing_experiment(outlier_type='extreme_1', runs=25, steps=5):
 
 def evaluate_real_datasets():
     REAL_DATASET_GROUP_PATH = 'data/raw/'
-    real_dataset_groups = glob.glob(REAL_DATASET_GROUP_PATH + "*")
+    real_dataset_groups = glob.glob(REAL_DATASET_GROUP_PATH + '*')
     seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
     results = pd.DataFrame()
     datasets = [KDDCup(seed=1)]
@@ -177,7 +180,7 @@ def evaluate_real_datasets():
         evaluator.plot_scores()
         results = results.append(result, ignore_index=True)
 
-    avg_results = results.groupby(["dataset", "algorithm"], as_index=False).mean()
+    avg_results = results.groupby(['dataset', 'algorithm'], as_index=False).mean()
     evaluator.set_benchmark_results(avg_results)
     evaluator.export_results('run_real_datasets')
     evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=False)

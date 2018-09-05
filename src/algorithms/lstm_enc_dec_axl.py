@@ -1,5 +1,4 @@
 import logging
-import sys
 
 import numpy as np
 import pandas as pd
@@ -9,16 +8,15 @@ from scipy.stats import multivariate_normal
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
-from .algorithm import Algorithm
-from .cuda_utils import GPUWrapper
+from .algorithm_utils import Algorithm, PyTorchUtils
 
 
-class LSTMED(Algorithm, GPUWrapper):
+class LSTMED(Algorithm, PyTorchUtils):
     def __init__(self, hidden_size: int=5, sequence_length: int=30, batch_size: int=20, num_epochs: int=10,
                  n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
-                 lr: float=0.1, weight_decay: float=1e-4, framework: int=Algorithm.Frameworks.PyTorch, gpu: int=0):
-        Algorithm.__init__(self, __name__, 'LSTMED', framework)
-        GPUWrapper.__init__(self, gpu)
+                 lr: float=0.1, weight_decay: float=1e-4, seed: int=None, gpu: int=None):
+        Algorithm.__init__(self, __name__, 'LSTM-ED', seed=None)
+        PyTorchUtils.__init__(self, seed, gpu)
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length
         self.batch_size = batch_size
@@ -36,7 +34,7 @@ class LSTMED(Algorithm, GPUWrapper):
         self.mean = None
         self.cov = None
 
-    def fit(self, X: pd.DataFrame, _):
+    def fit(self, X: pd.DataFrame):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
@@ -51,7 +49,8 @@ class LSTMED(Algorithm, GPUWrapper):
                                            sampler=SubsetRandomSampler(indices[split_point:]), pin_memory=True)
 
         self.lstmed = LSTMEDModule(n_features=X.shape[1], hidden_size=self.hidden_size,
-                                   n_layers=self.n_layers, use_bias=self.use_bias, dropout=self.dropout)
+                                   n_layers=self.n_layers, use_bias=self.use_bias, dropout=self.dropout,
+                                   seed=self.seed, gpu=self.gpu)
         self.to_device(self.lstmed)
         optimizer = torch.optim.Adam(self.lstmed.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
@@ -60,7 +59,7 @@ class LSTMED(Algorithm, GPUWrapper):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in train_loader:
                 output = self.lstmed(self.to_var(ts_batch))
-                loss = nn.MSELoss(reduce=False)(output, self.to_var(ts_batch.float())).sum()
+                loss = nn.MSELoss(size_average=False)(output, self.to_var(ts_batch.float()))
                 self.lstmed.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -101,23 +100,12 @@ class LSTMED(Algorithm, GPUWrapper):
 
         return scores
 
-    def binarize(self, score, threshold=None):
-        threshold = threshold if threshold is not None else self.threshold(score)
-        score = np.where(np.isnan(score), np.nanmin(score) - sys.float_info.epsilon, score)
-        return np.where(score >= threshold, 1, 0)
 
-    def threshold(self, score):
-        return np.nanmean(score) + 2 * np.nanstd(score)
-
-    def set_seed(self, seed):
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-
-
-class LSTMEDModule(nn.Module, GPUWrapper):
-    def __init__(self, n_features: int, hidden_size: int, n_layers: tuple, use_bias: tuple, dropout: tuple, gpu: int=0):
+class LSTMEDModule(nn.Module, PyTorchUtils):
+    def __init__(self, n_features: int, hidden_size: int, n_layers: tuple, use_bias: tuple, dropout: tuple,
+                 seed: int, gpu: int):
         super().__init__()
-        GPUWrapper.__init__(self, gpu)
+        PyTorchUtils.__init__(self, seed, gpu)
         self.n_features = n_features
         self.hidden_size = hidden_size
 
@@ -134,26 +122,25 @@ class LSTMEDModule(nn.Module, GPUWrapper):
         self.hidden2output = nn.Linear(self.hidden_size, self.n_features)
         self.to_device(self.hidden2output)
 
-    def init_hidden(self, batch_size):
-        return (self.to_var(torch.zeros(1, batch_size, self.hidden_size)),  # first is no of layer.
-                self.to_var(torch.zeros(1, batch_size, self.hidden_size)))
+    def _init_hidden(self, batch_size):
+        return (self.to_var(torch.Tensor(self.n_layers[0], batch_size, self.hidden_size).zero_()),
+                self.to_var(torch.Tensor(self.n_layers[0], batch_size, self.hidden_size).zero_()))
 
-    def forward(self, ts_batch, return_hidden=False):
+    def forward(self, ts_batch, return_latent: bool=False):
         batch_size = ts_batch.shape[0]
 
         # 1. Encode the timeseries to make use of the last hidden state.
-        enc_hidden = self.init_hidden(batch_size)  # initialization with zero
-        _, enc_hidden = self.encoder(self.to_var(ts_batch.float()),
-                                     enc_hidden)  # .float() here or .double() for the model
+        enc_hidden = self._init_hidden(batch_size)  # initialization with zero
+        _, enc_hidden = self.encoder(ts_batch.float(), enc_hidden)  # .float() here or .double() for the model
 
         # 2. Use hidden state as initialization for our Decoder-LSTM
-        dec_hidden = (enc_hidden[0], self.to_var(torch.zeros(1, batch_size, self.hidden_size)))
+        dec_hidden = (enc_hidden[0], self.to_var(torch.Tensor(self.n_layers[1], batch_size, self.hidden_size).zero_()))
 
         # 3. Also, use this hidden state to get the first output aka the last point of the reconstructed timeseries
         # 4. Reconstruct timeseries backwards
         #    * Use true data for training decoder
         #    * Use hidden2output for prediction
-        output = self.to_var(torch.zeros(ts_batch.size()))
+        output = self.to_var(torch.Tensor(ts_batch.size()).zero_())
         for i in reversed(range(ts_batch.shape[1])):
             output[:, i, :] = self.hidden2output(dec_hidden[0][0, :])
 
@@ -162,4 +149,4 @@ class LSTMEDModule(nn.Module, GPUWrapper):
             else:
                 _, dec_hidden = self.decoder(output[:, i].unsqueeze(1), dec_hidden)
 
-        return (output, enc_hidden) if return_hidden else output
+        return (output, enc_hidden[0][-1]) if return_latent else output

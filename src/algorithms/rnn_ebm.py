@@ -2,19 +2,19 @@ import numpy as np
 import tensorflow as tf
 from tqdm import trange
 
-from .algorithm import Algorithm
-from .cuda_utils import GPUWrapper
+from .algorithm_utils import Algorithm, TensorflowUtils
 
 
-class RecurrentEBM(Algorithm, GPUWrapper):
+class RecurrentEBM(Algorithm, TensorflowUtils):
     """ Recurrent Energy-Based Model implementation using TensorFlow.
     The interface of the class is sklearn-like.
     """
 
     def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100,
-                 min_lr=0.01, min_energy=None, batch_size=10, framework=Algorithm.Frameworks.Tensorflow, gpu: int=0):
-        Algorithm.__init__(self, __name__, 'Recurrent EBM', framework)
-        GPUWrapper.__init__(self, gpu)
+                 min_lr=0.01, min_energy=None, batch_size=10,
+                 seed: int=None, gpu: int=None):
+        Algorithm.__init__(self, __name__, 'Recurrent EBM', seed)
+        TensorflowUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
         self.n_hidden = n_hidden  # Size of RBM's hidden layer
         self.n_hidden_recurrent = n_hidden_recurrent  # Size of RNN's hidden layer
@@ -38,10 +38,10 @@ class RecurrentEBM(Algorithm, GPUWrapper):
 
         self.tf_session = None
 
-    def fit(self, X, _):
+    def fit(self, X):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
-        with self.tf_device:
+        with self.device:
             self._build_model(X.shape[1])
             self.tf_session = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
             self._initialize_tf()
@@ -50,7 +50,7 @@ class RecurrentEBM(Algorithm, GPUWrapper):
     def predict(self, X):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
-        with self.tf_device:
+        with self.device:
             scores = []
             labels = []
 
@@ -153,15 +153,3 @@ class RecurrentEBM(Algorithm, GPUWrapper):
         BX_t = tf.Variable(tf.zeros([1, n_visible]), name='BX_t')
 
         return W, Wuh, Wux, Wxu, Wuu, bu, u0, bh, bx, BH_t, BX_t
-
-    def binarize(self, score, threshold=None):
-        if threshold is None:
-            threshold = self.threshold(score)
-        score = np.where(np.isnan(score), threshold - 1, score)
-        return np.where(score >= threshold, 1, 0)
-
-    def threshold(self, score):
-        return np.nanmean(score) + 2 * np.nanstd(score)
-
-    def set_seed(self, seed):
-        tf.set_random_seed(seed)
