@@ -64,7 +64,9 @@ class LSTMAD(Algorithm, PyTorchUtils):
         self.mean = None
         self.cov = None
 
-    def fit(self, X):
+    def fit(self, X, X_test: pd.DataFrame=None, y_test: pd.Series=None):
+        eval_convergence = X_test is not None and y_test is not None
+
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         self.batch_size = 1
@@ -76,7 +78,20 @@ class LSTMAD(Algorithm, PyTorchUtils):
         X_train_gaussian = X.loc[split_point:, :]
 
         input_data_train, target_data_train = self._input_and_target_data(X_train)
-        self._train_model(input_data_train, target_data_train)
+
+        def train_closure():
+            self.optimizer.zero_grad()
+            output_data = self.model(input_data_train)
+            loss_train = self.loss(output_data, target_data_train)
+            loss_train.backward()
+            return loss_train
+
+        epoch_losses, epoch_aucs = [], []
+        for epoch in range(self.num_epochs):
+            loss = self.optimizer.step(train_closure)
+            if eval_convergence:
+                epoch_losses.append(np.mean(loss))
+                epoch_aucs.append(self.epoch_eval(X_test, y_test))
 
         self.model.eval()
         input_data_gaussian, target_data_gaussian = self._input_and_target_data(X_train_gaussian)
@@ -87,6 +102,9 @@ class LSTMAD(Algorithm, PyTorchUtils):
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
         self.mean = np.mean(norm, axis=0)
         self.cov = np.cov(norm.T)
+
+        if eval_convergence:
+            return (epoch_losses, epoch_aucs)
 
     def predict(self, X):
         X.interpolate(inplace=True)
@@ -128,17 +146,3 @@ class LSTMAD(Algorithm, PyTorchUtils):
 
         self.loss = torch.nn.MSELoss()
         self.optimizer = self.optimizer_type(self.model.parameters(), lr=self.lr)
-
-    def _train_model(self, input_data, target_data):
-        def closure():
-            return self._train(input_data, target_data)
-
-        for epoch in range(self.num_epochs):
-            self.optimizer.step(closure)
-
-    def _train(self, input_data, target_data):
-        self.optimizer.zero_grad()
-        output_data = self.model(input_data)
-        loss_train = self.loss(output_data, target_data)
-        loss_train.backward()
-        return loss_train

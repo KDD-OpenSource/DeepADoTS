@@ -27,7 +27,9 @@ class AutoEncoder(Algorithm, PyTorchUtils):
         self.mean = None
         self.cov = None
 
-    def fit(self, X: pd.DataFrame):
+    def fit(self, X: pd.DataFrame, X_test: pd.DataFrame=None, y_test: pd.Series=None):
+        eval_convergence = X_test is not None and y_test is not None
+
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
@@ -46,14 +48,20 @@ class AutoEncoder(Algorithm, PyTorchUtils):
         optimizer = torch.optim.Adam(self.aed.parameters(), lr=self.lr)
 
         self.aed.train()
+        epoch_losses, epoch_aucs = [], []
         for epoch in range(self.num_epochs):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
+            epoch_loss = []
             for ts_batch in train_loader:
                 output = self.aed(self.to_var(ts_batch))
                 loss = nn.MSELoss(size_average=False)(output, self.to_var(ts_batch.float()))
+                epoch_loss.append(loss)
                 self.aed.zero_grad()
                 loss.backward()
                 optimizer.step()
+            if eval_convergence:
+                epoch_losses.append(np.mean(epoch_loss))
+                epoch_aucs.append(self.epoch_eval(X_test, y_test))
 
         self.aed.eval()
         error_vectors = []
@@ -64,6 +72,9 @@ class AutoEncoder(Algorithm, PyTorchUtils):
 
         self.mean = np.mean(error_vectors, axis=0)
         self.cov = np.cov(error_vectors, rowvar=False)
+
+        if eval_convergence:
+            return (epoch_losses, epoch_aucs)
 
     def predict(self, X: pd.DataFrame) -> np.array:
         X.interpolate(inplace=True)
