@@ -50,7 +50,7 @@ class AutoEncoder(Algorithm, PyTorchUtils):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in train_loader:
                 output = self.aed(self.to_var(ts_batch))
-                loss = nn.MSELoss(reduction='sum')(output, self.to_var(ts_batch.float()))
+                loss = nn.MSELoss(reduce='sum')(output, self.to_var(ts_batch.float()))
                 self.aed.zero_grad()
                 loss.backward()
                 optimizer.step()
