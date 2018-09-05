@@ -198,6 +198,7 @@ class Evaluator:
             plt.plot(np.arange(len(losses))+1, aucs)
             plt.xlabel('Epoch')
             plt.ylabel('AUC on test set')
+            plt.ylim([0, 1])
             plt.xticks(np.arange(len(losses))+1)
 
         plt.suptitle(f'{ds_name}, lr={lr}', fontweight='bold')
