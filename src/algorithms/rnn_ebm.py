@@ -95,8 +95,8 @@ class RecurrentEBM(Algorithm, TensorflowUtils):
                 if len(x) == batch_size:
                     alpha = min(self.min_lr, 0.1 / float(i + 1))
                     _, loss = self.tf_session.run([self.update, self.cost],
-                                               feed_dict={self.input_data: x, self.lr: alpha,
-                                                          self._batch_size: batch_size})
+                                                  feed_dict={self.input_data: x, self.lr: alpha,
+                                                             self._batch_size: batch_size})
                     losses.append(loss)
             self.logger.debug(f'Epoch: {epoch+1} Loss: {np.mean(losses)}')
 

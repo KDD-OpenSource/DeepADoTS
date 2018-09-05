@@ -85,10 +85,11 @@ class DAGMM(Algorithm, PyTorchUtils):
             for input_data in data_loader:
                 input_data = self.to_var(input_data)
                 loss, _, _, _ = self.dagmm_step(input_data.float())
-                epoch_loss.append(loss)
+                epoch_loss.append(loss.detach().numpy())
             if eval_convergence:
                 epoch_losses.append(np.mean(epoch_loss))
                 epoch_aucs.append(self.epoch_eval(X_test, y_test))
+                self.dagmm.train()
 
         self.dagmm.eval()
         n = 0

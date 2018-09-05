@@ -90,10 +90,20 @@ class LSTMAD(Algorithm, PyTorchUtils):
         for epoch in range(self.num_epochs):
             loss = self.optimizer.step(train_closure)
             if eval_convergence:
-                epoch_losses.append(np.mean(loss))
+                epoch_losses.append(loss.detach().numpy()[()])
+
+                self.model.eval()
+                self._compute_distribution_params(X, X_train_gaussian)
                 epoch_aucs.append(self.epoch_eval(X_test, y_test))
+                self.model.train()
 
         self.model.eval()
+        self._compute_distribution_params(X, X_train_gaussian)
+
+        if eval_convergence:
+            return (epoch_losses, epoch_aucs)
+
+    def _compute_distribution_params(self, X, X_train_gaussian):
         input_data_gaussian, target_data_gaussian = self._input_and_target_data(X_train_gaussian)
         predictions_gaussian = self.model(input_data_gaussian)
         errors = self._calc_errors(predictions_gaussian, target_data_gaussian)
@@ -102,9 +112,6 @@ class LSTMAD(Algorithm, PyTorchUtils):
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
         self.mean = np.mean(norm, axis=0)
         self.cov = np.cov(norm.T)
-
-        if eval_convergence:
-            return (epoch_losses, epoch_aucs)
 
     def predict(self, X):
         X.interpolate(inplace=True)

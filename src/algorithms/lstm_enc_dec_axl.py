@@ -64,13 +64,14 @@ class LSTMED(Algorithm, PyTorchUtils):
             for ts_batch in train_loader:
                 output = self.lstmed(self.to_var(ts_batch))
                 loss = nn.MSELoss(size_average=False)(output, self.to_var(ts_batch.float()))
-                epoch_loss.append(loss)
+                epoch_loss.append(loss.detach().numpy())
                 self.lstmed.zero_grad()
                 loss.backward()
                 optimizer.step()
             if eval_convergence:
                 epoch_losses.append(np.mean(epoch_loss))
                 epoch_aucs.append(self.epoch_eval(X_test, y_test))
+                self.lstmed.train()
 
         self.lstmed.eval()
         error_vectors = []
