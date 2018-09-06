@@ -49,6 +49,11 @@ def run_multi_dim_multivariate_experiment(detectors, seeds, runs, output_dir=Non
                                      steps, store_results=store_results)
 
 
+def run_temporal_experiment(detectors, seeds, runs, outlier_type, steps=5, output_dir=None, store_results=True):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, 'temporal',
+                                     steps, outlier_type, store_results=store_results)
+
+
 # outlier type means agots types for the univariate experiments, the multivariate types for the multivariate experiments
 def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
     multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
@@ -78,6 +83,9 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
         elif anomaly_type == 'multi_dim':
             yield [SyntheticDataGenerator.get(f'{outlier_type}', seed, num_dim)
                    for num_dim in np.linspace(100, 1500, steps, dtype=int)]
+        elif anomaly_type == 'temporal':
+            window_sizes = [12, 24, 36, 48, 60]
+            yield [SyntheticDataGenerator.get(f'{outlier_type}_temporal', seed, win_size) for win_size in window_sizes]
 
 
 def run_experiment_evaluation(detectors, seeds, runs, output_dir, anomaly_type, steps=5, outlier_type='extreme_1',
