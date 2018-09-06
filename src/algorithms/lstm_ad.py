@@ -48,7 +48,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
     The interface of the class is sklearn-like.
     """
 
-    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1, optimizer=torch.optim.adam,
+    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1, optimizer=torch.optim.Adam,
                  seed: int=None, gpu: int=None):
         Algorithm.__init__(self, __name__, 'LSTM-AD', seed)
         PyTorchUtils.__init__(self, seed, gpu)
