@@ -3,7 +3,6 @@ import glob
 import os
 import pickle
 import time
-from itertools import product
 
 import numpy as np
 import pandas as pd
@@ -11,7 +10,7 @@ import pandas as pd
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
     run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
 from src.algorithms import AutoEncoder, DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED
-from src.datasets import KDDCup, SyntheticDataGenerator, RealPickledDataset
+from src.datasets import KDDCup, SyntheticDataGenerator, MultivariateAnomalyFunction, RealPickledDataset
 from src.evaluation import Evaluator, Plotter
 
 # Add this line if you want to test the pipeline & experiments
@@ -150,13 +149,15 @@ def run_experiments(steps=5):
 
 def detectors_lr(lr):
     def detectors(seed):
-        dets = [AutoEncoder(num_epochs=5, seed=seed, lr=lr),
-                DAGMM(num_epochs=5, sequence_length=15, seed=seed, lr=lr),
-                DAGMM(num_epochs=5, sequence_length=15, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed, lr=lr),
+        max_epoch = 1
+        dets = [AutoEncoder(num_epochs=max_epoch, seed=seed, lr=lr),
+                DAGMM(num_epochs=max_epoch, sequence_length=15, seed=seed, lr=lr),
+                DAGMM(num_epochs=max_epoch, sequence_length=15,
+                      autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed, lr=lr),
                 # Donut(seed=seed),
-                LSTMAD(num_epochs=5, seed=seed, lr=lr),
-                LSTMED(num_epochs=5, seed=seed, lr=lr),
-                RecurrentEBM(num_epochs=5, seed=seed, lr=lr)]
+                LSTMAD(num_epochs=max_epoch, seed=seed, lr=lr),
+                LSTMED(num_epochs=max_epoch, seed=seed, lr=lr),
+                RecurrentEBM(num_epochs=max_epoch, seed=seed, lr=lr)]
         return sorted(dets, key=lambda x: x.framework)
     return detectors
 
@@ -165,16 +166,24 @@ def run_hyperparam_experiment():
     for lr in [1e-4, 3e-4, 1e-3, 5e-3, 1e-2, 5e-2]:
         dets = detectors_lr(lr=lr)
         seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
-        dataset_funcs = [SyntheticDataGenerator.extreme_1]
+        datasets = []
+        for seed in seeds:
+            datasets.append([
+                SyntheticDataGenerator.extreme_1(seed),
+                SyntheticDataGenerator.variance_1(seed),
+                SyntheticDataGenerator.extreme_1(seed, n=10),
+                MultivariateAnomalyFunction.get_multivariate_dataset('delayed_missing', random_seed=seed)
+            ])
 
-        for seed, ds_func in product(seeds, dataset_funcs):
-            ds = ds_func(seed)
-            evaluator = Evaluator([ds], dets, 'reports/experiments/hyperparam', seed=seed, evaluate_convergence=True)
-            epoch_stats = evaluator.evaluate()
-            evaluator.plot_epoch_stats(epoch_stats, ds.name, lr)
-            ts = time.strftime('%Y-%m-%d-%H%M%S')
-            with open(os.path.join(evaluator.output_dir, f'convergence_ds={ds.name}|lr={lr}|{ts}.pickle'), 'wb') as f:
-                pickle.dump(epoch_stats, f)
+        for seed, current_datasets in zip(seeds, datasets):
+            for ds in current_datasets:
+                evaluator = Evaluator([ds], dets, 'reports/experiments/hyperparam',
+                                      seed=seed, evaluate_convergence=True)
+                epoch_stats = evaluator.evaluate()
+                evaluator.plot_epoch_stats(epoch_stats, ds.name, lr)
+                ts = time.strftime('%Y-%m-%d-%H%M%S')
+                with open(os.path.join(evaluator.output_dir, f'convergence_ds={ds.name}|lr={lr}|{ts}.pkl'), 'wb') as f:
+                    pickle.dump(epoch_stats, f)
 
 
 def run_final_missing_experiment(outlier_type='extreme_1', runs=25, steps=5):
