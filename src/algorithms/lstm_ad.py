@@ -48,7 +48,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
     The interface of the class is sklearn-like.
     """
 
-    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1, optimizer=torch.optim.Adam,
+    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1,
                  seed: int=None, gpu: int=None):
         Algorithm.__init__(self, __name__, 'LSTM-AD', seed)
         PyTorchUtils.__init__(self, seed, gpu)
@@ -58,8 +58,6 @@ class LSTMAD(Algorithm, PyTorchUtils):
         self.num_epochs = num_epochs
         self.lr = lr
         self.batch_size = batch_size
-
-        self.optimizer_type = optimizer
 
         self.mean = None
         self.cov = None
@@ -127,7 +125,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
         self.model.double()
 
         self.loss = torch.nn.MSELoss()
-        self.optimizer = self.optimizer_type(self.model.parameters(), lr=self.lr)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
     def _train_model(self, input_data, target_data):
         def closure():
