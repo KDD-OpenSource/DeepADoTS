@@ -69,11 +69,19 @@ class LSTMED(Algorithm, PyTorchUtils):
                 loss.backward()
                 optimizer.step()
             if eval_convergence:
+                self.lstmed.eval()
+                self._compute_distribution_params(X, train_gaussian_loader)
                 epoch_losses.append(np.mean(epoch_loss))
                 epoch_aucs.append(self.epoch_eval(X_test, y_test))
                 self.lstmed.train()
 
         self.lstmed.eval()
+        self._compute_distribution_params(X, train_gaussian_loader)
+
+        if eval_convergence:
+            return (epoch_losses, epoch_aucs)
+
+    def _compute_distribution_params(self, X, train_gaussian_loader):
         error_vectors = []
         for ts_batch in train_gaussian_loader:
             output = self.lstmed(self.to_var(ts_batch))
@@ -82,9 +90,6 @@ class LSTMED(Algorithm, PyTorchUtils):
 
         self.mean = np.mean(error_vectors, axis=0)
         self.cov = np.cov(error_vectors, rowvar=False)
-
-        if eval_convergence:
-            return (epoch_losses, epoch_aucs)
 
     def predict(self, X: pd.DataFrame):
         X.interpolate(inplace=True)

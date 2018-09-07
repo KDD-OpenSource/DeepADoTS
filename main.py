@@ -149,7 +149,7 @@ def run_experiments(steps=5):
 
 def detectors_lr(lr):
     def detectors(seed):
-        max_epoch = 1
+        max_epoch = 100
         dets = [AutoEncoder(num_epochs=max_epoch, seed=seed, lr=lr),
                 DAGMM(num_epochs=max_epoch, sequence_length=15, seed=seed, lr=lr),
                 DAGMM(num_epochs=max_epoch, sequence_length=15,
@@ -163,26 +163,24 @@ def detectors_lr(lr):
 
 
 def run_hyperparam_experiment():
-    for lr in [1e-4, 3e-4, 1e-3, 5e-3, 1e-2, 5e-2]:
-        dets = detectors_lr(lr=lr)
-        seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
-        datasets = []
-        for seed in seeds:
-            datasets.append([
-                SyntheticDataGenerator.extreme_1(seed),
-                SyntheticDataGenerator.variance_1(seed),
-                SyntheticDataGenerator.extreme_1(seed, n=10),
-                MultivariateAnomalyFunction.get_multivariate_dataset('delayed_missing', random_seed=seed)
-            ])
+    seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
+    for seed in seeds:
+        for lr in [1e-4, 3e-4, 1e-3, 5e-3, 1e-2, 5e-2]:
+            dets = detectors_lr(lr=lr)
+            datasets = [
+                    SyntheticDataGenerator.extreme_1(seed),
+                    SyntheticDataGenerator.variance_1(seed),
+                    SyntheticDataGenerator.extreme_1(seed, n=10),
+                    MultivariateAnomalyFunction.get_multivariate_dataset('delayed_missing', random_seed=seed)
+            ]
 
-        for seed, current_datasets in zip(seeds, datasets):
-            for ds in current_datasets:
-                evaluator = Evaluator([ds], dets, 'reports/experiments/hyperparam',
+            for ds in datasets:
+                evaluator = Evaluator([ds], dets, f'reports/experiments/hyperparam',
                                       seed=seed, evaluate_convergence=True)
                 epoch_stats = evaluator.evaluate()
                 evaluator.plot_epoch_stats(epoch_stats, ds.name, lr)
                 ts = time.strftime('%Y-%m-%d-%H%M%S')
-                with open(os.path.join(evaluator.output_dir, f'convergence_ds={ds.name}|lr={lr}|{ts}.pkl'), 'wb') as f:
+                with open(os.path.join(evaluator.output_dir, f'convergence_lr={lr}|ds={ds.name}|{ts}.pkl'), 'wb') as f:
                     pickle.dump(epoch_stats, f)
 
 
