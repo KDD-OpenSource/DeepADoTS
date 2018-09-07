@@ -79,9 +79,6 @@ class SyntheticMultivariateDataset(Dataset):
 
     def generate_correlated_group(self, dimensions, pollution):
         values = np.zeros((self.length, dimensions))
-        xaxis_distances = np.linspace(*self.values_range, dimensions)
-        for index in range(dimensions):
-            values[:, index].fill(xaxis_distances[index])
         labels = np.zeros(self.length)
 
         # First pos data points are noise (don't start directly with curve)
