@@ -20,6 +20,7 @@ class SyntheticMultivariateDataset(Dataset):
                  features: int = 2,
                  group_size: int = None,
                  test_pollution: float = 0.5,
+                 train_pollution: float = 0,
                  global_noise: float = 0.1,  # Noise added to all dimensions over the whole timeseries
                  values_range: Tuple[int, int] = (0, 100),
                  file_name: str = 'synthetic_mv1.pkl'):
@@ -33,6 +34,7 @@ class SyntheticMultivariateDataset(Dataset):
         self.labels_padding = labels_padding
         self.random_seed = random_seed
         self.test_pollution = test_pollution
+        self.train_pollution = train_pollution
         self.values_range = values_range
         assert features >= 2, 'At least two dimensions are required for generating MV outliers'
         self.features = features
@@ -43,6 +45,9 @@ class SyntheticMultivariateDataset(Dataset):
         if self.features % self.group_size == 1:  # How many dimensions each correlated group has
             logging.warn('Group size results in one overhanging univariate group. Generating multivariate'
                          'anomalies on univariate data is impossible.')
+
+        if self.train_pollution > 0:
+            self.name = self.name + f'(pol={self.train_pollution})'
 
     @staticmethod
     def get_noisy_value(x, strength=1):
@@ -153,6 +158,6 @@ class SyntheticMultivariateDataset(Dataset):
 
     def load(self):
         np.random.seed(self.random_seed)
-        X_train, y_train = self.generate_data(pollution=0)
+        X_train, y_train = self.generate_data(pollution=self.train_pollution)
         X_test, y_test = self.generate_data(pollution=self.test_pollution)
         self._data = X_train, y_train, X_test, y_test

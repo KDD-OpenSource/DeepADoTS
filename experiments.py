@@ -44,6 +44,11 @@ def run_multivariate_experiment(detectors, seeds, runs, output_dir=None, store_r
     return run_experiment_evaluation(detectors, seeds, runs, output_dir, 'multivariate', store_results=store_results)
 
 
+def run_multivariate_polluted_experiment(detectors, seeds, runs, outlier_type, output_dir=None, store_results=True):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, 'mv_polluted',
+                                     outlier_type=outlier_type, store_results=store_results)
+
+
 def run_multi_dim_multivariate_experiment(detectors, seeds, runs, output_dir=None, steps=2, store_results=True):
     return run_experiment_evaluation(detectors, seeds, runs, output_dir, 'multi_dim_multivariate',
                                      steps, store_results=store_results)
@@ -62,6 +67,10 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
                    for missing in np.logspace(-6.5, -0.15, num=steps, base=2)]
         elif anomaly_type == 'polluted':
             yield [SyntheticDataGenerator.get(f'{outlier_type}_polluted', seed, pollution_percentage=pollution)
+                   for pollution in [0.01, 0.05, 0.1, 0.2, 0.5]]
+        elif anomaly_type == 'mv_polluted':
+            yield [MultivariateAnomalyFunction.get_multivariate_dataset(
+                        outlier_type, random_seed=seed, train_pollution=pollution)
                    for pollution in [0.01, 0.05, 0.1, 0.2, 0.5]]
         elif anomaly_type == 'multivariate':
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(dim_func, random_seed=seed)
