@@ -12,37 +12,36 @@ from .algorithm_utils import Algorithm, PyTorchUtils
 
 
 class AutoEncoder(Algorithm, PyTorchUtils):
-    def __init__(self, hidden_size: int=5, sequence_length: int=30, batch_size: int=20, num_epochs: int=10,
-                 lr: float=0.1, seed: int=None, gpu: int=None):
+    def __init__(self, num_epochs: int=10, batch_size: int=20, lr: float=1e-3,
+                 hidden_size: int=5, sequence_length: int=30, train_gaussian_percentage: float=0.25,
+                 seed: int=None, gpu: int=None):
         Algorithm.__init__(self, __name__, 'AutoEncoder', seed)
         PyTorchUtils.__init__(self, seed, gpu)
-        self.hidden_size = hidden_size
-        self.sequence_length = sequence_length
-        self.batch_size = batch_size
         self.num_epochs = num_epochs
+        self.batch_size = batch_size
         self.lr = lr
 
-        self.aed = None
+        self.hidden_size = hidden_size
+        self.sequence_length = sequence_length
+        self.train_gaussian_percentage = train_gaussian_percentage
 
-        self.mean = None
-        self.cov = None
+        self.aed = None
+        self.mean, self.cov = None, None
 
     def fit(self, X: pd.DataFrame):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
-
         sequences = [data[i:i + self.sequence_length] for i in range(data.shape[0] - self.sequence_length + 1)]
         indices = np.random.permutation(len(sequences))
-        split_point = int(0.75 * len(sequences))  # magic number
-
+        split_point = int(self.train_gaussian_percentage * len(sequences))
         train_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, drop_last=True,
-                                  sampler=SubsetRandomSampler(indices[:split_point]), pin_memory=True)
+                                  sampler=SubsetRandomSampler(indices[:-split_point]), pin_memory=True)
         train_gaussian_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, drop_last=True,
-                                           sampler=SubsetRandomSampler(indices[split_point:]), pin_memory=True)
+                                           sampler=SubsetRandomSampler(indices[-split_point:]), pin_memory=True)
 
         self.aed = AutoEncoderModule(X.shape[1], self.sequence_length, self.hidden_size, seed=self.seed, gpu=self.gpu)
-        self.to_device(self.aed)
+        self.to_device(self.aed)  # .double()
         optimizer = torch.optim.Adam(self.aed.parameters(), lr=self.lr)
 
         self.aed.train()
@@ -73,7 +72,7 @@ class AutoEncoder(Algorithm, PyTorchUtils):
         data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=False, drop_last=False)
 
         self.aed.eval()
-        mvnormal = multivariate_normal(mean=self.mean, cov=self.cov, allow_singular=True)
+        mvnormal = multivariate_normal(self.mean, self.cov, allow_singular=True)
         scores = []
         for idx, ts in enumerate(data_loader):
             output = self.aed(self.to_var(ts))
