@@ -108,17 +108,17 @@ def run_experiments(steps=5):
     evaluators.append(ev_mv)
 
     for mv_anomaly in ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']:
-        announce_experiment('Multivariate Polluted Datasets')
+        announce_experiment(f'Multivariate Polluted {mv_anomaly} Datasets')
         ev_mv = run_multivariate_polluted_experiment(
             detectors, seeds, RUNS, mv_anomaly,
             output_dir=os.path.join(output_dir, 'mv_polluted'))
         evaluators.append(ev_mv)
 
-    announce_experiment('High-dimensional multivariate outliers')
-    ev_mv_dim = run_multi_dim_multivariate_experiment(
-        detectors, seeds, RUNS, steps=20,
-        output_dir=os.path.join(output_dir, 'multi_dim_mv'))
-    evaluators.append(ev_mv_dim)
+        announce_experiment(f'High-dimensional multivariate {mv_anomaly} outliers')
+        ev_mv_dim = run_multi_dim_multivariate_experiment(
+            detectors, seeds, RUNS, mv_anomaly, steps=20,
+            output_dir=os.path.join(output_dir, 'multi_dim_mv'))
+        evaluators.append(ev_mv_dim)
 
     # TODO: Window-length experiment
 
