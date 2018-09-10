@@ -20,6 +20,7 @@ RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
 def main():
     run_pipeline()
     run_experiments()
+    evaluate_different_window_sizes()
     # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
     #     run_final_missing_experiment(outlier_type=ot, runs=2)
     # evaluate_real_datasets()
@@ -183,6 +184,34 @@ def evaluate_real_datasets():
     avg_results = results.groupby(['dataset', 'algorithm'], as_index=False).mean()
     evaluator.set_benchmark_results(avg_results)
     evaluator.export_results('run_real_datasets')
+    evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=False)
+    evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=True)
+
+
+# TODO: Adapt epochs
+def different_window_detectors(seed):
+    dets = [LSTMAD(num_epochs=10)]
+    for window_size in [13, 25, 50, 100]:
+        dets.extend([LSTMED(name='LSTMED Window: ' + str(window_size), num_epochs=2, seed=seed,
+                            sequence_length=window_size), AutoEncoder(name='AE Window: ' + str(window_size),
+                                                                      num_epochs=2, seed=seed,
+                                                                      sequence_length=window_size)])
+    return dets
+
+
+def evaluate_different_window_sizes():
+    results = pd.DataFrame()
+    seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
+    for seed in seeds:
+        datasets = [SyntheticDataGenerator.long_term_dependencies_width(seed),
+                    SyntheticDataGenerator.long_term_dependencies_height(seed),
+                    SyntheticDataGenerator.long_term_dependencies_missing(seed)]
+        evaluator = Evaluator(datasets, different_window_detectors, seed=seed)
+        evaluator.evaluate()
+        result = evaluator.benchmarks()
+        results = results.append(result, ignore_index=True)
+    evaluator.set_benchmark_results(results)
+    evaluator.export_results('run_different_windows')
     evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=False)
     evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=True)
 

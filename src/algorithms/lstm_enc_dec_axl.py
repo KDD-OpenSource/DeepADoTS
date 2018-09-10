@@ -7,15 +7,16 @@ import torch.nn as nn
 from scipy.stats import multivariate_normal
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
+from tqdm import trange
 
 from .algorithm_utils import Algorithm, PyTorchUtils
 
 
 class LSTMED(Algorithm, PyTorchUtils):
-    def __init__(self, hidden_size: int=5, sequence_length: int=30, batch_size: int=20, num_epochs: int=10,
-                 n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
+    def __init__(self, name: str='LSTM-ED', hidden_size: int=5, sequence_length: int=30, batch_size: int=20,
+                 num_epochs: int=10, n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
                  lr: float=0.1, weight_decay: float=1e-4, seed: int=None, gpu: int=None):
-        Algorithm.__init__(self, __name__, 'LSTM-ED', seed=None)
+        Algorithm.__init__(self, __name__, name, seed=None)
         PyTorchUtils.__init__(self, seed, gpu)
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length
@@ -55,7 +56,7 @@ class LSTMED(Algorithm, PyTorchUtils):
         optimizer = torch.optim.Adam(self.lstmed.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
         self.lstmed.train()
-        for epoch in range(self.num_epochs):
+        for epoch in trange(self.num_epochs):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in train_loader:
                 output = self.lstmed(self.to_var(ts_batch))

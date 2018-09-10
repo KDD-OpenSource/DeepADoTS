@@ -3,6 +3,7 @@ import pandas as pd
 import torch
 from scipy.stats import multivariate_normal
 from torch.autograd import Variable
+from tqdm import trange
 
 from .algorithm_utils import Algorithm, PyTorchUtils
 
@@ -133,7 +134,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
         def closure():
             return self._train(input_data, target_data)
 
-        for epoch in range(self.num_epochs):
+        for epoch in trange(self.num_epochs):
             self.optimizer.step(closure)
 
     def _train(self, input_data, target_data):
