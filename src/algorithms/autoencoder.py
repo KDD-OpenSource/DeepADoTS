@@ -7,15 +7,16 @@ import torch.nn as nn
 from scipy.stats import multivariate_normal
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
+from tqdm import trange
 
 from .algorithm_utils import Algorithm, PyTorchUtils
 
 
 class AutoEncoder(Algorithm, PyTorchUtils):
-    def __init__(self, num_epochs: int=10, batch_size: int=20, lr: float=1e-3,
+    def __init__(self, name: str='AutoEncoder', num_epochs: int=10, batch_size: int=20, lr: float=1e-3,
                  hidden_size: int=5, sequence_length: int=30, train_gaussian_percentage: float=0.25,
                  seed: int=None, gpu: int=None, details=True):
-        Algorithm.__init__(self, __name__, 'AutoEncoder', seed, details=details)
+        Algorithm.__init__(self, __name__, name, seed, details=details)
         PyTorchUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
         self.batch_size = batch_size
@@ -45,7 +46,7 @@ class AutoEncoder(Algorithm, PyTorchUtils):
         optimizer = torch.optim.Adam(self.aed.parameters(), lr=self.lr)
 
         self.aed.train()
-        for epoch in range(self.num_epochs):
+        for epoch in trange(self.num_epochs):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
             for ts_batch in train_loader:
                 output = self.aed(self.to_var(ts_batch))

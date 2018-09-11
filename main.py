@@ -5,9 +5,9 @@ import os
 import numpy as np
 import pandas as pd
 
-from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-    run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment, \
-    run_multivariate_polluted_experiment
+from experiments import run_missing_experiment, run_extremes_experiment, \
+    run_multivariate_experiment, run_multi_dim_multivariate_experiment, announce_experiment, \
+    run_multivariate_polluted_experiment, run_different_window_sizes_evaluator
 from src.algorithms import AutoEncoder, DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED
 from src.datasets import KDDCup, SyntheticDataGenerator, RealPickledDataset
 from src.evaluation import Evaluator, Plotter
@@ -29,10 +29,12 @@ def detectors(seed):
                 Donut(num_epochs=1, seed=seed), LSTMAD(num_epochs=1, seed=seed), LSTMED(num_epochs=1, seed=seed),
                 RecurrentEBM(num_epochs=1, seed=seed)]
     else:
-        dets = [AutoEncoder(num_epochs=40, seed=seed), DAGMM(sequence_length=15, seed=seed),
-                DAGMM(sequence_length=15, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
-                Donut(seed=seed), LSTMAD(seed=seed), LSTMED(num_epochs=40, seed=seed),
-                RecurrentEBM(num_epochs=15, seed=seed)]
+        standard_epochs = 40
+        dets = [AutoEncoder(num_epochs=standard_epochs, seed=seed),
+                DAGMM(num_epochs=standard_epochs, sequence_length=15, seed=seed),
+                DAGMM(num_epochs=standard_epochs, sequence_length=15, autoencoder_type=DAGMM.AutoEncoder.LSTM,
+                      seed=seed), Donut(seed=seed), LSTMAD(num_epochs=standard_epochs, seed=seed),
+                LSTMED(num_epochs=standard_epochs, seed=seed), RecurrentEBM(num_epochs=standard_epochs, seed=seed)]
     return sorted(dets, key=lambda x: x.framework)
 
 
@@ -88,7 +90,7 @@ def run_pipeline():
     evaluator.create_bar_charts(runs=RUNS, detectorwise=True)
 
 
-def run_experiments(steps=5):
+def run_experiments():
     # Set the seed manually for reproducibility.
     seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
     output_dir = 'reports/experiments'
@@ -120,7 +122,9 @@ def run_experiments(steps=5):
             output_dir=os.path.join(output_dir, 'multi_dim_mv'))
         evaluators.append(ev_mv_dim)
 
-    # TODO: Window-length experiment
+    announce_experiment('Long-Term Experiments')
+    ev_different_windows = run_different_window_sizes_evaluator(different_window_detectors, seeds, RUNS)
+    evaluators.append(ev_different_windows)
 
     for ev in evaluators:
         ev.plot_single_heatmap()
@@ -167,6 +171,17 @@ def evaluate_real_datasets():
     evaluator.export_results('run_real_datasets')
     evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=False)
     evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=True)
+
+
+def different_window_detectors(seed):
+    standard_epochs = 40
+    dets = [LSTMAD(num_epochs=standard_epochs)]
+    for window_size in [13, 25, 50, 100]:
+        dets.extend([LSTMED(name='LSTMED Window: ' + str(window_size), num_epochs=standard_epochs, seed=seed,
+                            sequence_length=window_size), AutoEncoder(name='AE Window: ' + str(window_size),
+                                                                      num_epochs=standard_epochs, seed=seed,
+                                                                      sequence_length=window_size)])
+    return dets
 
 
 if __name__ == '__main__':

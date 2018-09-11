@@ -55,6 +55,24 @@ def run_multi_dim_multivariate_experiment(detectors, seeds, runs, outlier_type, 
                                      steps, outlier_type=outlier_type, store_results=store_results)
 
 
+def run_different_window_sizes_evaluator(detectors, seeds, runs):
+    results = pd.DataFrame()
+    for seed in seeds:
+        datasets = [SyntheticDataGenerator.long_term_dependencies_width(seed),
+                    SyntheticDataGenerator.long_term_dependencies_height(seed),
+                    SyntheticDataGenerator.long_term_dependencies_missing(seed)]
+        evaluator = Evaluator(datasets, detectors, seed=seed)
+        evaluator.evaluate()
+        evaluator.plot_scores()
+        result = evaluator.benchmarks()
+        results = results.append(result, ignore_index=True)
+    evaluator.set_benchmark_results(results)
+    evaluator.export_results('run_different_windows')
+    evaluator.create_boxplots(runs=runs, data=results, detectorwise=False)
+    evaluator.create_boxplots(runs=runs, data=results, detectorwise=True)
+    return evaluator
+
+
 # outlier type means agots types for the univariate experiments, the multivariate types for the multivariate experiments
 def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
     for seed in seeds:

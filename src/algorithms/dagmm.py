@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+from tqdm import trange
 
 from .algorithm_utils import Algorithm, PyTorchUtils
 from .autoencoder import AutoEncoderModule
@@ -78,7 +79,7 @@ class DAGMM(Algorithm, PyTorchUtils):
         self.to_device(self.dagmm)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
 
-        for _ in range(self.num_epochs):
+        for _ in trange(self.num_epochs):
             for input_data in data_loader:
                 input_data = self.to_var(input_data)
                 self.dagmm_step(input_data.float())
