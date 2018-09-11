@@ -38,9 +38,9 @@ class LongTermDependencyDataset(Dataset):
         self.y = np.repeat(self.y, self.length_mask)  # Each data point needs a label
         return self
 
-    def build_doubled_height(self, anomalous_hills):
+    def build_halved_height(self, anomalous_hills):
         for anomalous_hill in anomalous_hills:
-            self.height_mask[anomalous_hill] = 2
+            self.height_mask[anomalous_hill] = 0.5
             self.y[anomalous_hill] = 1
         self.y = np.repeat(self.y, self.length_mask)
         return self
@@ -742,8 +742,8 @@ class SyntheticDataGenerator:
 
     @staticmethod
     def long_term_dependencies_height(seed):
-        return LongTermDependencyDataset('Long Term Dependencies Doubled Height', 'long_term_doubled_height',
-                                         seed).build_doubled_height([153, 155])
+        return LongTermDependencyDataset('Long Term Dependencies Halved Height', 'long_term_halved_height',
+                                         seed).build_halved_height([153, 155])
 
     @staticmethod
     def long_term_dependencies_width(seed):
