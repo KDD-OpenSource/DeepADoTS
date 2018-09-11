@@ -106,18 +106,18 @@ def run_experiments():
             output_dir=os.path.join(output_dir, outlier_type, 'intensity'))
         evaluators.append(ev_extr)
 
-    announce_experiment('Multivariate Datasets')
-    ev_mv = run_multivariate_experiment(
-        detectors, seeds, RUNS,
-        output_dir=os.path.join(output_dir, 'multivariate'))
-    evaluators.append(ev_mv)
+    # announce_experiment('Multivariate Datasets')
+    # ev_mv = run_multivariate_experiment(
+    #     detectors, seeds, RUNS,
+    #     output_dir=os.path.join(output_dir, 'multivariate'))
+    # evaluators.append(ev_mv)
 
-    for mv_anomaly in ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']:
-        announce_experiment(f'Multivariate Polluted {mv_anomaly} Datasets')
-        ev_mv = run_multivariate_polluted_experiment(
-            detectors, seeds, RUNS, mv_anomaly,
-            output_dir=os.path.join(output_dir, 'mv_polluted'))
-        evaluators.append(ev_mv)
+    # for mv_anomaly in ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']:
+    #    announce_experiment(f'Multivariate Polluted {mv_anomaly} Datasets')
+    #    ev_mv = run_multivariate_polluted_experiment(
+    #        detectors, seeds, RUNS, mv_anomaly,
+    #        output_dir=os.path.join(output_dir, 'mv_polluted'))
+    #    evaluators.append(ev_mv)
 
         # announce_experiment(f'High-dimensional multivariate {mv_anomaly} outliers')
         # ev_mv_dim = run_multi_dim_multivariate_experiment(
@@ -125,9 +125,9 @@ def run_experiments():
         #     output_dir=os.path.join(output_dir, 'multi_dim_mv'))
         # evaluators.append(ev_mv_dim)
 
-    announce_experiment('Long-Term Experiments')
-    ev_different_windows = run_different_window_sizes_evaluator(different_window_detectors, seeds, RUNS)
-    evaluators.append(ev_different_windows)
+    # announce_experiment('Long-Term Experiments')
+    # ev_different_windows = run_different_window_sizes_evaluator(different_window_detectors, seeds, RUNS)
+    # evaluators.append(ev_different_windows)
 
     for ev in evaluators:
         ev.plot_single_heatmap()

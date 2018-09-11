@@ -1,5 +1,5 @@
 #!/bin/bash
-source ../venv/bin/activate
+source ./venv/bin/activate
 
 set +e
 
@@ -8,7 +8,7 @@ do
 	echo ""
  	echo ""
 	echo "---> EXECUTION $EXE_RUN <---"
-	python3 main.py
+	python3 ./main.py
 done
 
 set -e
