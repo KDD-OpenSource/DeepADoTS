@@ -5,9 +5,9 @@ import os
 import numpy as np
 import pandas as pd
 
-from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-    run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment, \
-    run_multivariate_polluted_experiment
+from experiments import run_missing_experiment, run_extremes_experiment, \
+    run_multivariate_experiment, run_multi_dim_multivariate_experiment, announce_experiment, \
+    run_multivariate_polluted_experiment, run_different_window_sizes_evaluator
 from src.algorithms import AutoEncoder, DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED
 from src.datasets import KDDCup, SyntheticDataGenerator, RealPickledDataset
 from src.evaluation import Evaluator, Plotter
@@ -20,7 +20,6 @@ RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
 
 def main():
     run_experiments()
-    evaluate_different_window_sizes()
 
 
 def detectors(seed):
@@ -30,11 +29,11 @@ def detectors(seed):
                 Donut(num_epochs=1, seed=seed), LSTMAD(num_epochs=1, seed=seed), LSTMED(num_epochs=1, seed=seed),
                 RecurrentEBM(num_epochs=1, seed=seed)]
     else:
-        standard_epochs=40
+        standard_epochs = 40
         dets = [AutoEncoder(num_epochs=standard_epochs, seed=seed),
                 DAGMM(num_epochs=standard_epochs, sequence_length=15, seed=seed),
-                DAGMM(num_epochs=standard_epochs, sequence_length=15, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
-                Donut(seed=seed), LSTMAD(num_epochs=standard_epochs, seed=seed),
+                DAGMM(num_epochs=standard_epochs, sequence_length=15, autoencoder_type=DAGMM.AutoEncoder.LSTM,
+                      seed=seed), Donut(seed=seed), LSTMAD(num_epochs=standard_epochs, seed=seed),
                 LSTMED(num_epochs=standard_epochs, seed=seed), RecurrentEBM(num_epochs=standard_epochs, seed=seed)]
     return sorted(dets, key=lambda x: x.framework)
 
@@ -91,7 +90,7 @@ def run_pipeline():
     evaluator.create_bar_charts(runs=RUNS, detectorwise=True)
 
 
-def run_experiments(steps=5):
+def run_experiments():
     # Set the seed manually for reproducibility.
     seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
     output_dir = 'reports/experiments'
@@ -122,6 +121,10 @@ def run_experiments(steps=5):
             detectors, seeds, RUNS, mv_anomaly, steps=20,
             output_dir=os.path.join(output_dir, 'multi_dim_mv'))
         evaluators.append(ev_mv_dim)
+
+    announce_experiment('Long-Term Experiments')
+    ev_different_windows = run_different_window_sizes_evaluator(different_window_detectors, seeds, RUNS)
+    evaluators.append(ev_different_windows)
 
     for ev in evaluators:
         ev.plot_single_heatmap()
@@ -171,30 +174,14 @@ def evaluate_real_datasets():
 
 
 def different_window_detectors(seed):
-    dets = [LSTMAD(num_epochs=40)]
+    standard_epochs = 40
+    dets = [LSTMAD(num_epochs=standard_epochs)]
     for window_size in [13, 25, 50, 100]:
-        dets.extend([LSTMED(name='LSTMED Window: ' + str(window_size), num_epochs=40, seed=seed,
+        dets.extend([LSTMED(name='LSTMED Window: ' + str(window_size), num_epochs=standard_epochs, seed=seed,
                             sequence_length=window_size), AutoEncoder(name='AE Window: ' + str(window_size),
-                                                                      num_epochs=40, seed=seed,
+                                                                      num_epochs=standard_epochs, seed=seed,
                                                                       sequence_length=window_size)])
     return dets
-
-
-def evaluate_different_window_sizes():
-    results = pd.DataFrame()
-    seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
-    for seed in seeds:
-        datasets = [SyntheticDataGenerator.long_term_dependencies_width(seed),
-                    SyntheticDataGenerator.long_term_dependencies_height(seed),
-                    SyntheticDataGenerator.long_term_dependencies_missing(seed)]
-        evaluator = Evaluator(datasets, different_window_detectors, seed=seed)
-        evaluator.evaluate()
-        result = evaluator.benchmarks()
-        results = results.append(result, ignore_index=True)
-    evaluator.set_benchmark_results(results)
-    evaluator.export_results('run_different_windows')
-    evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=False)
-    evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=True)
 
 
 if __name__ == '__main__':

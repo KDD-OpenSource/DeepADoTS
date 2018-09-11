@@ -34,11 +34,10 @@ class SyntheticMultivariateDataset(Dataset):
         self.random_seed = random_seed
         self.test_pollution = test_pollution
         self.train_pollution = train_pollution
-        self.values_range = values_range
-        
+
         assert features >= 2, 'At least two dimensions are required for generating MV outliers'
         self.features = features
-        assert group_size is None or (group_size <= features and group_size > 0), 'Group size may not be greater '\
+        assert group_size is None or (features >= group_size > 0), 'Group size may not be greater '\
             'than amount of dimensions'
         self.group_size = group_size or self.features
         assert self.group_size <= self.features
