@@ -19,13 +19,13 @@ class LongTermDependencyDataset(Dataset):
     """ Build a univariate data set which contains hills in regular distances with regular widths, heights and spaces
     in between. The three builder function can be used to vary these properties given the indices of the hills."""
 
-    def __init__(self, name, file_name, random_state, n=20, gaussian_std=0.01):
+    def __init__(self, name, file_name, random_state, n=100, gaussian_std=0.01):
         super().__init__(name, file_name)
         np.random.seed(random_state)
         self.train_split = 0.7
         self.n = n
         self.hill_mask = np.tile([0, 1], n)
-        self.length_mask = np.tile([200, 100], n)
+        self.length_mask = np.tile([40, 20], n)
         self.height_mask = np.tile([0, 1], n)
         self.y = np.zeros(len(self.hill_mask))  # All hills are normal by default
         self.length = sum(self.length_mask)
@@ -738,14 +738,14 @@ class SyntheticDataGenerator:
     @staticmethod
     def long_term_dependencies_missing(seed):
         return LongTermDependencyDataset('Long Term Dependencies Missing', 'long_term_missing',
-                                         seed).build_missing_data([31, 37])
+                                         seed).build_missing_data([153, 155])
 
     @staticmethod
     def long_term_dependencies_height(seed):
         return LongTermDependencyDataset('Long Term Dependencies Doubled Height', 'long_term_doubled_height',
-                                         seed).build_doubled_height([31, 37])
+                                         seed).build_doubled_height([153, 155])
 
     @staticmethod
     def long_term_dependencies_width(seed):
         return LongTermDependencyDataset('Long Term Dependencies Irregular Length', 'long_term_irregular_length',
-                                         seed).build_irregular_widths([31, 37], [50, 200])
+                                         seed).build_irregular_widths([153, 155], [10, 30])

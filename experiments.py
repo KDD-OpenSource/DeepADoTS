@@ -63,6 +63,7 @@ def run_different_window_sizes_evaluator(detectors, seeds, runs):
                     SyntheticDataGenerator.long_term_dependencies_missing(seed)]
         evaluator = Evaluator(datasets, detectors, seed=seed)
         evaluator.evaluate()
+        evaluator.plot_scores()
         result = evaluator.benchmarks()
         results = results.append(result, ignore_index=True)
     evaluator.set_benchmark_results(results)
