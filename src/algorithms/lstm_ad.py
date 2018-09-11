@@ -8,48 +8,12 @@ from tqdm import trange
 from .algorithm_utils import Algorithm, PyTorchUtils
 
 
-class LSTMSequence(torch.nn.Module):
-    # ToDo: cuda support
-    def __init__(self, d, batch_size: int, len_in=1, len_out=10):
-        super().__init__()
-        self.d = d  # input and output feature dimensionality
-        self.batch_size = batch_size
-        self.len_in = len_in
-        self.len_out = len_out
-        self.hidden_size1 = 32
-        self.hidden_size2 = 32
-        self.lstm1 = torch.nn.LSTMCell(d * len_in, self.hidden_size1)
-        self.lstm2 = torch.nn.LSTMCell(self.hidden_size1, self.hidden_size2)
-        self.linear = torch.nn.Linear(self.hidden_size2, d * len_out)
-
-        self.register_buffer('h_t', torch.zeros(self.batch_size, self.hidden_size1))
-        self.register_buffer('c_t', torch.zeros(self.batch_size, self.hidden_size1))
-        self.register_buffer('h_t2', torch.zeros(self.batch_size, self.hidden_size1))
-        self.register_buffer('c_t2', torch.zeros(self.batch_size, self.hidden_size1))
-
-    def forward(self, input):
-        outputs = []
-        h_t = Variable(self.h_t.double(), requires_grad=False)
-        c_t = Variable(self.c_t.double(), requires_grad=False)
-        h_t2 = Variable(self.h_t2.double(), requires_grad=False)
-        c_t2 = Variable(self.c_t2.double(), requires_grad=False)
-
-        for input_t in input.chunk(input.size(1), dim=1):
-            h_t, c_t = self.lstm1(input_t.squeeze(dim=1), (h_t, c_t))
-            h_t2, c_t2 = self.lstm2(h_t, (h_t2, c_t2))
-            output = self.linear(h_t2)
-            outputs += [output]
-        outputs = torch.stack(outputs, 1).squeeze()  # stack (n, d * len_out) outputs in time dimensionality (dim=1)
-
-        return outputs.view(input.size(0), input.size(1), self.d, self.len_out)
-
-
 class LSTMAD(Algorithm, PyTorchUtils):
     """ LSTM-AD implementation using PyTorch.
     The interface of the class is sklearn-like.
     """
 
-    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1,
+    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=1e-3, batch_size=1,
                  seed: int=None, gpu: int=None, details=True):
         Algorithm.__init__(self, __name__, 'LSTM-AD', seed, details=details)
         PyTorchUtils.__init__(self, seed, gpu)
@@ -157,3 +121,38 @@ class LSTMAD(Algorithm, PyTorchUtils):
         loss_train = self.loss(output_data, target_data)
         loss_train.backward()
         return loss_train
+
+
+class LSTMSequence(torch.nn.Module):
+    def __init__(self, d, batch_size: int, len_in=1, len_out=10):
+        super().__init__()
+        self.d = d  # input and output feature dimensionality
+        self.batch_size = batch_size
+        self.len_in = len_in
+        self.len_out = len_out
+        self.hidden_size1 = 32
+        self.hidden_size2 = 32
+        self.lstm1 = torch.nn.LSTMCell(d * len_in, self.hidden_size1)
+        self.lstm2 = torch.nn.LSTMCell(self.hidden_size1, self.hidden_size2)
+        self.linear = torch.nn.Linear(self.hidden_size2, d * len_out)
+
+        self.register_buffer('h_t', torch.zeros(self.batch_size, self.hidden_size1))
+        self.register_buffer('c_t', torch.zeros(self.batch_size, self.hidden_size1))
+        self.register_buffer('h_t2', torch.zeros(self.batch_size, self.hidden_size1))
+        self.register_buffer('c_t2', torch.zeros(self.batch_size, self.hidden_size1))
+
+    def forward(self, input):
+        outputs = []
+        h_t = Variable(self.h_t.double(), requires_grad=False)
+        c_t = Variable(self.c_t.double(), requires_grad=False)
+        h_t2 = Variable(self.h_t2.double(), requires_grad=False)
+        c_t2 = Variable(self.c_t2.double(), requires_grad=False)
+
+        for input_t in input.chunk(input.size(1), dim=1):
+            h_t, c_t = self.lstm1(input_t.squeeze(dim=1), (h_t, c_t))
+            h_t2, c_t2 = self.lstm2(h_t, (h_t2, c_t2))
+            output = self.linear(h_t2)
+            outputs += [output]
+        outputs = torch.stack(outputs, 1).squeeze()  # stack (n, d * len_out) outputs in time dimensionality (dim=1)
+
+        return outputs.view(input.size(0), input.size(1), self.d, self.len_out)
