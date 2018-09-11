@@ -132,7 +132,7 @@ class LSTMEDModule(nn.Module, PyTorchUtils):
         _, enc_hidden = self.encoder(ts_batch.float(), enc_hidden)  # .float() here or .double() for the model
 
         # 2. Use hidden state as initialization for our Decoder-LSTM
-        dec_hidden = (enc_hidden[0], self.to_var(torch.Tensor(self.n_layers[1], batch_size, self.hidden_size).zero_()))
+        dec_hidden = enc_hidden
 
         # 3. Also, use this hidden state to get the first output aka the last point of the reconstructed timeseries
         # 4. Reconstruct timeseries backwards
