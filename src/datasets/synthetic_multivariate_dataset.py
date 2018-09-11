@@ -22,7 +22,6 @@ class SyntheticMultivariateDataset(Dataset):
                  test_pollution: float = 0.5,
                  train_pollution: float = 0,
                  global_noise: float = 0.1,  # Noise added to all dimensions over the whole timeseries
-                 values_range: Tuple[int, int] = (0, 100),
                  file_name: str = 'synthetic_mv1.pkl'):
         super().__init__(f'{name} (f={anomaly_func.__name__})', file_name)
         self.length = length
@@ -36,6 +35,7 @@ class SyntheticMultivariateDataset(Dataset):
         self.test_pollution = test_pollution
         self.train_pollution = train_pollution
         self.values_range = values_range
+        
         assert features >= 2, 'At least two dimensions are required for generating MV outliers'
         self.features = features
         assert group_size is None or (group_size <= features and group_size > 0), 'Group size may not be greater '\
@@ -84,9 +84,6 @@ class SyntheticMultivariateDataset(Dataset):
 
     def generate_correlated_group(self, dimensions, pollution):
         values = np.zeros((self.length, dimensions))
-        xaxis_distances = np.linspace(*self.values_range, dimensions)
-        for index in range(dimensions):
-            values[:, index].fill(xaxis_distances[index])
         labels = np.zeros(self.length)
 
         # First pos data points are noise (don't start directly with curve)
