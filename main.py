@@ -15,7 +15,7 @@ from src.evaluation import Evaluator, Plotter
 # Add this line if you want to test the pipeline & experiments
 # os.environ['CIRCLECI'] = 'True'
 
-RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
+RUNS = 2 if os.environ.get('CIRCLECI', False) else 1
 
 
 def main():
@@ -116,11 +116,11 @@ def run_experiments():
             output_dir=os.path.join(output_dir, 'mv_polluted'))
         evaluators.append(ev_mv)
 
-        announce_experiment(f'High-dimensional multivariate {mv_anomaly} outliers')
-        ev_mv_dim = run_multi_dim_multivariate_experiment(
-            detectors, seeds, RUNS, mv_anomaly, steps=20,
-            output_dir=os.path.join(output_dir, 'multi_dim_mv'))
-        evaluators.append(ev_mv_dim)
+        # announce_experiment(f'High-dimensional multivariate {mv_anomaly} outliers')
+        # ev_mv_dim = run_multi_dim_multivariate_experiment(
+        #     detectors, seeds, RUNS, mv_anomaly, steps=20,
+        #     output_dir=os.path.join(output_dir, 'multi_dim_mv'))
+        # evaluators.append(ev_mv_dim)
 
     announce_experiment('Long-Term Experiments')
     ev_different_windows = run_different_window_sizes_evaluator(different_window_detectors, seeds, RUNS)
