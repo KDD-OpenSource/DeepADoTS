@@ -133,6 +133,10 @@ class Evaluator:
                     det.fit(X_train.copy())
                     score = det.predict(X_test.copy())
                     self.results[(ds.name, det.name)] = score
+                    try:
+                        self.plot_details(det, ds, score)
+                    except Exception:
+                        pass
                 except Exception as e:
                     self.logger.error(f'An exception occurred while training {det.name} on {ds}: {e}')
                     self.logger.error(traceback.format_exc())
@@ -296,6 +300,57 @@ class Evaluator:
         plt.tight_layout()
         if store:
             self.store(plt.gcf(), 'auroc', store_in_figures=True)
+
+    def plot_details(self, det, ds, score, store=True):
+        if not det.details:
+            return
+        plt.close('all')
+        cmap = plt.get_cmap('inferno')
+        _, _, X_test, y_test = ds.data()
+
+        grid = 0
+        for value in det.prediction_details.values():
+            grid += 1 if value.ndim == 1 else value.shape[0]
+        grid += X_test.shape[1]  # data
+        grid += 1 + 1  # score and gt
+
+        fig, axes = plt.subplots(grid, 1, figsize=(15, 1.5 * grid))
+
+        i = 0
+        c = cmap(i / grid)
+        axes[i].set_title('test data')
+        for col in X_test.values.T:
+            axes[i].plot(col, color=c)
+            i += 1
+        c = cmap(i / grid)
+
+        axes[i].set_title('test gt data')
+        axes[i].plot(y_test.values, color=c)
+        i += 1
+        c = cmap(i / grid)
+
+        axes[i].set_title('scores')
+        axes[i].plot(score, color=c)
+        i += 1
+        c = cmap(i / grid)
+
+        for key, values in det.prediction_details.items():
+            axes[i].set_title(key)
+            if values.ndim == 1:
+                axes[i].plot(values, color=c)
+                i += 1
+            elif values.ndim == 2:
+                for v in values:
+                    axes[i].plot(v, color=c)
+                    i += 1
+            else:
+                self.logger.warning('plot_details: not sure what to do')
+            c = cmap(i / grid)
+
+        fig.tight_layout()
+        if store:
+            self.store(fig, f'details_{det.name}_{ds.name}')
+        return fig
 
     # create boxplot diagrams for auc values for each algorithm/dataset per algorithm/dataset
     def create_boxplots(self, runs, data, detectorwise=True, store=True):

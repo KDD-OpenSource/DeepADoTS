@@ -50,18 +50,17 @@ class LSTMAD(Algorithm, PyTorchUtils):
     """
 
     def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1,
-                 seed: int=None, gpu: int=None):
-        Algorithm.__init__(self, __name__, 'LSTM-AD', seed)
+                 seed: int=None, gpu: int=None, details=True):
+        Algorithm.__init__(self, __name__, 'LSTM-AD', seed, details=details)
         PyTorchUtils.__init__(self, seed, gpu)
-        self.len_in = len_in
-        self.len_out = len_out
-
         self.num_epochs = num_epochs
         self.lr = lr
         self.batch_size = batch_size
 
-        self.mean = None
-        self.cov = None
+        self.len_in = len_in
+        self.len_out = len_out
+
+        self.mean, self.cov = None, None
 
     def fit(self, X):
         X.interpolate(inplace=True)
@@ -95,6 +94,12 @@ class LSTMAD(Algorithm, PyTorchUtils):
 
         predictions = self.model(input_data)
         errors = self._calc_errors(predictions, target_data)
+
+        if self.details:
+            self.prediction_details.update({'predictions_mean': predictions.mean(dim=3).squeeze(0).data.numpy().T})
+            self.prediction_details.update({'errors_mean': np.pad(
+                errors.mean(axis=3).reshape(-1), (self.len_in + self.len_out - 1, self.len_out - 1),
+                'constant', constant_values=np.nan)})
 
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
         scores = -multivariate_normal.logpdf(norm, mean=self.mean, cov=self.cov, allow_singular=True)
