@@ -21,9 +21,9 @@ class DAGMM(Algorithm, PyTorchUtils):
         NN = AutoEncoderModule
         LSTM = LSTMEDModule
 
-    def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-2, batch_size=50, gmm_k=3,
+    def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-3, batch_size=50, gmm_k=3,
                  normal_percentile=80, sequence_length=15, autoencoder_type=AutoEncoderModule, autoencoder_args=None,
-                 seed: int=None, gpu: int=None, details=True):
+                 hidden_size: int=5, seed: int=None, gpu: int=None, details=True):
         _name = 'LSTM-DAGMM' if autoencoder_type == LSTMEDModule else 'DAGMM'
         Algorithm.__init__(self, __name__, _name, seed, details=details)
         PyTorchUtils.__init__(self, seed, gpu)
@@ -43,6 +43,7 @@ class DAGMM(Algorithm, PyTorchUtils):
         self.autoencoder_args.update({'seed': seed, 'gpu': gpu})
         if autoencoder_args is not None:
             self.autoencoder_args.update(autoencoder_args)
+        self.hidden_size = hidden_size
 
         self.dagmm, self.optimizer, self.train_energy, self._threshold = None, None, None, None
 
@@ -72,9 +73,9 @@ class DAGMM(Algorithm, PyTorchUtils):
         data = X.values
         sequences = [data[i:i + self.sequence_length] for i in range(X.shape[0] - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=True, drop_last=True)
-        hidden_size = int(np.ceil(X.shape[1] / 20))
-        autoencoder = self.autoencoder_type(n_features=X.shape[1], hidden_size=hidden_size, **self.autoencoder_args)
-        self.dagmm = DAGMMModule(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size + 2,
+        self.hidden_size = 5 + int(X.shape[1] / 20)
+        autoencoder = self.autoencoder_type(X.shape[1], hidden_size=self.hidden_size, **self.autoencoder_args)
+        self.dagmm = DAGMMModule(autoencoder, n_gmm=self.gmm_k, latent_dim=self.hidden_size + 2,
                                  seed=self.seed, gpu=self.gpu)
         self.to_device(self.dagmm)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
@@ -113,7 +114,7 @@ class DAGMM(Algorithm, PyTorchUtils):
         data_loader = DataLoader(dataset=sequences, batch_size=1, shuffle=False)
         test_energy = np.full((self.sequence_length, X.shape[0]), np.nan)
 
-        encodings = np.full((self.sequence_length, X.shape[0]), np.nan)
+        encodings = np.full((self.sequence_length, X.shape[0], self.hidden_size), np.nan)
         decodings = np.full((self.sequence_length, X.shape[0], X.shape[1]), np.nan)
         euc_errors = np.full((self.sequence_length, X.shape[0]), np.nan)
         csn_errors = np.full((self.sequence_length, X.shape[0]), np.nan)
@@ -133,7 +134,7 @@ class DAGMM(Algorithm, PyTorchUtils):
         test_energy = np.nanmean(test_energy, axis=0)
 
         if self.details:
-            self.prediction_details.update({'latent_representations': np.nanmean(encodings, axis=0)})
+            self.prediction_details.update({'latent_representations': np.nanmean(encodings, axis=0).T})
             self.prediction_details.update({'reconstructions_mean': np.nanmean(decodings, axis=0).T})
             self.prediction_details.update({'euclidean_errors_mean': np.nanmean(euc_errors, axis=0)})
             self.prediction_details.update({'cosine_errors_mean': np.nanmean(csn_errors, axis=0)})
