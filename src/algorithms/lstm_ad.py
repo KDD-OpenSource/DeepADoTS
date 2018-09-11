@@ -48,7 +48,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
     The interface of the class is sklearn-like.
     """
 
-    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1,
+    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1, optimizer=torch.optim.Adam,
                  seed: int=None, gpu: int=None):
         Algorithm.__init__(self, __name__, 'LSTM-AD', seed)
         PyTorchUtils.__init__(self, seed, gpu)
@@ -59,10 +59,14 @@ class LSTMAD(Algorithm, PyTorchUtils):
         self.lr = lr
         self.batch_size = batch_size
 
+        self.optimizer_type = optimizer
+
         self.mean = None
         self.cov = None
 
-    def fit(self, X):
+    def fit(self, X, X_test: pd.DataFrame=None, y_test: pd.Series=None):
+        eval_convergence = X_test is not None and y_test is not None
+
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         self.batch_size = 1
@@ -74,9 +78,32 @@ class LSTMAD(Algorithm, PyTorchUtils):
         X_train_gaussian = X.loc[split_point:, :]
 
         input_data_train, target_data_train = self._input_and_target_data(X_train)
-        self._train_model(input_data_train, target_data_train)
+
+        def train_closure():
+            self.optimizer.zero_grad()
+            output_data = self.model(input_data_train)
+            loss_train = self.loss(output_data, target_data_train)
+            loss_train.backward()
+            return loss_train
+
+        epoch_losses, epoch_aucs = [], []
+        for epoch in range(self.num_epochs):
+            loss = self.optimizer.step(train_closure)
+            if eval_convergence:
+                epoch_losses.append(loss.detach().numpy()[()])
+
+                self.model.eval()
+                self._compute_distribution_params(X, X_train_gaussian)
+                epoch_aucs.append(self.epoch_eval(X_test, y_test))
+                self.model.train()
 
         self.model.eval()
+        self._compute_distribution_params(X, X_train_gaussian)
+
+        if eval_convergence:
+            return (epoch_losses, epoch_aucs)
+
+    def _compute_distribution_params(self, X, X_train_gaussian):
         input_data_gaussian, target_data_gaussian = self._input_and_target_data(X_train_gaussian)
         predictions_gaussian = self.model(input_data_gaussian)
         errors = self._calc_errors(predictions_gaussian, target_data_gaussian)
@@ -125,18 +152,4 @@ class LSTMAD(Algorithm, PyTorchUtils):
         self.model.double()
 
         self.loss = torch.nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
-
-    def _train_model(self, input_data, target_data):
-        def closure():
-            return self._train(input_data, target_data)
-
-        for epoch in range(self.num_epochs):
-            self.optimizer.step(closure)
-
-    def _train(self, input_data, target_data):
-        self.optimizer.zero_grad()
-        output_data = self.model(input_data)
-        loss_train = self.loss(output_data, target_data)
-        loss_train.backward()
-        return loss_train
+        self.optimizer = self.optimizer_type(self.model.parameters(), lr=self.lr)

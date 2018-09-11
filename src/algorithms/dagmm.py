@@ -63,7 +63,8 @@ class DAGMM(Algorithm, PyTorchUtils):
         self.optimizer.step()
         return total_loss, sample_energy, recon_error, cov_diag
 
-    def fit(self, X: pd.DataFrame):
+    def fit(self, X: pd.DataFrame, X_test: pd.DataFrame=None, y_test: pd.Series=None):
+        eval_convergence = X_test is not None and y_test is not None
         """Learn the mixture probability, mean and covariance for each component k.
         Store the computed energy based on the training data and the aforementioned parameters."""
         X.interpolate(inplace=True)
@@ -78,10 +79,17 @@ class DAGMM(Algorithm, PyTorchUtils):
         self.to_device(self.dagmm)
         self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
 
+        epoch_losses, epoch_aucs = [], []
         for _ in range(self.num_epochs):
+            epoch_loss = []
             for input_data in data_loader:
                 input_data = self.to_var(input_data)
-                self.dagmm_step(input_data.float())
+                loss, _, _, _ = self.dagmm_step(input_data.float())
+                epoch_loss.append(loss.detach().numpy())
+            if eval_convergence:
+                epoch_losses.append(np.mean(epoch_loss))
+                epoch_aucs.append(self.epoch_eval(X_test, y_test))
+                self.dagmm.train()
 
         self.dagmm.eval()
         n = 0
@@ -100,6 +108,9 @@ class DAGMM(Algorithm, PyTorchUtils):
             cov_sum += cov * batch_gamma_sum.unsqueeze(-1).unsqueeze(-1)  # keep sums of the numerator only
 
             n += input_data.size(0)
+
+        if eval_convergence:
+            return (epoch_losses, epoch_aucs)
 
     def predict(self, X: pd.DataFrame):
         """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the

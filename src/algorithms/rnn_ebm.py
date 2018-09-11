@@ -11,14 +11,14 @@ class RecurrentEBM(Algorithm, TensorflowUtils):
     """
 
     def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100,
-                 min_lr=0.01, min_energy=None, batch_size=10,
+                 lr=0.01, min_energy=None, batch_size=10,
                  seed: int=None, gpu: int=None):
         Algorithm.__init__(self, __name__, 'Recurrent EBM', seed)
         TensorflowUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
         self.n_hidden = n_hidden  # Size of RBM's hidden layer
         self.n_hidden_recurrent = n_hidden_recurrent  # Size of RNN's hidden layer
-        self.min_lr = min_lr
+        self.min_lr = lr
         self.min_energy = min_energy  # Threshold for anomaly
         self.batch_size = batch_size
 
@@ -38,14 +38,35 @@ class RecurrentEBM(Algorithm, TensorflowUtils):
 
         self.tf_session = None
 
-    def fit(self, X):
+    def fit(self, X, X_test=None, y_test=None):
+        eval_convergence = X_test is not None and y_test is not None
+
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         with self.device:
             self._build_model(X.shape[1])
             self.tf_session = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
             self._initialize_tf()
-            self._train_model(X, self.batch_size)
+
+            epoch_losses, epoch_aucs = [], []
+            for epoch in trange(self.num_epochs):
+                losses = []
+                for i in range(0, len(X), self.batch_size):
+                    x = X[i:i + self.batch_size]
+                    if len(x) == self.batch_size:
+                        alpha = min(self.min_lr, 0.1 / float(i + 1))
+                        _, loss = self.tf_session.run([self.update, self.cost],
+                                                      feed_dict={
+                                                        self.input_data: x, self.lr: alpha,
+                                                        self._batch_size: self.batch_size})
+                        losses.append(loss)
+                self.logger.debug(f'Epoch: {epoch+1} Loss: {np.mean(losses)}')
+                if eval_convergence:
+                    epoch_losses.append(np.mean(losses))
+                    epoch_aucs.append(self.epoch_eval(X_test, y_test))
+
+            if eval_convergence:
+                return (epoch_losses, epoch_aucs)
 
     def predict(self, X):
         X.interpolate(inplace=True)
@@ -68,16 +89,16 @@ class RecurrentEBM(Algorithm, TensorflowUtils):
 
     def _train_model(self, train_set, batch_size):
         for epoch in trange(self.num_epochs):
-            costs = []
+            losses = []
             for i in range(0, len(train_set), batch_size):
                 x = train_set[i:i + batch_size]
                 if len(x) == batch_size:
                     alpha = self.min_lr  # min(self.min_lr, 0.1 / float(i + 1))
-                    _, C = self.tf_session.run([self.update, self.cost],
-                                               feed_dict={self.input_data: x, self.lr: alpha,
-                                                          self._batch_size: batch_size})
-                    costs.append(C)
-            self.logger.debug(f'Epoch: {epoch+1} Cost: {np.mean(costs)}')
+                    _, loss = self.tf_session.run([self.update, self.cost],
+                                                  feed_dict={self.input_data: x, self.lr: alpha,
+                                                             self._batch_size: batch_size})
+                    losses.append(loss)
+            self.logger.debug(f'Epoch: {epoch+1} Loss: {np.mean(losses)}')
 
     def _initialize_tf(self):
         init = tf.global_variables_initializer()

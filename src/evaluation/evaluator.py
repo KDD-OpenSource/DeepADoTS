@@ -24,7 +24,7 @@ from .config import init_logging
 
 class Evaluator:
     def __init__(self, datasets: list, detectors: callable, output_dir: {str}=None, seed: int=None,
-                 create_log_file=True):
+                 create_log_file=True, evaluate_convergence=False):
         """
         :param datasets: list of datasets
         :param detectors: callable that returns list of detectors
@@ -41,6 +41,7 @@ class Evaluator:
         self.benchmark_results = None
         # Last passed seed value in evaluate()
         self.seed = seed
+        self.evaluate_convergence = evaluate_convergence
 
     @property
     def detectors(self):
@@ -127,10 +128,16 @@ class Evaluator:
     def evaluate(self):
         for ds in progressbar.progressbar(self.datasets):
             (X_train, y_train, X_test, y_test) = ds.data()
+
+            all_epoch_stats = {}
             for det in progressbar.progressbar(self.detectors):
                 self.logger.info(f'Training {det.name} on {ds.name} with seed {self.seed}')
                 try:
-                    det.fit(X_train.copy())
+                    if self.evaluate_convergence:
+                        epoch_stats = det.fit(X_train.copy(), X_test.copy(), y_test.copy())
+                        all_epoch_stats[det.name] = epoch_stats
+                    else:
+                        det.fit(X_train.copy())
                     score = det.predict(X_test.copy())
                     self.results[(ds.name, det.name)] = score
                 except Exception as e:
@@ -138,6 +145,9 @@ class Evaluator:
                     self.logger.error(traceback.format_exc())
                     self.results[(ds.name, det.name)] = np.zeros_like(y_test)
             gc.collect()
+
+            if self.evaluate_convergence:
+                return all_epoch_stats
 
     def benchmarks(self) -> pd.DataFrame:
         df = pd.DataFrame()
@@ -165,6 +175,37 @@ class Evaluator:
             anomaly = self.binarize(score, threshold=threshold)
             metrics = Evaluator.get_accuracy_precision_recall_fscore(y_test, anomaly)
             yield (anomaly.sum(), *metrics)
+
+    def plot_epoch_stats(self, epoch_stats, ds_name, lr):
+        if epoch_stats is None:
+            return
+
+        fig = plt.figure(figsize=(3*len(epoch_stats), 15))
+        for index, algo in enumerate(epoch_stats.keys()):
+            if algo not in epoch_stats:
+                continue
+            losses, aucs = epoch_stats[algo]
+
+            fig.add_subplot(len(epoch_stats), 2, 2*index + 1)
+            plt.title(algo)
+            plt.plot(np.arange(len(losses))+1, losses)
+            plt.xlabel('Epoch')
+            plt.ylabel('Loss during training')
+            plt.xticks(np.arange(len(losses))+1)
+
+            fig.add_subplot(len(epoch_stats), 2, 2*index + 2)
+            plt.title(algo)
+            plt.plot(np.arange(len(losses))+1, aucs)
+            plt.xlabel('Epoch')
+            plt.ylabel('AUC on test set')
+            plt.ylim([0, 1])
+            plt.xticks(np.arange(len(losses))+1)
+
+        plt.suptitle(f'{ds_name}, lr={lr}', fontweight='bold')
+        fig.subplots_adjust(top=0.2, hspace=0.4)
+        fig.tight_layout()
+        self.store(fig, f'convergence_ds={ds_name}|lr={lr}')
+        return fig
 
     def plot_scores(self, store=True):
         detectors = self.detectors

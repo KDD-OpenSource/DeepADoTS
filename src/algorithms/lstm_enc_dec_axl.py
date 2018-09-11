@@ -33,7 +33,9 @@ class LSTMED(Algorithm, PyTorchUtils):
         self.lstmed = None
         self.mean, self.cov = None, None
 
-    def fit(self, X: pd.DataFrame):
+    def fit(self, X: pd.DataFrame, X_test: pd.DataFrame=None, y_test: pd.Series=None):
+        eval_convergence = X_test is not None and y_test is not None
+
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
@@ -52,16 +54,31 @@ class LSTMED(Algorithm, PyTorchUtils):
         optimizer = torch.optim.Adam(self.lstmed.parameters(), lr=self.lr)
 
         self.lstmed.train()
+        epoch_losses, epoch_aucs = [], []
         for epoch in range(self.num_epochs):
             logging.debug(f'Epoch {epoch+1}/{self.num_epochs}.')
+            epoch_loss = []
             for ts_batch in train_loader:
                 output = self.lstmed(self.to_var(ts_batch))
                 loss = nn.MSELoss(size_average=False)(output, self.to_var(ts_batch.float()))
+                epoch_loss.append(loss.detach().numpy())
                 self.lstmed.zero_grad()
                 loss.backward()
                 optimizer.step()
+            if eval_convergence:
+                self.lstmed.eval()
+                self._compute_distribution_params(X, train_gaussian_loader)
+                epoch_losses.append(np.mean(epoch_loss))
+                epoch_aucs.append(self.epoch_eval(X_test, y_test))
+                self.lstmed.train()
 
         self.lstmed.eval()
+        self._compute_distribution_params(X, train_gaussian_loader)
+
+        if eval_convergence:
+            return (epoch_losses, epoch_aucs)
+
+    def _compute_distribution_params(self, X, train_gaussian_loader):
         error_vectors = []
         for ts_batch in train_gaussian_loader:
             output = self.lstmed(self.to_var(ts_batch))

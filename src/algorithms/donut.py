@@ -153,7 +153,7 @@ class Donut(Algorithm, TensorflowUtils):
         self.batch_size = batch_size
         self.means, self.stds, self.tf_sessions, self.models = [], [], [], []
 
-    def fit(self, X: pd.DataFrame):
+    def fit(self, X: pd.DataFrame, X_test: pd.DataFrame=None, y_test: pd.Series=None):
         with self.device:
             # Reset all results from last run to avoid reusing variables
             self.means, self.stds, self.tf_sessions, self.models = [], [], [], []

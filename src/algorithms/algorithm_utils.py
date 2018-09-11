@@ -1,10 +1,12 @@
 import abc
 import logging
 import random
+import sys
 
 import numpy as np
 import torch
 import tensorflow as tf
+from sklearn.metrics import roc_curve, auc
 from tensorflow.python.client import device_lib
 from torch.autograd import Variable
 
@@ -22,7 +24,7 @@ class Algorithm(metaclass=abc.ABCMeta):
         return self.name
 
     @abc.abstractmethod
-    def fit(self, X):
+    def fit(self, X, X_test=None, y_test=None):
         """
         Train the algorithm on the given dataset
         """
@@ -32,6 +34,16 @@ class Algorithm(metaclass=abc.ABCMeta):
         """
         :return anomaly score
         """
+
+    def epoch_eval(self, X_test, y_test):
+        score = self.predict(X_test.copy())
+        if np.isnan(score).all():
+            score = np.zeros_like(score)
+        score_nonan = score.copy()
+        # Rank NaN below every other value in terms of anomaly score
+        score_nonan[np.isnan(score_nonan)] = np.nanmin(score_nonan) - sys.float_info.epsilon
+        fpr, tpr, _ = roc_curve(y_test, score_nonan)
+        return auc(fpr, tpr)
 
 
 class PyTorchUtils(metaclass=abc.ABCMeta):
