@@ -22,9 +22,9 @@ class DAGMM(Algorithm, PyTorchUtils):
 
     def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-2, batch_size=50, gmm_k=3,
                  normal_percentile=80, sequence_length=15, autoencoder_type=AutoEncoderModule, autoencoder_args=None,
-                 seed: int=None, gpu: int=None):
+                 seed: int=None, gpu: int=None, details=True):
         _name = 'LSTM-DAGMM' if autoencoder_type == LSTMEDModule else 'DAGMM'
-        Algorithm.__init__(self, __name__, _name, seed)
+        Algorithm.__init__(self, __name__, _name, seed, details=details)
         PyTorchUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
         self.lambda_energy = lambda_energy
@@ -69,7 +69,7 @@ class DAGMM(Algorithm, PyTorchUtils):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
-        sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
+        sequences = [data[i:i + self.sequence_length] for i in range(X.shape[0] - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=True, drop_last=True)
         hidden_size = int(np.ceil(X.shape[1] / 20))
         autoencoder = self.autoencoder_type(n_features=X.shape[1], hidden_size=hidden_size, **self.autoencoder_args)
@@ -110,15 +110,33 @@ class DAGMM(Algorithm, PyTorchUtils):
         data = X.values
         sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
         data_loader = DataLoader(dataset=sequences, batch_size=1, shuffle=False)
-        test_energy = np.full((self.sequence_length, len(data)), np.nan)
+        test_energy = np.full((self.sequence_length, X.shape[0]), np.nan)
 
-        for idx, sequence in enumerate(data_loader):
-            _, _, z, _ = self.dagmm(self.to_var(sequence).float())
+        encodings = np.full((self.sequence_length, X.shape[0]), np.nan)
+        decodings = np.full((self.sequence_length, X.shape[0], X.shape[1]), np.nan)
+        euc_errors = np.full((self.sequence_length, X.shape[0]), np.nan)
+        csn_errors = np.full((self.sequence_length, X.shape[0]), np.nan)
+
+        for i, sequence in enumerate(data_loader):
+            enc, dec, z, gamma = self.dagmm(self.to_var(sequence).float())
             sample_energy, _ = self.dagmm.compute_energy(z, size_average=False)
-            window_elements = np.arange(idx, idx + self.sequence_length, 1)
-            test_energy[idx % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
+            idx = (i % self.sequence_length, np.arange(i, i + self.sequence_length))
+            test_energy[idx] = sample_energy.data.numpy()
+
+            if self.details:
+                encodings[idx] = enc.data.numpy()
+                decodings[idx] = dec.data.numpy()
+                euc_errors[idx] = z[:, 1].data.numpy()
+                csn_errors[idx] = z[:, 2].data.numpy()
 
         test_energy = np.nanmean(test_energy, axis=0)
+
+        if self.details:
+            self.prediction_details.update({'latent_representations': np.nanmean(encodings, axis=0)})
+            self.prediction_details.update({'reconstructions_mean': np.nanmean(decodings, axis=0).T})
+            self.prediction_details.update({'euclidean_errors_mean': np.nanmean(euc_errors, axis=0)})
+            self.prediction_details.update({'cosine_errors_mean': np.nanmean(csn_errors, axis=0)})
+
         return test_energy
 
 
@@ -150,10 +168,9 @@ class DAGMMModule(nn.Module, PyTorchUtils):
 
     def forward(self, x):
         dec, enc = self.autoencoder(x, return_latent=True)
-        dec = dec.view(dec.shape[0], -1)
 
-        rec_cosine = F.cosine_similarity(x.view(x.shape[0], -1), dec, dim=1)
-        rec_euclidean = self.relative_euclidean_distance(x.view(x.shape[0], -1), dec, dim=1)
+        rec_cosine = F.cosine_similarity(x.view(x.shape[0], -1), dec.view(dec.shape[0], -1), dim=1)
+        rec_euclidean = self.relative_euclidean_distance(x.view(x.shape[0], -1), dec.view(dec.shape[0], -1), dim=1)
 
         # Concatenate latent representation, cosine similarity and relative Euclidean distance between x and dec(enc(x))
         z = torch.cat([enc, rec_euclidean.unsqueeze(-1), rec_cosine.unsqueeze(-1)], dim=1)

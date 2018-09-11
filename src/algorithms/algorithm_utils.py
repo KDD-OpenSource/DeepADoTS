@@ -10,10 +10,13 @@ from torch.autograd import Variable
 
 
 class Algorithm(metaclass=abc.ABCMeta):
-    def __init__(self, module_name, name, seed):
+    def __init__(self, module_name, name, seed, details=False):
         self.logger = logging.getLogger(module_name)
         self.name = name
         self.seed = seed
+        self.details = details
+        self.prediction_details = {}
+
         if self.seed is not None:
             random.seed(seed)
             np.random.seed(seed)

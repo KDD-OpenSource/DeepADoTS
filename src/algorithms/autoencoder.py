@@ -14,8 +14,8 @@ from .algorithm_utils import Algorithm, PyTorchUtils
 class AutoEncoder(Algorithm, PyTorchUtils):
     def __init__(self, num_epochs: int=10, batch_size: int=20, lr: float=1e-3,
                  hidden_size: int=5, sequence_length: int=30, train_gaussian_percentage: float=0.25,
-                 seed: int=None, gpu: int=None):
-        Algorithm.__init__(self, __name__, 'AutoEncoder', seed)
+                 seed: int=None, gpu: int=None, details=True):
+        Algorithm.__init__(self, __name__, 'AutoEncoder', seed, details=details)
         PyTorchUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
         self.batch_size = batch_size
@@ -74,19 +74,36 @@ class AutoEncoder(Algorithm, PyTorchUtils):
         self.aed.eval()
         mvnormal = multivariate_normal(self.mean, self.cov, allow_singular=True)
         scores = []
+        outputs = []
+        errors = []
         for idx, ts in enumerate(data_loader):
             output = self.aed(self.to_var(ts))
-
             error = nn.L1Loss(reduce=False)(output, self.to_var(ts.float()))
             score = -mvnormal.logpdf(error.view(-1, X.shape[1]).data.cpu().numpy())
             scores.append(score.reshape(ts.size(0), self.sequence_length))
+            if self.details:
+                outputs.append(output.data.numpy())
+                errors.append(error.data.numpy())
 
         # stores seq_len-many scores per timestamp and averages them
         scores = np.concatenate(scores)
-        lattice = np.full((self.sequence_length, data.shape[0]), np.nan)
+        lattice = np.full((self.sequence_length, X.shape[0]), np.nan)
         for i, score in enumerate(scores):
             lattice[i % self.sequence_length, i:i + self.sequence_length] = score
         scores = np.nanmean(lattice, axis=0)
+
+        if self.details:
+            outputs = np.concatenate(outputs)
+            lattice = np.full((self.sequence_length, X.shape[0], X.shape[1]), np.nan)
+            for i, output in enumerate(outputs):
+                lattice[i % self.sequence_length, i:i + self.sequence_length, :] = output
+            self.prediction_details.update({'reconstructions_mean': np.nanmean(lattice, axis=0).T})
+
+            errors = np.concatenate(errors)
+            lattice = np.full((self.sequence_length, X.shape[0], X.shape[1]), np.nan)
+            for i, error in enumerate(errors):
+                lattice[i % self.sequence_length, i:i + self.sequence_length, :] = error
+            self.prediction_details.update({'errors_mean': np.nanmean(lattice, axis=0).T})
 
         return scores
 
@@ -96,6 +113,7 @@ class AutoEncoderModule(nn.Module, PyTorchUtils):
         # Each point is a flattened window and thus has as many features as sequence_length * features
         super().__init__()
         PyTorchUtils.__init__(self, seed, gpu)
+        self.hidden_size = hidden_size
         input_length = n_features * sequence_length
 
         # creates powers of two between eight and the next smaller power from the input_length
