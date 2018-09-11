@@ -11,7 +11,7 @@ class RecurrentEBM(Algorithm, TensorflowUtils):
     """
 
     def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100,
-                 min_lr=0.01, min_energy=None, batch_size=10,
+                 min_lr=1e-3, min_energy=None, batch_size=10,
                  seed: int=None, gpu: int=None):
         Algorithm.__init__(self, __name__, 'Recurrent EBM', seed)
         TensorflowUtils.__init__(self, seed, gpu)
