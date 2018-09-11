@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-    run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
+    run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment, \
+    run_multivariate_polluted_experiment
 from src.algorithms import AutoEncoder, DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED
 from src.datasets import KDDCup, SyntheticDataGenerator, RealPickledDataset
 from src.evaluation import Evaluator, Plotter
@@ -18,19 +19,15 @@ RUNS = 2 if os.environ.get('CIRCLECI', False) else 15
 
 
 def main():
-    run_pipeline()
     run_experiments()
-    # for ot in ['extreme_1', 'variance_1', 'shift_1', 'trend_1']:
-    #     run_final_missing_experiment(outlier_type=ot, runs=2)
-    # evaluate_real_datasets()
 
 
 def detectors(seed):
     if os.environ.get('CIRCLECI', False):
-        dets = [AutoEncoder(num_epochs=2, seed=seed), DAGMM(num_epochs=2, seed=seed),
-                DAGMM(num_epochs=2, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
-                Donut(num_epochs=5, seed=seed), LSTMAD(num_epochs=5, seed=seed), LSTMED(num_epochs=2, seed=seed),
-                RecurrentEBM(num_epochs=2, seed=seed)]
+        dets = [AutoEncoder(num_epochs=1, seed=seed), DAGMM(num_epochs=1, seed=seed),
+                DAGMM(num_epochs=1, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
+                Donut(num_epochs=1, seed=seed), LSTMAD(num_epochs=1, seed=seed), LSTMED(num_epochs=1, seed=seed),
+                RecurrentEBM(num_epochs=1, seed=seed)]
     else:
         dets = [AutoEncoder(num_epochs=40, seed=seed), DAGMM(sequence_length=15, seed=seed),
                 DAGMM(sequence_length=15, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
@@ -94,39 +91,15 @@ def run_pipeline():
 def run_experiments(steps=5):
     # Set the seed manually for reproducibility.
     seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
-
+    output_dir = 'reports/experiments'
     evaluators = []
-    for outlier_type in ['extreme_1', 'shift_1', 'variance_1', 'trend_1']:
-        output_dir = os.path.join('reports/experiments', outlier_type)
 
+    for outlier_type in ['extreme_1', 'shift_1', 'variance_1', 'trend_1']:
         announce_experiment('Outlier Height')
         ev_extr = run_extremes_experiment(
             detectors, seeds, RUNS, outlier_type, steps=10,
-            output_dir=os.path.join(output_dir, 'extremes'))
+            output_dir=os.path.join(output_dir, outlier_type, 'intensity'))
         evaluators.append(ev_extr)
-
-        # CI: Keep the execution fast so stop after one experiment
-        if os.environ.get('CIRCLECI', False):
-            ev_extr.plot_single_heatmap()
-            return
-
-        announce_experiment('Pollution')
-        ev_pol = run_pollution_experiment(
-            detectors, seeds, RUNS, outlier_type, steps=steps,
-            output_dir=os.path.join(output_dir, 'pollution'))
-        evaluators.append(ev_pol)
-
-        announce_experiment('Missing Values')
-        ev_mis = run_missing_experiment(
-            detectors, seeds, RUNS, outlier_type, steps=steps,
-            output_dir=os.path.join(output_dir, 'missing'))
-        evaluators.append(ev_mis)
-
-        announce_experiment('High-dimensional normal outliers')
-        ev_dim = run_multi_dim_experiment(
-            detectors, seeds, RUNS, outlier_type, steps=20,
-            output_dir=os.path.join(output_dir, 'multi_dim'))
-        evaluators.append(ev_dim)
 
     announce_experiment('Multivariate Datasets')
     ev_mv = run_multivariate_experiment(
@@ -134,11 +107,20 @@ def run_experiments(steps=5):
         output_dir=os.path.join(output_dir, 'multivariate'))
     evaluators.append(ev_mv)
 
-    announce_experiment('High-dimensional multivariate outliers')
-    ev_mv_dim = run_multi_dim_multivariate_experiment(
-        detectors, seeds, RUNS, steps=20,
-        output_dir=os.path.join(output_dir, 'multi_dim_mv'))
-    evaluators.append(ev_mv_dim)
+    for mv_anomaly in ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']:
+        announce_experiment(f'Multivariate Polluted {mv_anomaly} Datasets')
+        ev_mv = run_multivariate_polluted_experiment(
+            detectors, seeds, RUNS, mv_anomaly,
+            output_dir=os.path.join(output_dir, 'mv_polluted'))
+        evaluators.append(ev_mv)
+
+        announce_experiment(f'High-dimensional multivariate {mv_anomaly} outliers')
+        ev_mv_dim = run_multi_dim_multivariate_experiment(
+            detectors, seeds, RUNS, mv_anomaly, steps=20,
+            output_dir=os.path.join(output_dir, 'multi_dim_mv'))
+        evaluators.append(ev_mv_dim)
+
+    # TODO: Window-length experiment
 
     for ev in evaluators:
         ev.plot_single_heatmap()
