@@ -3,12 +3,10 @@ from agots.generators.behavior_generators import sine_generator
 
 from .synthetic_dataset import SyntheticDataset
 
-WINDOW_SIZE = 36
 
-
-def generate_timestamps(start, end, percentage):
-    windows = np.arange(start, end - WINDOW_SIZE, WINDOW_SIZE)
-    timestamps = [(w, w+WINDOW_SIZE) for w in np.random.choice(windows, int(percentage * len(windows)), replace=False)]
+def generate_timestamps(start, end, percentage, window_size=36):
+    windows = np.arange(start, end - window_size, window_size)
+    timestamps = [(w, w+window_size) for w in np.random.choice(windows, int(percentage * len(windows)), replace=False)]
     return timestamps
 
 
@@ -169,6 +167,21 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
+    def shift_1_temporal(seed, window_size, n=1, anomaly_percentage=0.2):
+        np.random.seed(seed)
+        dataset = SyntheticDataGenerator.shift_1(seed, n, anomaly_percentage=anomaly_percentage)
+
+        timestamps = generate_timestamps(0, int(dataset.train_split * dataset.length), anomaly_percentage, window_size)
+
+        dim = np.random.choice(n, len(timestamps))
+        outlier_config = {'shift':
+                          [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+        dataset.outlier_config = outlier_config
+
+        dataset.name = f'Syn Shift Outliers (win_size={window_size}, anom={anomaly_percentage}))'
+        return dataset
+
+    @staticmethod
     def variance_1(seed, n=1, k=1, anomaly_percentage=0.2):
         length = 3000
         train_split = 0.7
@@ -228,6 +241,21 @@ class SyntheticDataGenerator:
         return dataset
 
     @staticmethod
+    def variance_1_temporal(seed, window_size, n=1, anomaly_percentage=0.2):
+        np.random.seed(seed)
+        dataset = SyntheticDataGenerator.variance_1(seed, n, anomaly_percentage=anomaly_percentage)
+
+        timestamps = generate_timestamps(0, int(dataset.train_split * dataset.length), anomaly_percentage, window_size)
+
+        dim = np.random.choice(n, len(timestamps))
+        outlier_config = {'variance':
+                          [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+        dataset.outlier_config = outlier_config
+
+        dataset.name = f'Syn Variance Outliers (win_size={window_size}, anom={anomaly_percentage}))'
+        return dataset
+
+    @staticmethod
     def trend_1(seed, n=1, k=1, anomaly_percentage=0.2):
         length = 3000
         train_split = 0.7
@@ -282,6 +310,21 @@ class SyntheticDataGenerator:
         dataset.outlier_config['trend'][0]['factor'] = extreme_value
 
         dataset.name = f'Syn Trend Outliers (extremeness={extreme_value})'
+        return dataset
+
+    @staticmethod
+    def trend_1_temporal(seed, window_size, n=1, anomaly_percentage=0.2):
+        np.random.seed(seed)
+        dataset = SyntheticDataGenerator.trend_1(seed, n, anomaly_percentage=anomaly_percentage)
+
+        timestamps = generate_timestamps(0, int(dataset.train_split * dataset.length), anomaly_percentage, window_size)
+
+        dim = np.random.choice(n, len(timestamps))
+        outlier_config = {'trend':
+                          [{'n': i, 'timestamps': [ts for d, ts in zip(dim, timestamps) if d == i]} for i in range(n)]}
+        dataset.outlier_config = outlier_config
+
+        dataset.name = f'Syn Trend Outliers (win_size={window_size}, anom={anomaly_percentage}))'
         return dataset
 
     @staticmethod

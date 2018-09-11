@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 
 from experiments import run_pollution_experiment, run_missing_experiment, run_extremes_experiment, \
-    run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, announce_experiment
+    run_multivariate_experiment, run_multi_dim_experiment, run_multi_dim_multivariate_experiment, \
+    run_temporal_experiment, announce_experiment
 from src.algorithms import AutoEncoder, DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED
 from src.datasets import KDDCup, SyntheticDataGenerator, RealPickledDataset
 from src.evaluation import Evaluator, Plotter
@@ -127,6 +128,15 @@ def run_experiments(steps=5):
             detectors, seeds, RUNS, outlier_type, steps=20,
             output_dir=os.path.join(output_dir, 'multi_dim'))
         evaluators.append(ev_dim)
+
+        if outlier_type is 'extreme_1':
+            continue
+        else:
+            announce_experiment('Temporal')
+            ev_tmp = run_temporal_experiment(
+                detectors, seeds, RUNS, outlier_type, steps,
+                os.path.join(output_dir, 'temporal'))
+            evaluators.append(ev_tmp)
 
     announce_experiment('Multivariate Datasets')
     ev_mv = run_multivariate_experiment(
