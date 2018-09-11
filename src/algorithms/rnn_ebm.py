@@ -72,7 +72,7 @@ class RecurrentEBM(Algorithm, TensorflowUtils):
             for i in range(0, len(train_set), batch_size):
                 x = train_set[i:i + batch_size]
                 if len(x) == batch_size:
-                    alpha = min(self.min_lr, 0.1 / float(i + 1))
+                    alpha = self.min_lr  # min(self.min_lr, 0.1 / float(i + 1))
                     _, C = self.tf_session.run([self.update, self.cost],
                                                feed_dict={self.input_data: x, self.lr: alpha,
                                                           self._batch_size: batch_size})

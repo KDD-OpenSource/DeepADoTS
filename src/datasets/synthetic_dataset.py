@@ -43,6 +43,11 @@ class SyntheticDataset(Dataset):
         X_test = generator.add_outliers(self.outlier_config)[train_split_point:]
         y_test = self._label_outliers(self.label_config or self.outlier_config)[train_split_point:]
 
+        # Normalize
+        train_mean, train_std = np.mean(X_train, axis=0), np.std(X_train, axis=0)
+        X_train = (X_train - train_mean) / train_std
+        X_test = (X_test - train_mean) / train_std
+
         self._data = X_train, y_train, X_test, y_test
 
     def _label_outliers(self, config: dict) -> pd.Series:

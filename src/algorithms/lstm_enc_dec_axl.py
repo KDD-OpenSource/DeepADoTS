@@ -13,47 +13,44 @@ from .algorithm_utils import Algorithm, PyTorchUtils
 
 
 class LSTMED(Algorithm, PyTorchUtils):
-    def __init__(self, name: str='LSTM-ED', hidden_size: int=5, sequence_length: int=30, batch_size: int=20,
-                 num_epochs: int=10, n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
-                 lr: float=0.1, weight_decay: float=1e-4, seed: int=None, gpu: int=None):
-        Algorithm.__init__(self, __name__, name, seed=None)
+    def __init__(self, name: str='LSTM-ED', num_epochs: int=10, batch_size: int=20, lr: float=1e-3,
+                 hidden_size: int=5, sequence_length: int=30, train_gaussian_percentage: float=0.25,
+                 n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
+                 seed: int=None, gpu: int=None):
+        Algorithm.__init__(self, __name__, name, seed)
         PyTorchUtils.__init__(self, seed, gpu)
+        self.num_epochs = num_epochs
+        self.batch_size = batch_size
+        self.lr = lr
+
         self.hidden_size = hidden_size
         self.sequence_length = sequence_length
-        self.batch_size = batch_size
-        self.num_epochs = num_epochs
+        self.train_gaussian_percentage = train_gaussian_percentage
 
         self.n_layers = n_layers
         self.use_bias = use_bias
         self.dropout = dropout
 
-        self.lr = lr
-        self.weight_decay = weight_decay
-
         self.lstmed = None
-
-        self.mean = None
-        self.cov = None
+        self.mean, self.cov = None, None
 
     def fit(self, X: pd.DataFrame):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         data = X.values
-
         sequences = [data[i:i + self.sequence_length] for i in range(data.shape[0] - self.sequence_length + 1)]
         indices = np.random.permutation(len(sequences))
-        split_point = int(0.75 * len(sequences))  # magic number
-
+        split_point = int(self.train_gaussian_percentage * len(sequences))
         train_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, drop_last=True,
-                                  sampler=SubsetRandomSampler(indices[:split_point]), pin_memory=True)
+                                  sampler=SubsetRandomSampler(indices[:-split_point]), pin_memory=True)
         train_gaussian_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, drop_last=True,
-                                           sampler=SubsetRandomSampler(indices[split_point:]), pin_memory=True)
+                                           sampler=SubsetRandomSampler(indices[-split_point:]), pin_memory=True)
 
-        self.lstmed = LSTMEDModule(n_features=X.shape[1], hidden_size=self.hidden_size,
-                                   n_layers=self.n_layers, use_bias=self.use_bias, dropout=self.dropout,
+        self.lstmed = LSTMEDModule(X.shape[1], self.hidden_size,
+                                   self.n_layers, self.use_bias, self.dropout,
                                    seed=self.seed, gpu=self.gpu)
         self.to_device(self.lstmed)
-        optimizer = torch.optim.Adam(self.lstmed.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        optimizer = torch.optim.Adam(self.lstmed.parameters(), lr=self.lr)
 
         self.lstmed.train()
         for epoch in trange(self.num_epochs):
@@ -83,7 +80,7 @@ class LSTMED(Algorithm, PyTorchUtils):
         data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=False, drop_last=False)
 
         self.lstmed.eval()
-        mvnormal = multivariate_normal(mean=self.mean, cov=self.cov, allow_singular=True)
+        mvnormal = multivariate_normal(self.mean, self.cov, allow_singular=True)
         scores = []
         for idx, ts in enumerate(data_loader):
             output = self.lstmed(self.to_var(ts))
@@ -103,7 +100,8 @@ class LSTMED(Algorithm, PyTorchUtils):
 
 
 class LSTMEDModule(nn.Module, PyTorchUtils):
-    def __init__(self, n_features: int, hidden_size: int, n_layers: tuple, use_bias: tuple, dropout: tuple,
+    def __init__(self, n_features: int, hidden_size: int,
+                 n_layers: tuple, use_bias: tuple, dropout: tuple,
                  seed: int, gpu: int):
         super().__init__()
         PyTorchUtils.__init__(self, seed, gpu)
