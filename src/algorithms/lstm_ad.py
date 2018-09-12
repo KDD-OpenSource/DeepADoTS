@@ -84,12 +84,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
     def _input_and_target_data_eval(self, X: pd.DataFrame):
         X = np.expand_dims(X, axis=0)
         input_data = self.to_var(torch.from_numpy(X), requires_grad=False)
-        target_data = []
-        for l in range(self.len_out - 1):
-            target_data += [X[:, 1 + l:-self.len_out + 1 + l, :]]
-        target_data += [X[:, self.len_out:, :]]
-        target_data = self.to_var(torch.from_numpy(np.stack(target_data, axis=3)), requires_grad=False)
-
+        target_data = self.to_var(torch.from_numpy(X[:, self.len_in + self.len_out - 1:, :]), requires_grad=False)
         return input_data, target_data
 
     def _calc_errors(self, predictions, target_data):
@@ -97,7 +92,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
         for l in range(1, self.len_out):
             errors += [predictions.data.numpy()[:, self.len_in + self.len_out - 1 - l:-l, :, l]]
         errors = np.stack(errors, axis=3)
-        errors = target_data.data.numpy()[..., 0][..., np.newaxis] - errors
+        errors = target_data.data.numpy()[..., np.newaxis] - errors
         return errors
 
     def _build_model(self, d, batch_size):
