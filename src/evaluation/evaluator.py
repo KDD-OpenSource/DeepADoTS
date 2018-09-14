@@ -23,7 +23,7 @@ from .config import init_logging
 
 
 class Evaluator:
-    def __init__(self, datasets: list, detectors: callable, output_dir: {str}=None, seed: int=42,
+    def __init__(self, datasets: list, detectors: callable, output_dir: {str}=None, seed: int=None,
                  create_log_file=True):
         """
         :param datasets: list of datasets
@@ -44,7 +44,7 @@ class Evaluator:
 
     @property
     def detectors(self):
-        detectors = self._detectors()
+        detectors = self._detectors(self.seed)
         assert np.unique([x.name for x in detectors]).size == len(detectors), 'Some detectors have the same name!'
         return detectors
 
@@ -116,7 +116,7 @@ class Evaluator:
         maximum = np.nanmax(score)
         minimum = np.nanmin(score)
         threshold = np.linspace(minimum, maximum, steps)
-        metrics = list(self.get_metrics_by_thresholds(det, y_test, score, threshold))
+        metrics = list(self.get_metrics_by_thresholds(y_test, score, threshold))
         metrics = np.array(metrics).T
         anomalies, acc, prec, rec, f_score, f01_score = metrics
         if return_metrics:
@@ -130,10 +130,13 @@ class Evaluator:
             for det in progressbar.progressbar(self.detectors):
                 self.logger.info(f'Training {det.name} on {ds.name} with seed {self.seed}')
                 try:
-                    det.set_seed(self.seed)
-                    det.fit(X_train.copy(), y_train.copy())
+                    det.fit(X_train.copy())
                     score = det.predict(X_test.copy())
                     self.results[(ds.name, det.name)] = score
+                    try:
+                        self.plot_details(det, ds, score)
+                    except Exception:
+                        pass
                 except Exception as e:
                     self.logger.error(f'An exception occurred while training {det.name} on {ds}: {e}')
                     self.logger.error(traceback.format_exc())
@@ -146,7 +149,7 @@ class Evaluator:
             _, _, _, y_test = ds.data()
             for det in self.detectors:
                 score = self.results[(ds.name, det.name)]
-                y_pred = det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))
+                y_pred = self.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))
                 acc, prec, rec, f1_score, f01_score = self.get_accuracy_precision_recall_fscore(y_test, y_pred)
                 score = self.results[(ds.name, det.name)]
                 auroc = self.get_auroc(det, ds, score)
@@ -161,10 +164,9 @@ class Evaluator:
                                ignore_index=True)
         return df
 
-    @staticmethod
-    def get_metrics_by_thresholds(det, y_test: list, score: list, thresholds: list):
+    def get_metrics_by_thresholds(self, y_test: list, score: list, thresholds: list):
         for threshold in thresholds:
-            anomaly = det.binarize(score, threshold=threshold)
+            anomaly = self.binarize(score, threshold=threshold)
             metrics = Evaluator.get_accuracy_precision_recall_fscore(y_test, anomaly)
             yield (anomaly.sum(), *metrics)
 
@@ -204,7 +206,7 @@ class Evaluator:
                 sp = fig.add_subplot((2 * len(detectors) + 3), 1, subplot_num)
                 sp.set_title(f'binary labels of {det.name}', loc=subtitle_loc)
                 plt.plot(np.arange(len(score)),
-                         [x for x in det.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))])
+                         [x for x in self.binarize(score, self.get_optimal_threshold(det, y_test, np.array(score)))])
                 subplot_num += 1
             fig.subplots_adjust(top=0.9, hspace=0.4)
             fig.tight_layout()
@@ -298,6 +300,57 @@ class Evaluator:
         plt.tight_layout()
         if store:
             self.store(plt.gcf(), 'auroc', store_in_figures=True)
+
+    def plot_details(self, det, ds, score, store=True):
+        if not det.details:
+            return
+        plt.close('all')
+        cmap = plt.get_cmap('inferno')
+        _, _, X_test, y_test = ds.data()
+
+        grid = 0
+        for value in det.prediction_details.values():
+            grid += 1 if value.ndim == 1 else value.shape[0]
+        grid += X_test.shape[1]  # data
+        grid += 1 + 1  # score and gt
+
+        fig, axes = plt.subplots(grid, 1, figsize=(15, 1.5 * grid))
+
+        i = 0
+        c = cmap(i / grid)
+        axes[i].set_title('test data')
+        for col in X_test.values.T:
+            axes[i].plot(col, color=c)
+            i += 1
+        c = cmap(i / grid)
+
+        axes[i].set_title('test gt data')
+        axes[i].plot(y_test.values, color=c)
+        i += 1
+        c = cmap(i / grid)
+
+        axes[i].set_title('scores')
+        axes[i].plot(score, color=c)
+        i += 1
+        c = cmap(i / grid)
+
+        for key, values in det.prediction_details.items():
+            axes[i].set_title(key)
+            if values.ndim == 1:
+                axes[i].plot(values, color=c)
+                i += 1
+            elif values.ndim == 2:
+                for v in values:
+                    axes[i].plot(v, color=c)
+                    i += 1
+            else:
+                self.logger.warning('plot_details: not sure what to do')
+            c = cmap(i / grid)
+
+        fig.tight_layout()
+        if store:
+            self.store(fig, f'details_{det.name}_{ds.name}')
+        return fig
 
     # create boxplot diagrams for auc values for each algorithm/dataset per algorithm/dataset
     def create_boxplots(self, runs, data, detectorwise=True, store=True):
@@ -533,3 +586,11 @@ class Evaluator:
         self.gen_merged_latex_per_algorithm(std_results, f'std_{det_title_suffix}', store=store)
         self.print_merged_table_per_algorithm(avg_results_renamed)
         self.gen_merged_latex_per_algorithm(avg_results_renamed, f'avg_{det_title_suffix}', store=store)
+
+    def binarize(self, score, threshold=None):
+        threshold = threshold if threshold is not None else self.threshold(score)
+        score = np.where(np.isnan(score), np.nanmin(score) - sys.float_info.epsilon, score)
+        return np.where(score >= threshold, 1, 0)
+
+    def threshold(self, score):
+        return np.nanmean(score) + 2 * np.nanstd(score)

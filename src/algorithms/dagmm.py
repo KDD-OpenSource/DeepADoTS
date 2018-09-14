@@ -9,18 +9,144 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+from tqdm import trange
 
-from .algorithm import Algorithm
-from .dagmm_autoencoder import NNAutoEncoder
-from .cuda_utils import GPUWrapper
+from .algorithm_utils import Algorithm, PyTorchUtils
+from .autoencoder import AutoEncoderModule
+from .lstm_enc_dec_axl import LSTMEDModule
 
 
-class DAGMMModule(nn.Module, GPUWrapper):
+class DAGMM(Algorithm, PyTorchUtils):
+    class AutoEncoder:
+        NN = AutoEncoderModule
+        LSTM = LSTMEDModule
+
+    def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-2, batch_size=50, gmm_k=3,
+                 normal_percentile=80, sequence_length=15, autoencoder_type=AutoEncoderModule, autoencoder_args=None,
+                 seed: int=None, gpu: int=None, details=True):
+        _name = 'LSTM-DAGMM' if autoencoder_type == LSTMEDModule else 'DAGMM'
+        Algorithm.__init__(self, __name__, _name, seed, details=details)
+        PyTorchUtils.__init__(self, seed, gpu)
+        self.num_epochs = num_epochs
+        self.lambda_energy = lambda_energy
+        self.lambda_cov_diag = lambda_cov_diag
+        self.lr = lr
+        self.batch_size = batch_size
+        self.sequence_length = sequence_length
+        self.gmm_k = gmm_k  # Number of Gaussian mixtures
+        self.normal_percentile = normal_percentile  # Up to which percentile data should be considered normal
+        self.autoencoder_type = autoencoder_type
+        if autoencoder_type == AutoEncoderModule:
+            self.autoencoder_args = ({'sequence_length': self.sequence_length})
+        elif autoencoder_type == LSTMEDModule:
+            self.autoencoder_args = ({'n_layers': (3, 3), 'use_bias': (True, True), 'dropout': (0.3, 0.3)})
+        self.autoencoder_args.update({'seed': seed, 'gpu': gpu})
+        if autoencoder_args is not None:
+            self.autoencoder_args.update(autoencoder_args)
+
+        self.dagmm, self.optimizer, self.train_energy, self._threshold = None, None, None, None
+
+    def reset_grad(self):
+        self.dagmm.zero_grad()
+
+    def dagmm_step(self, input_data):
+        self.dagmm.train()
+        enc, dec, z, gamma = self.dagmm(input_data)
+        total_loss, sample_energy, recon_error, cov_diag = self.dagmm.loss_function(input_data, dec, z, gamma,
+                                                                                    self.lambda_energy,
+                                                                                    self.lambda_cov_diag)
+        self.reset_grad()
+        total_loss = torch.clamp(total_loss, max=1e7)  # Extremely high loss can cause NaN gradients
+        total_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.dagmm.parameters(), 5)
+        # if np.array([np.isnan(p.grad.detach().numpy()).any() for p in self.dagmm.parameters()]).any():
+        #     import IPython; IPython.embed()
+        self.optimizer.step()
+        return total_loss, sample_energy, recon_error, cov_diag
+
+    def fit(self, X: pd.DataFrame):
+        """Learn the mixture probability, mean and covariance for each component k.
+        Store the computed energy based on the training data and the aforementioned parameters."""
+        X.interpolate(inplace=True)
+        X.bfill(inplace=True)
+        data = X.values
+        sequences = [data[i:i + self.sequence_length] for i in range(X.shape[0] - self.sequence_length + 1)]
+        data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=True, drop_last=True)
+        hidden_size = int(np.ceil(X.shape[1] / 20))
+        autoencoder = self.autoencoder_type(n_features=X.shape[1], hidden_size=hidden_size, **self.autoencoder_args)
+        self.dagmm = DAGMMModule(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size + 2,
+                                 seed=self.seed, gpu=self.gpu)
+        self.to_device(self.dagmm)
+        self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
+
+        for _ in trange(self.num_epochs):
+            for input_data in data_loader:
+                input_data = self.to_var(input_data)
+                self.dagmm_step(input_data.float())
+
+        self.dagmm.eval()
+        n = 0
+        mu_sum = 0
+        cov_sum = 0
+        gamma_sum = 0
+        for input_data in data_loader:
+            input_data = self.to_var(input_data)
+            _, _, z, gamma = self.dagmm(input_data.float())
+            phi, mu, cov = self.dagmm.compute_gmm_params(z, gamma)
+
+            batch_gamma_sum = torch.sum(gamma, dim=0)
+
+            gamma_sum += batch_gamma_sum
+            mu_sum += mu * batch_gamma_sum.unsqueeze(-1)  # keep sums of the numerator only
+            cov_sum += cov * batch_gamma_sum.unsqueeze(-1).unsqueeze(-1)  # keep sums of the numerator only
+
+            n += input_data.size(0)
+
+    def predict(self, X: pd.DataFrame):
+        """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
+        given data."""
+        self.dagmm.eval()
+        X.interpolate(inplace=True)
+        X.bfill(inplace=True)
+        data = X.values
+        sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
+        data_loader = DataLoader(dataset=sequences, batch_size=1, shuffle=False)
+        test_energy = np.full((self.sequence_length, X.shape[0]), np.nan)
+
+        encodings = np.full((self.sequence_length, X.shape[0]), np.nan)
+        decodings = np.full((self.sequence_length, X.shape[0], X.shape[1]), np.nan)
+        euc_errors = np.full((self.sequence_length, X.shape[0]), np.nan)
+        csn_errors = np.full((self.sequence_length, X.shape[0]), np.nan)
+
+        for i, sequence in enumerate(data_loader):
+            enc, dec, z, gamma = self.dagmm(self.to_var(sequence).float())
+            sample_energy, _ = self.dagmm.compute_energy(z, size_average=False)
+            idx = (i % self.sequence_length, np.arange(i, i + self.sequence_length))
+            test_energy[idx] = sample_energy.data.numpy()
+
+            if self.details:
+                encodings[idx] = enc.data.numpy()
+                decodings[idx] = dec.data.numpy()
+                euc_errors[idx] = z[:, 1].data.numpy()
+                csn_errors[idx] = z[:, 2].data.numpy()
+
+        test_energy = np.nanmean(test_energy, axis=0)
+
+        if self.details:
+            self.prediction_details.update({'latent_representations': np.nanmean(encodings, axis=0)})
+            self.prediction_details.update({'reconstructions_mean': np.nanmean(decodings, axis=0).T})
+            self.prediction_details.update({'euclidean_errors_mean': np.nanmean(euc_errors, axis=0)})
+            self.prediction_details.update({'cosine_errors_mean': np.nanmean(csn_errors, axis=0)})
+
+        return test_energy
+
+
+class DAGMMModule(nn.Module, PyTorchUtils):
     """Residual Block."""
 
-    def __init__(self, autoencoder, n_gmm=2, latent_dim=3, gpu=0):
+    def __init__(self, autoencoder, n_gmm, latent_dim, seed: int, gpu: int):
         super(DAGMMModule, self).__init__()
-        GPUWrapper.__init__(self, gpu)
+        PyTorchUtils.__init__(self, seed, gpu)
 
         self.add_module('autoencoder', autoencoder)
 
@@ -42,7 +168,7 @@ class DAGMMModule(nn.Module, GPUWrapper):
         return (a - b).norm(2, dim=dim) / torch.clamp(a.norm(2, dim=dim), min=1e-10)
 
     def forward(self, x):
-        dec, enc = self.autoencoder(x)
+        dec, enc = self.autoencoder(x, return_latent=True)
 
         rec_cosine = F.cosine_similarity(x.view(x.shape[0], -1), dec.view(dec.shape[0], -1), dim=1)
         rec_euclidean = self.relative_euclidean_distance(x.view(x.shape[0], -1), dec.view(dec.shape[0], -1), dim=1)
@@ -139,113 +265,3 @@ class DAGMMModule(nn.Module, GPUWrapper):
         sample_energy, cov_diag = self.compute_energy(z, phi, mu, cov)
         loss = recon_error + lambda_energy * sample_energy + lambda_cov_diag * cov_diag
         return loss, sample_energy, recon_error, cov_diag
-
-
-class DAGMM(Algorithm, GPUWrapper):
-    def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-2, batch_size=50, gmm_k=3,
-                 normal_percentile=80, sequence_length=15, autoencoder_type=NNAutoEncoder, autoencoder_args=None,
-                 framework=Algorithm.Frameworks.PyTorch, gpu: int=0):
-        window_name = 'W' if sequence_length > 1 else 'N'
-        _autoencoder_name = "N" if autoencoder_type == NNAutoEncoder else "L"
-        Algorithm.__init__(self, __name__, f'DAGMM-{_autoencoder_name}{window_name}', framework)
-        GPUWrapper.__init__(self, gpu)
-        self.num_epochs = num_epochs
-        self.lambda_energy = lambda_energy
-        self.lambda_cov_diag = lambda_cov_diag
-        self.lr = lr
-        self.batch_size = batch_size
-        self.sequence_length = sequence_length
-        self.gmm_k = gmm_k  # Number of Gaussian mixtures
-        self.normal_percentile = normal_percentile  # Up to which percentile data should be considered normal
-        self.autoencoder_type = autoencoder_type
-        self.autoencoder_args = autoencoder_args or {'gpu': gpu}
-
-        self.dagmm, self.optimizer, self.train_energy, self._threshold = None, None, None, None
-
-    def reset_grad(self):
-        self.dagmm.zero_grad()
-
-    def dagmm_step(self, input_data):
-        self.dagmm.train()
-        enc, dec, z, gamma = self.dagmm(input_data)
-        total_loss, sample_energy, recon_error, cov_diag = self.dagmm.loss_function(input_data, dec, z, gamma,
-                                                                                    self.lambda_energy,
-                                                                                    self.lambda_cov_diag)
-        self.reset_grad()
-        total_loss = torch.clamp(total_loss, max=1e7)  # Extremely high loss can cause NaN gradients
-        total_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.dagmm.parameters(), 5)
-        # if np.array([np.isnan(p.grad.detach().numpy()).any() for p in self.dagmm.parameters()]).any():
-        #     import IPython; IPython.embed()
-        self.optimizer.step()
-        return total_loss, sample_energy, recon_error, cov_diag
-
-    def fit(self, X: pd.DataFrame, _):
-        """Learn the mixture probability, mean and covariance for each component k.
-        Store the computed energy based on the training data and the aforementioned parameters."""
-        X.interpolate(inplace=True)
-        X.bfill(inplace=True)
-        data = X.values
-        sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
-        data_loader = DataLoader(dataset=sequences, batch_size=self.batch_size, shuffle=True, drop_last=True)
-        hidden_size = max(1, X.shape[1] // 20)
-        autoencoder = self.autoencoder_type(n_features=X.shape[1], sequence_length=self.sequence_length,
-                                            hidden_size=hidden_size, **self.autoencoder_args)
-        self.dagmm = DAGMMModule(autoencoder, n_gmm=self.gmm_k, latent_dim=hidden_size + 2, gpu=self.gpu)
-        self.to_device(self.dagmm)
-        self.optimizer = torch.optim.Adam(self.dagmm.parameters(), lr=self.lr)
-
-        for _ in range(self.num_epochs):
-            for input_data in data_loader:
-                input_data = self.to_var(input_data)
-                self.dagmm_step(input_data.float())
-
-        self.dagmm.eval()
-        n = 0
-        mu_sum = 0
-        cov_sum = 0
-        gamma_sum = 0
-        for input_data in data_loader:
-            input_data = self.to_var(input_data)
-            _, _, z, gamma = self.dagmm(input_data.float())
-            phi, mu, cov = self.dagmm.compute_gmm_params(z, gamma)
-
-            batch_gamma_sum = torch.sum(gamma, dim=0)
-
-            gamma_sum += batch_gamma_sum
-            mu_sum += mu * batch_gamma_sum.unsqueeze(-1)  # keep sums of the numerator only
-            cov_sum += cov * batch_gamma_sum.unsqueeze(-1).unsqueeze(-1)  # keep sums of the numerator only
-
-            n += input_data.size(0)
-
-    def predict(self, X: pd.DataFrame):
-        """Using the learned mixture probability, mean and covariance for each component k, compute the energy on the
-        given data."""
-        self.dagmm.eval()
-        X.interpolate(inplace=True)
-        X.bfill(inplace=True)
-        data = X.values
-        sequences = [data[i:i + self.sequence_length] for i in range(len(data) - self.sequence_length + 1)]
-        data_loader = DataLoader(dataset=sequences, batch_size=1, shuffle=False)
-        test_energy = np.full((self.sequence_length, len(data)), np.nan)
-
-        for idx, sequence in enumerate(data_loader):
-            _, _, z, _ = self.dagmm(self.to_var(sequence).float())
-            sample_energy, _ = self.dagmm.compute_energy(z, size_average=False)
-            window_elements = np.arange(idx, idx + self.sequence_length, 1)
-            test_energy[idx % self.sequence_length, window_elements] = sample_energy.data.cpu().numpy()
-
-        test_energy = np.nanmean(test_energy, axis=0)
-        return test_energy
-
-    def binarize(self, score, threshold=None):
-        if threshold is None:
-            threshold = self.threshold(score)
-        return np.where(score >= threshold, 1, 0)
-
-    def threshold(self, score):
-        return np.nanmean(score) + np.nanstd(score)
-
-    def set_seed(self, seed):
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)

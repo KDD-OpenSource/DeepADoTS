@@ -44,15 +44,37 @@ def run_multivariate_experiment(detectors, seeds, runs, output_dir=None, store_r
     return run_experiment_evaluation(detectors, seeds, runs, output_dir, 'multivariate', store_results=store_results)
 
 
-def run_multi_dim_multivariate_experiment(detectors, seeds, runs, output_dir=None, steps=2, store_results=True):
+def run_multivariate_polluted_experiment(detectors, seeds, runs, outlier_type, output_dir=None, store_results=True):
+    return run_experiment_evaluation(detectors, seeds, runs, output_dir, 'mv_polluted',
+                                     outlier_type=outlier_type, store_results=store_results)
+
+
+def run_multi_dim_multivariate_experiment(detectors, seeds, runs, outlier_type, output_dir=None,
+                                          steps=2, store_results=True):
     return run_experiment_evaluation(detectors, seeds, runs, output_dir, 'multi_dim_multivariate',
-                                     steps, store_results=store_results)
+                                     steps, outlier_type=outlier_type, store_results=store_results)
+
+
+def run_different_window_sizes_evaluator(detectors, seeds, runs):
+    results = pd.DataFrame()
+    for seed in seeds:
+        datasets = [SyntheticDataGenerator.long_term_dependencies_width(seed),
+                    SyntheticDataGenerator.long_term_dependencies_height(seed),
+                    SyntheticDataGenerator.long_term_dependencies_missing(seed)]
+        evaluator = Evaluator(datasets, detectors, seed=seed)
+        evaluator.evaluate()
+        evaluator.plot_scores()
+        result = evaluator.benchmarks()
+        results = results.append(result, ignore_index=True)
+    evaluator.set_benchmark_results(results)
+    evaluator.export_results('run_different_windows')
+    evaluator.create_boxplots(runs=runs, data=results, detectorwise=False)
+    evaluator.create_boxplots(runs=runs, data=results, detectorwise=True)
+    return evaluator
 
 
 # outlier type means agots types for the univariate experiments, the multivariate types for the multivariate experiments
 def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
-    multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
-
     for seed in seeds:
         if anomaly_type == 'extreme':
             yield [SyntheticDataGenerator.get(f'{outlier_type}_extremeness', seed, extreme)
@@ -63,18 +85,23 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
         elif anomaly_type == 'polluted':
             yield [SyntheticDataGenerator.get(f'{outlier_type}_polluted', seed, pollution_percentage=pollution)
                    for pollution in [0.01, 0.05, 0.1, 0.2, 0.5]]
+        elif anomaly_type == 'mv_polluted':
+            yield [MultivariateAnomalyFunction.get_multivariate_dataset(
+                        outlier_type, random_seed=seed, train_pollution=pollution)
+                   for pollution in [0.01, 0.05, 0.1, 0.2, 0.5]]
         elif anomaly_type == 'multivariate':
+            multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(dim_func, random_seed=seed)
                    for dim_func in multivariate_anomaly_functions]
         elif anomaly_type == 'multi_dim_multivariate':
             group_sizes = [None, 20]
             num_dims = [250, 500, 1000, 1500]
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(
-                        mv_outlier_type, random_seed=seed, features=dim, group_size=gsize,
+                        outlier_type, random_seed=seed, features=dim, group_size=gsize,
                         name=f'Synthetic Multivariate {dim}-dimensional {outlier_type} '
                         f'Curve Outliers with {gsize or dim} per group'
                     )
-                   for dim, mv_outlier_type, gsize in product(num_dims, multivariate_anomaly_functions, group_sizes)]
+                   for dim, gsize in product(num_dims, group_sizes)]
         elif anomaly_type == 'multi_dim':
             yield [SyntheticDataGenerator.get(f'{outlier_type}', seed, num_dim)
                    for num_dim in np.linspace(100, 1500, steps, dtype=int)]

@@ -3,12 +3,13 @@ import pandas as pd
 import torch
 from scipy.stats import multivariate_normal
 from torch.autograd import Variable
+from tqdm import trange
 
-from .algorithm import Algorithm
-from .cuda_utils import GPUWrapper
+from .algorithm_utils import Algorithm, PyTorchUtils
 
 
 class LSTMSequence(torch.nn.Module):
+    # ToDo: cuda support
     def __init__(self, d, batch_size: int, len_in=1, len_out=10):
         super().__init__()
         self.d = d  # input and output feature dimensionality
@@ -43,28 +44,25 @@ class LSTMSequence(torch.nn.Module):
         return outputs.view(input.size(0), input.size(1), self.d, self.len_out)
 
 
-class LSTMAD(Algorithm, GPUWrapper):
+class LSTMAD(Algorithm, PyTorchUtils):
     """ LSTM-AD implementation using PyTorch.
     The interface of the class is sklearn-like.
     """
 
-    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1, optimizer=torch.optim.Rprop,
-                 framework=Algorithm.Frameworks.PyTorch, gpu: int=0):
-        Algorithm.__init__(self, __name__, 'LSTM-AD', framework)
-        GPUWrapper.__init__(self, gpu)
-        self.len_in = len_in
-        self.len_out = len_out
-
+    def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=0.01, batch_size=1,
+                 seed: int=None, gpu: int=None, details=True):
+        Algorithm.__init__(self, __name__, 'LSTM-AD', seed, details=details)
+        PyTorchUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
         self.lr = lr
         self.batch_size = batch_size
 
-        self.optimizer_type = optimizer
+        self.len_in = len_in
+        self.len_out = len_out
 
-        self.mean = None
-        self.cov = None
+        self.mean, self.cov = None, None
 
-    def fit(self, X, _):
+    def fit(self, X):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         self.batch_size = 1
@@ -97,6 +95,12 @@ class LSTMAD(Algorithm, GPUWrapper):
         predictions = self.model(input_data)
         errors = self._calc_errors(predictions, target_data)
 
+        if self.details:
+            self.prediction_details.update({'predictions_mean': predictions.mean(dim=3).squeeze(0).data.numpy().T})
+            self.prediction_details.update({'errors_mean': np.pad(
+                errors.mean(axis=3).reshape(-1), (self.len_in + self.len_out - 1, self.len_out - 1),
+                'constant', constant_values=np.nan)})
+
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
         scores = -multivariate_normal.logpdf(norm, mean=self.mean, cov=self.cov, allow_singular=True)
         scores = np.pad(scores, (self.len_in + self.len_out - 1, self.len_out - 1), 'constant', constant_values=np.nan)
@@ -127,13 +131,13 @@ class LSTMAD(Algorithm, GPUWrapper):
         self.model.double()
 
         self.loss = torch.nn.MSELoss()
-        self.optimizer = self.optimizer_type(self.model.parameters(), lr=self.lr)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
     def _train_model(self, input_data, target_data):
         def closure():
             return self._train(input_data, target_data)
 
-        for epoch in range(self.num_epochs):
+        for epoch in trange(self.num_epochs):
             self.optimizer.step(closure)
 
     def _train(self, input_data, target_data):
@@ -142,18 +146,3 @@ class LSTMAD(Algorithm, GPUWrapper):
         loss_train = self.loss(output_data, target_data)
         loss_train.backward()
         return loss_train
-
-    def binarize(self, score, threshold=None):
-        if threshold:
-            threshold = threshold
-        else:
-            threshold = self.threshold(score)
-        score = np.where(np.isnan(score), threshold - 1, score)
-        return np.where(score >= threshold, 1, 0)
-
-    def threshold(self, score):
-        return np.nanmean(score) + 1.5 * np.nanstd(score)
-
-    def set_seed(self, seed):
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
