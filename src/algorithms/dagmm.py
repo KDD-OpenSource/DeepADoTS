@@ -22,7 +22,7 @@ class DAGMM(Algorithm, PyTorchUtils):
         LSTM = LSTMEDModule
 
     def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-3, batch_size=50, gmm_k=3,
-                 normal_percentile=80, sequence_length=15, autoencoder_type=AutoEncoderModule, autoencoder_args=None,
+                 normal_percentile=80, sequence_length=30, autoencoder_type=AutoEncoderModule, autoencoder_args=None,
                  hidden_size: int=5, seed: int=None, gpu: int=None, details=True):
         _name = 'LSTM-DAGMM' if autoencoder_type == LSTMEDModule else 'DAGMM'
         Algorithm.__init__(self, __name__, _name, seed, details=details)
@@ -39,7 +39,7 @@ class DAGMM(Algorithm, PyTorchUtils):
         if autoencoder_type == AutoEncoderModule:
             self.autoencoder_args = ({'sequence_length': self.sequence_length})
         elif autoencoder_type == LSTMEDModule:
-            self.autoencoder_args = ({'n_layers': (3, 3), 'use_bias': (True, True), 'dropout': (0.3, 0.3)})
+            self.autoencoder_args = ({'n_layers': (1, 1), 'use_bias': (True, True), 'dropout': (0.0, 0.0)})
         self.autoencoder_args.update({'seed': seed, 'gpu': gpu})
         if autoencoder_args is not None:
             self.autoencoder_args.update(autoencoder_args)
