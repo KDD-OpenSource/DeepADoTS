@@ -88,9 +88,9 @@ class LSTMAD(Algorithm, PyTorchUtils):
         return input_data, target_data
 
     def _calc_errors(self, predictions, target_data):
-        errors = [predictions.data.numpy()[:, self.len_in + self.len_out - 1:, :, 0]]
+        errors = [predictions.data.numpy()[:, self.len_out - 1:-self.len_in, :, 0]]
         for l in range(1, self.len_out):
-            errors += [predictions.data.numpy()[:, self.len_in + self.len_out - 1 - l:-l, :, l]]
+            errors += [predictions.data.numpy()[:, self.len_out - 1 - l:-self.len_in-l, :, l]]
         errors = np.stack(errors, axis=3)
         errors = target_data.data.numpy()[..., np.newaxis] - errors
         return errors

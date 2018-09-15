@@ -26,7 +26,7 @@ class LongTermDependencyDataset(Dataset):
         self.n = n
         self.hill_mask = np.tile([0, 1], n)
         self.length_mask = np.tile([40, 20], n)
-        self.height_mask = np.tile([0, 1], n)
+        self.height_mask = np.tile([0, 1.], n)
         self.y = np.zeros(len(self.hill_mask))  # All hills are normal by default
         self.length = sum(self.length_mask)
         self.gaussian_std = gaussian_std
