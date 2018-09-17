@@ -1,5 +1,5 @@
 
-# Anomaly Detection on Time Series: An Evaluation of Deep Learning Methods. [![CircleCI](https://circleci.com/gh/KDD-OpenSource/MP-2018/tree/master.svg?style=svg&circle-token=2f20af2255f5f2d1ca22193c1b896d1c97b270d3)](https://circleci.com/gh/KDD-OpenSource/MP-2018/tree/master)
+# Anomaly Detection on Time Series: An Evaluation of Deep Learning Methods. [![CircleCI](https://circleci.com/gh/KDD-OpenSource/DeepADoTS/tree/master.svg?style=svg&circle-token=2f20af2255f5f2d1ca22193c1b896d1c97b270d3)](https://circleci.com/gh/KDD-OpenSource/DeepADoTS/tree/master)
 
 The goal of this repository is to provide a benchmarking pipeline for anomaly detection on time series data for multiple state-of-the-art deep learning methods.
 
@@ -46,7 +46,7 @@ Extension of Dagmm using an LSTM-Autoencoder instead of a Neural Network Autoenc
 ## Installation
 
 ```bash
-git clone --recurse-submodules -j8 git://github.com/KDD-OpenSource/<this-repo>.git  
+git clone --recurse-submodules -j8 git://github.com/KDD-OpenSource/DeepADoTS.git  
 virtualenv venv -p /usr/bin/python3  
 source venv/bin/activate  
 pip install -r requirements.txt
@@ -68,6 +68,6 @@ python3 main.py
 
 
 ## Credits
-[Base implementation for DAGMM](https://github.com/danieltan07/dagmm)
-[Base implementation for Donut](https://github.com/haowen-xu/donut)
-[Base implementation for Recurrent EBM](https://github.com/dshieble/Music_RNN_RBM)
+[Base implementation for DAGMM](https://github.com/danieltan07/dagmm)  
+[Base implementation for Donut](https://github.com/haowen-xu/donut)  
+[Base implementation for Recurrent EBM](https://github.com/dshieble/Music_RNN_RBM)  
