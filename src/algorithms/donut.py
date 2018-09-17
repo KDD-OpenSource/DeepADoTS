@@ -187,7 +187,7 @@ class Donut(Algorithm, TensorflowUtils):
 
                 trainer = QuietDonutTrainer(model=model, model_vs=model_vs, max_epoch=self.max_epoch,
                                             batch_size=self.batch_size, valid_batch_size=self.batch_size,
-                                            missing_data_injection_rate=0.0)
+                                            missing_data_injection_rate=0.0, lr_anneal_factor=1.0)
                 with tf_session.as_default():
                     trainer.fit(features, labels, missing, mean, std, valid_portion=0.25)
                 self.means.append(mean)

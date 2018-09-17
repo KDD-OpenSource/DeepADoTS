@@ -165,4 +165,4 @@ class LSTMEDModule(nn.Module, PyTorchUtils):
             else:
                 _, dec_hidden = self.decoder(output[:, i].unsqueeze(1), dec_hidden)
 
-        return (output, enc_hidden[0][-1]) if return_latent else output
+        return (output, enc_hidden[1][-1]) if return_latent else output

@@ -57,12 +57,14 @@ class LSTMAD(Algorithm, PyTorchUtils):
         input_data, target_data = self._input_and_target_data_eval(X)
 
         predictions = self.model(input_data)
-        errors = self._calc_errors(predictions, target_data)
+        errors, stacked_preds = self._calc_errors(predictions, target_data, return_stacked_predictions=True)
 
         if self.details:
-            self.prediction_details.update({'predictions_mean': predictions.mean(dim=3).squeeze(0).data.numpy().T})
+            self.prediction_details.update({'predictions_mean': np.pad(
+                stacked_preds.mean(axis=3).squeeze(0).T, ((0, 0), (self.len_in + self.len_out - 1, 0)),
+                'constant', constant_values=np.nan)})
             self.prediction_details.update({'errors_mean': np.pad(
-                errors.mean(axis=3).reshape(-1), (self.len_in + self.len_out - 1, self.len_out - 1),
+                errors.mean(axis=3).reshape(-1), (self.len_in + self.len_out - 1, 0),
                 'constant', constant_values=np.nan)})
 
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
@@ -87,13 +89,14 @@ class LSTMAD(Algorithm, PyTorchUtils):
         target_data = self.to_var(torch.from_numpy(X[:, self.len_in + self.len_out - 1:, :]), requires_grad=False)
         return input_data, target_data
 
-    def _calc_errors(self, predictions, target_data):
-        errors = [predictions.data.numpy()[:, self.len_in + self.len_out - 1:, :, 0]]
+    def _calc_errors(self, predictions, target_data, return_stacked_predictions=False):
+        errors = [predictions.data.numpy()[:, self.len_out - 1:-self.len_in, :, 0]]
         for l in range(1, self.len_out):
-            errors += [predictions.data.numpy()[:, self.len_in + self.len_out - 1 - l:-l, :, l]]
+            errors += [predictions.data.numpy()[:, self.len_out - 1 - l:-self.len_in-l, :, l]]
         errors = np.stack(errors, axis=3)
+        stacked_predictions = errors
         errors = target_data.data.numpy()[..., np.newaxis] - errors
-        return errors
+        return errors if return_stacked_predictions is False else (errors, stacked_predictions)
 
     def _build_model(self, d, batch_size):
         self.model = LSTMSequence(d, batch_size, len_in=self.len_in, len_out=self.len_out)
