@@ -41,7 +41,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
         self._train_model(input_data_train, target_data_train)
 
         self.model.eval()
-        input_data_gaussian, target_data_gaussian = self._input_and_target_data(X_train_gaussian)
+        input_data_gaussian, target_data_gaussian = self._input_and_target_data_eval(X_train_gaussian)
         predictions_gaussian = self.model(input_data_gaussian)
         errors = self._calc_errors(predictions_gaussian, target_data_gaussian)
 
@@ -54,7 +54,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
         X.interpolate(inplace=True)
         X.bfill(inplace=True)
         self.model.eval()
-        input_data, target_data = self._input_and_target_data(X)
+        input_data, target_data = self._input_and_target_data_eval(X)
 
         predictions = self.model(input_data)
         errors = self._calc_errors(predictions, target_data)
@@ -67,7 +67,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
 
         norm = errors.reshape(errors.shape[0] * errors.shape[1], X.shape[-1] * self.len_out)
         scores = -multivariate_normal.logpdf(norm, mean=self.mean, cov=self.cov, allow_singular=True)
-        scores = np.pad(scores, (self.len_in + self.len_out - 1, self.len_out - 1), 'constant', constant_values=np.nan)
+        scores = np.pad(scores, (self.len_in + self.len_out - 1, 0), 'constant', constant_values=np.nan)
         return scores
 
     def _input_and_target_data(self, X: pd.DataFrame):
@@ -81,12 +81,18 @@ class LSTMAD(Algorithm, PyTorchUtils):
 
         return input_data, target_data
 
+    def _input_and_target_data_eval(self, X: pd.DataFrame):
+        X = np.expand_dims(X, axis=0)
+        input_data = self.to_var(torch.from_numpy(X), requires_grad=False)
+        target_data = self.to_var(torch.from_numpy(X[:, self.len_in + self.len_out - 1:, :]), requires_grad=False)
+        return input_data, target_data
+
     def _calc_errors(self, predictions, target_data):
-        errors = [predictions.data.cpu().numpy()[:, self.len_out - 1:, :, 0]]
+        errors = [predictions.data.numpy()[:, self.len_in + self.len_out - 1:, :, 0]]
         for l in range(1, self.len_out):
-            errors += [predictions.data.cpu().numpy()[:, self.len_out - 1 - l:-l, :, l]]
+            errors += [predictions.data.numpy()[:, self.len_in + self.len_out - 1 - l:-l, :, l]]
         errors = np.stack(errors, axis=3)
-        errors = target_data.data.cpu().numpy()[:, self.len_out - 1:, :, 0][..., np.newaxis] - errors
+        errors = target_data.data.numpy()[..., np.newaxis] - errors
         return errors
 
     def _build_model(self, d, batch_size):
