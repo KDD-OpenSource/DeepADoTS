@@ -114,7 +114,6 @@ class AutoEncoderModule(nn.Module, PyTorchUtils):
         # Each point is a flattened window and thus has as many features as sequence_length * features
         super().__init__()
         PyTorchUtils.__init__(self, seed, gpu)
-        self.hidden_size = hidden_size
         input_length = n_features * sequence_length
 
         # creates powers of two between eight and the next smaller power from the input_length
