@@ -12,10 +12,7 @@ from src.algorithms import AutoEncoder, DAGMM, Donut, RecurrentEBM, LSTMAD, LSTM
 from src.datasets import KDDCup, SyntheticDataGenerator, RealPickledDataset
 from src.evaluation import Evaluator, Plotter
 
-# Add this line if you want to test the pipeline & experiments
-# os.environ['CIRCLECI'] = 'True'
-
-RUNS = 2 if os.environ.get('CIRCLECI', False) else 1
+RUNS = 1
 
 
 def main():
@@ -131,20 +128,6 @@ def run_experiments():
 
     for ev in evaluators:
         ev.plot_single_heatmap()
-
-
-def run_final_missing_experiment(outlier_type='extreme_1', runs=25, steps=5):
-    only_load = len(sys.argv) > 1 and sys.argv[1] == 'load'
-    output_dir = os.path.join('reports/experiments', outlier_type)
-    if len(sys.argv) > 2:
-        output_dir = os.path.join('reports', sys.argv[2], outlier_type)
-    seeds = np.random.randint(np.iinfo(np.uint32).max, size=runs, dtype=np.uint32)
-    if not only_load:
-        run_missing_experiment(
-            detectors, seeds, RUNS, outlier_type, steps=steps,
-            output_dir=output_dir, store_results=False)
-    plotter = Plotter('reports', output_dir)
-    plotter.barplots(f'missing on {outlier_type}')
 
 
 def evaluate_real_datasets():
