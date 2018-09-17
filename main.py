@@ -35,6 +35,7 @@ def detectors(seed):
                 LSTMAD(num_epochs=standard_epochs, seed=seed),
                 LSTMED(num_epochs=standard_epochs, seed=seed),
                 RecurrentEBM(num_epochs=standard_epochs, seed=seed)]
+
     return sorted(dets, key=lambda x: x.framework)
 
 

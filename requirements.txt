@@ -1,5 +1,5 @@
 # Data Generator
--e git+https://github.com/WGierke/agots#egg=agots
+-e git+https://github.com/KDD-OpenSource/agots#egg=agots
 
 # Requirements for donut (https://github.com/korepwx/donut)
 git+https://github.com/thu-ml/zhusuan.git
