@@ -6,8 +6,8 @@ import pandas as pd
 
 from experiments import run_extremes_experiment, run_multivariate_experiment, run_multi_dim_multivariate_experiment,\
     announce_experiment, run_multivariate_polluted_experiment, run_different_window_sizes_evaluator
-from src.algorithms import AutoEncoder, DAGMM, Donut, RecurrentEBM, LSTMAD, LSTMED
-from src.datasets import KDDCup, SyntheticDataGenerator, RealPickledDataset
+from src.algorithms import AutoEncoder, DAGMM, RecurrentEBM, LSTMAD, LSTMED
+from src.datasets import KDDCup, RealPickledDataset
 from src.evaluation import Evaluator
 
 RUNS = 1
@@ -21,72 +21,17 @@ def detectors(seed):
     if os.environ.get('CIRCLECI', False):
         dets = [AutoEncoder(num_epochs=1, seed=seed), DAGMM(num_epochs=1, seed=seed),
                 DAGMM(num_epochs=1, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
-                Donut(num_epochs=1, seed=seed), LSTMAD(num_epochs=1, seed=seed), LSTMED(num_epochs=1, seed=seed),
+                LSTMAD(num_epochs=1, seed=seed), LSTMED(num_epochs=1, seed=seed),
                 RecurrentEBM(num_epochs=1, seed=seed)]
     else:
         standard_epochs = 40
         dets = [AutoEncoder(num_epochs=standard_epochs, seed=seed),
                 DAGMM(num_epochs=standard_epochs, seed=seed, lr=1e-4),
-                DAGMM(num_epochs=standard_epochs, autoencoder_type=DAGMM.AutoEncoder.LSTM,
-                      seed=seed),
-                Donut(num_epochs=standard_epochs, seed=seed),
-                LSTMAD(num_epochs=standard_epochs, seed=seed),
-                LSTMED(num_epochs=standard_epochs, seed=seed),
+                DAGMM(num_epochs=standard_epochs, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
+                LSTMAD(num_epochs=standard_epochs, seed=seed), LSTMED(num_epochs=standard_epochs, seed=seed),
                 RecurrentEBM(num_epochs=standard_epochs, seed=seed)]
 
     return sorted(dets, key=lambda x: x.framework)
-
-
-def pipeline_datasets(seed):
-    if os.environ.get('CIRCLECI', False):
-        return [SyntheticDataGenerator.extreme_1(seed)]
-    else:
-        return [
-            SyntheticDataGenerator.extreme_1(seed),
-            SyntheticDataGenerator.variance_1(seed),
-            SyntheticDataGenerator.shift_1(seed),
-            SyntheticDataGenerator.trend_1(seed),
-            SyntheticDataGenerator.combined_1(seed),
-            SyntheticDataGenerator.combined_4(seed),
-        ]
-
-
-def run_pipeline():
-    # Perform multiple pipeline runs for more robust end results.
-    # Set the seed manually for reproducibility.
-    seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
-    results = pd.DataFrame()
-    evaluator = None
-
-    # Use same datasets for all CI runs (saves execution time)
-    datasets = pipeline_datasets(42) if os.environ.get('CIRCLECI', False) else None
-
-    for seed in seeds:
-        datasets = datasets if datasets is not None else pipeline_datasets(seed)
-        evaluator = Evaluator(datasets, detectors, seed=seed)
-        evaluator.evaluate()
-        result = evaluator.benchmarks()
-        results = results.append(result, ignore_index=True)
-
-        # Plots for each (det, ds, seed)
-        evaluator.plot_roc_curves()
-        evaluator.plot_scores()
-        evaluator.plot_threshold_comparison()
-
-    # Plots which need the whole data (not averaged)
-    evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=False)
-    evaluator.create_boxplots(runs=RUNS, data=results, detectorwise=True)
-    evaluator.gen_merged_tables(results)
-
-    # Set average results from multiple pipeline runs for evaluation
-    avg_results = results.groupby(['dataset', 'algorithm'], as_index=False).mean()
-    evaluator.benchmark_results = avg_results
-    evaluator.export_results('run-pipeline')
-
-    # Plots using 'self.benchmark_results' (averaged)
-    evaluator.plot_single_heatmap()
-    evaluator.create_bar_charts(runs=RUNS, detectorwise=False)
-    evaluator.create_bar_charts(runs=RUNS, detectorwise=True)
 
 
 def run_experiments():
@@ -94,13 +39,18 @@ def run_experiments():
     seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
     output_dir = 'reports/experiments'
     evaluators = []
+    outlier_height_steps = 1 if os.environ.get('CIRCLECI', False) else 10
 
     for outlier_type in ['extreme_1', 'shift_1', 'variance_1', 'trend_1']:
         announce_experiment('Outlier Height')
         ev_extr = run_extremes_experiment(
-            detectors, seeds, RUNS, outlier_type, steps=10,
+            detectors, seeds, RUNS, outlier_type, steps=outlier_height_steps,
             output_dir=os.path.join(output_dir, outlier_type, 'intensity'))
         evaluators.append(ev_extr)
+
+    if os.environ.get('CIRCLECI', False):
+        ev_extr.plot_single_heatmap()
+        return
 
     announce_experiment('Multivariate Datasets')
     ev_mv = run_multivariate_experiment(
