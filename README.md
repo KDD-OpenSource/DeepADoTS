@@ -46,14 +46,14 @@ Extension of Dagmm using an LSTM-Autoencoder instead of a Neural Network Autoenc
 ## Installation
 
 ```bash
-git clone --recurse-submodules -j8 git://github.com/KDD-OpenSource/DeepADoTS.git  
+git clone git://github.com/KDD-OpenSource/DeepADoTS.git  
 virtualenv venv -p /usr/bin/python3  
 source venv/bin/activate  
 pip install -r requirements.txt
 ```
 
 ## Usage
-In the local repository folder, activate virtual environment first
+In the local repository folder, activate a virtual environment first
 
 ```
 source venv/bin/activate
@@ -63,8 +63,8 @@ python3 main.py
 ## Deployment
 
 - You can use nvidia-docker
-- `docker build -t mp2018 .`
-- `nvidia-docker run -ti mp2018 /bin/bash -c "python3.6 /repo/main.py"`
+- `docker build -t deep-adots .`
+- `nvidia-docker run -ti deep-adots /bin/bash -c "python3.6 /repo/main.py"`
 
 
 ## Credits

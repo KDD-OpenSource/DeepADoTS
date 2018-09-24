@@ -8,7 +8,7 @@ def parse_requirements(filename):
 
 
 setup(
-    name='mp-2018',
+    name='deep-adots',
     author='Maxi Fischer, Willi Gierke, Ajay Kesar, Thomas Kellermeier, Axel Stebner, Daniel Thevessen',
     description='Unsupervised Anomaly Detection: Representation Learning for Predictive Maintenance over Time',
     long_description=open('README.md').read(),
@@ -17,6 +17,6 @@ setup(
     scripts=[],
     # Requirements for executing the project (not development)
     install_requires=parse_requirements('requirements.txt'),
-    url='github.com/KDD-OpenSource/MP-2018',
+    url='github.com/KDD-OpenSource/DeepADoTS',
     license='MIT License',
 )
