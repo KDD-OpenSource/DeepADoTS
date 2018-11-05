@@ -3,23 +3,41 @@
 
 The goal of this repository is to provide a benchmarking pipeline for anomaly detection on time series data for multiple state-of-the-art deep learning methods.
 
-## Installation
+
+## Implemented Algorithms
+
+### LSTM-AD
+Malhotra, Pankaj, et al. "Long short term memory networks for anomaly detection in time series." Proceedings. Presses universitaires de Louvain, 2015.
+
+### LSTM-ED
+Malhotra, Pankaj, et al. "LSTM-based encoder-decoder for multi-sensor anomaly detection." ICML, 2016.
+
+### Autoencoder
+Hawkins, Simon, et al. "Outlier detection using replicator neural networks." DaWaK, 2002.
+
+### Donut
+Xu, Haowen, et al. "Unsupervised Anomaly Detection via Variational Auto-Encoder for Seasonal KPIs in Web Applications." WWW, 2018.
+
+### REBM using a restricted Boltzmann Machine as energy-based model
+Zhai, Shuangfei, et al. "Deep structured energy based models for anomaly detection." ICML, 2016.
+
+### DAGMM
+Zong, Bo, et al. "Deep autoencoding gaussian mixture model for unsupervised anomaly detection." ICLR, 2018.
+
+### LSTM-DAGMM
+Extension of Dagmm using an LSTM-Autoencoder instead of a Neural Network Autoencoder
+
+
+## Usage
 
 ```bash
 git clone git://github.com/KDD-OpenSource/DeepADoTS.git  
 virtualenv venv -p /usr/bin/python3  
 source venv/bin/activate  
-pip install -r requirements.txt
-```
-
-## Usage
-
-In the local repository folder, activate the virtual environment first
-
-```
-source venv/bin/activate
+pip install -r requirements.txt  
 python3 main.py
-``` 
+```
+
 
 ## Example
 We follow the [scikit-learn API](http://scikit-learn.org/dev/developers/contributing.html#different-objects) by offering the interface methods `fit(X)` and `predict(X)`. The former estimates the data distribution in an unsupervised way while the latter returns an anomaly score for each instance - the higher, the more certain is the model that the instance is an anomaly. To compare the performance of methods, we use the [ROC AUC](http://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_auc_score.html) value.
@@ -98,7 +116,8 @@ plt.show()
 ```
 Which creates a plot like this
 ![](https://user-images.githubusercontent.com/6676439/48005276-51ee4c80-e113-11e8-8887-ac887e2cdde4.png)
-We can see that global outliers (zeros) and local outliers (strangly written digits) receive high anomaly scores.
+We can see that global outliers (zeros) and local outliers (strangely written digits) receive high anomaly scores.
+
 
 ## Deployment
 
@@ -121,30 +140,8 @@ Supervisors:
 * [Emmanuel Müller](https://github.com/emmanuel-mueller)
 
 
-## Implemented Algorithms
-
-### LSTM-AD
-Malhotra, Pankaj, et al. "Long short term memory networks for anomaly detection in time series." Proceedings. Presses universitaires de Louvain, 2015.
-
-### LSTM-ED
-Malhotra, Pankaj, et al. "LSTM-based encoder-decoder for multi-sensor anomaly detection." ICML, 2016.
-
-### Autoencoder
-Hawkins, Simon, et al. "Outlier detection using replicator neural networks." DaWaK, 2002.
-
-### Donut
-Xu, Haowen, et al. "Unsupervised Anomaly Detection via Variational Auto-Encoder for Seasonal KPIs in Web Applications." WWW, 2018.
-
-### REBM using a restricted Boltzmann Machine as energy-based model
-Zhai, Shuangfei, et al. "Deep structured energy based models for anomaly detection." ICML, 2016.
-
-### DAGMM
-Zong, Bo, et al. "Deep autoencoding gaussian mixture model for unsupervised anomaly detection." ICLR, 2018.
-
-### LSTM-DAGMM
-Extension of Dagmm using an LSTM-Autoencoder instead of a Neural Network Autoencoder
-
 ## Credits
 [Base implementation for DAGMM](https://github.com/danieltan07/dagmm)  
 [Base implementation for Donut](https://github.com/haowen-xu/donut)  
 [Base implementation for Recurrent EBM](https://github.com/dshieble/Music_RNN_RBM)  
+[Downloader for real-world datasets](https://github.com/chickenbestlover/RNN-Time-series-Anomaly-Detection/blob/master/0_download_dataset.py)
