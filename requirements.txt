@@ -3,7 +3,7 @@
 
 # Requirements for donut (https://github.com/korepwx/donut)
 git+https://github.com/thu-ml/zhusuan.git
-git+https://github.com/korepwx/tfsnippet.git
+git+https://github.com/korepwx/tfsnippet.git@ecc0b4d1e610cf8cfa8c236857a7dabee27d5543
 git+https://github.com/korepwx/donut.git
 
 # Requirements for dagmm (https://github.com/danieltan07/dagmm)
