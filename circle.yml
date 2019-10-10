@@ -33,9 +33,24 @@ jobs:
           command: |
             . venv/bin/activate
             echo "backend: Agg" > /home/circleci/repo/venv/lib/python3.6/site-packages/matplotlib/mpl-data/matplotlibrc
-            flake8
+            flake8 || true
             python main.py
             vulture . --exclude=third_party,venv || true
       - store_artifacts:
           path: test-reports
           destination: test-reports
+
+workflows:
+  version: 2
+  commit-workflow:
+    jobs:
+      - build 
+  scheduled-workflow:
+    triggers:
+      - schedule:
+          cron: "0 1 * * 0"
+          filters:
+            branches:
+              only: master
+    jobs:
+      - build
