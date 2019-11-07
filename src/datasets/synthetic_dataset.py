@@ -6,16 +6,16 @@ from . import Dataset
 
 
 class SyntheticDataset(Dataset):
-    def __init__(self, length: int=1000, n: int=4, k: int=2,
-                 shift_config: dict=None,
-                 behavior: object=None,
-                 behavior_config: dict=None,
-                 baseline_config: dict=None,
-                 outlier_config: dict=None,
-                 pollution_config: dict=None,
-                 label_config: dict=None,
-                 train_split: float=0.7,
-                 random_state: int=None, **kwargs):
+    def __init__(self, length: int = 1000, n: int = 4, k: int = 2,
+                 shift_config: dict = None,
+                 behavior: object = None,
+                 behavior_config: dict = None,
+                 baseline_config: dict = None,
+                 outlier_config: dict = None,
+                 pollution_config: dict = None,
+                 label_config: dict = None,
+                 train_split: float = 0.7,
+                 random_state: int = None, **kwargs):
         super().__init__(**kwargs)
 
         self.length = length
@@ -64,12 +64,12 @@ class SyntheticDataset(Dataset):
         y[timestamps] = 1
         return pd.Series(y)
 
-    def add_missing_values(self, missing_percentage: float, per_column: bool=True):
+    def add_missing_values(self, missing_percentage: float, per_column: bool = True):
         X_train, y_train, X_test, y_test = self._data
         if per_column:
             for col in X_train.columns:
-                missing_idxs = np.random.choice(len(X_train), int(missing_percentage*len(X_train)), replace=False)
+                missing_idxs = np.random.choice(len(X_train), int(missing_percentage * len(X_train)), replace=False)
                 X_train[col][missing_idxs] = np.nan
         else:
-            missing_idxs = np.random.choice(len(X_train), int(missing_percentage*len(X_train)), replace=False)
+            missing_idxs = np.random.choice(len(X_train), int(missing_percentage * len(X_train)), replace=False)
             X_train.iloc[missing_idxs] = [np.nan] * X_train.shape[-1]

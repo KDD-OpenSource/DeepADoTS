@@ -13,10 +13,10 @@ from .algorithm_utils import Algorithm, PyTorchUtils
 
 
 class LSTMED(Algorithm, PyTorchUtils):
-    def __init__(self, name: str='LSTM-ED', num_epochs: int=10, batch_size: int=20, lr: float=1e-3,
-                 hidden_size: int=5, sequence_length: int=30, train_gaussian_percentage: float=0.25,
-                 n_layers: tuple=(1, 1), use_bias: tuple=(True, True), dropout: tuple=(0, 0),
-                 seed: int=None, gpu: int = None, details=True):
+    def __init__(self, name: str = 'LSTM-ED', num_epochs: int = 10, batch_size: int = 20, lr: float = 1e-3,
+                 hidden_size: int = 5, sequence_length: int = 30, train_gaussian_percentage: float = 0.25,
+                 n_layers: tuple = (1, 1), use_bias: tuple = (True, True), dropout: tuple = (0, 0),
+                 seed: int = None, gpu: int = None, details=True):
         Algorithm.__init__(self, __name__, name, seed, details=details)
         PyTorchUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
@@ -142,7 +142,7 @@ class LSTMEDModule(nn.Module, PyTorchUtils):
         return (self.to_var(torch.Tensor(self.n_layers[0], batch_size, self.hidden_size).zero_()),
                 self.to_var(torch.Tensor(self.n_layers[0], batch_size, self.hidden_size).zero_()))
 
-    def forward(self, ts_batch, return_latent: bool=False):
+    def forward(self, ts_batch, return_latent: bool = False):
         batch_size = ts_batch.shape[0]
 
         # 1. Encode the timeseries to make use of the last hidden state.

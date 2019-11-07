@@ -12,7 +12,7 @@ class RecurrentEBM(Algorithm, TensorflowUtils):
 
     def __init__(self, num_epochs=100, n_hidden=50, n_hidden_recurrent=100,
                  min_lr=1e-3, min_energy=None, batch_size=10,
-                 seed: int=None, gpu: int=None):
+                 seed: int = None, gpu: int = None):
         Algorithm.__init__(self, __name__, 'Recurrent EBM', seed)
         TensorflowUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
@@ -28,9 +28,7 @@ class RecurrentEBM(Algorithm, TensorflowUtils):
         self._batch_size = None
 
         # Variables
-        self.W, self.Wuh, self.Wux, self.Wxu, self.Wuu, self.bu, \
-            self.u0, self.bh, self.bx, self.BH_t, self.BX_t = \
-            None, None, None, None, None, None, None, None, None, None, None
+        self.W, self.Wuh, self.Wux, self.Wxu, self.Wuu, self.bu, self.u0, self.bh, self.bx, self.BH_t, self.BX_t = [None] * 11
         self.tvars = []
 
         self.update = None
@@ -86,7 +84,7 @@ class RecurrentEBM(Algorithm, TensorflowUtils):
     def _build_model(self, n_visible):
         self.input_data, self.lr, self._batch_size = self._create_placeholders(n_visible)
         self.W, self.Wuh, self.Wux, self.Wxu, self.Wuu, self.bu, \
-            self.u0, self.bh, self.bx, self.BH_t, self.BX_t = self._create_variables(n_visible)
+        self.u0, self.bh, self.bx, self.BH_t, self.BX_t = self._create_variables(n_visible)
 
         def rnn_recurrence(u_tmin1, sl):
             # Iterate through the data in the batch and generate the values of the RNN hidden nodes

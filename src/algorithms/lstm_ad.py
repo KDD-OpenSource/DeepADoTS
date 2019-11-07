@@ -14,7 +14,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
     """
 
     def __init__(self, len_in=1, len_out=10, num_epochs=100, lr=1e-3, batch_size=1,
-                 seed: int=None, gpu: int=None, details=True):
+                 seed: int = None, gpu: int = None, details=True):
         Algorithm.__init__(self, __name__, 'LSTM-AD', seed, details=details)
         PyTorchUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
@@ -92,7 +92,7 @@ class LSTMAD(Algorithm, PyTorchUtils):
     def _calc_errors(self, predictions, target_data, return_stacked_predictions=False):
         errors = [predictions.data.numpy()[:, self.len_out - 1:-self.len_in, :, 0]]
         for l in range(1, self.len_out):
-            errors += [predictions.data.numpy()[:, self.len_out - 1 - l:-self.len_in-l, :, l]]
+            errors += [predictions.data.numpy()[:, self.len_out - 1 - l:-self.len_in - l, :, l]]
         errors = np.stack(errors, axis=3)
         stacked_predictions = errors
         errors = target_data.data.numpy()[..., np.newaxis] - errors

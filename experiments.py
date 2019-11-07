@@ -1,10 +1,9 @@
-from itertools import product
-
 import numpy as np
 import pandas as pd
+from itertools import product
 
-from src.evaluation.evaluator import Evaluator
 from src.datasets import SyntheticDataGenerator, MultivariateAnomalyFunction
+from src.evaluation.evaluator import Evaluator
 
 
 # Validates all algorithms regarding polluted data based on a given outlier type.
@@ -87,8 +86,8 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
                    for pollution in [0.01, 0.05, 0.1, 0.2, 0.5]]
         elif anomaly_type == 'mv_polluted':
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(
-                        outlier_type, random_seed=seed, train_pollution=pollution)
-                   for pollution in [0.01, 0.05, 0.1, 0.2, 0.5]]
+                outlier_type, random_seed=seed, train_pollution=pollution)
+                for pollution in [0.01, 0.05, 0.1, 0.2, 0.5]]
         elif anomaly_type == 'multivariate':
             multivariate_anomaly_functions = ['doubled', 'inversed', 'shrinked', 'delayed', 'xor', 'delayed_missing']
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(dim_func, random_seed=seed)
@@ -97,11 +96,11 @@ def get_datasets_for_multiple_runs(anomaly_type, seeds, steps, outlier_type):
             group_sizes = [None, 20]
             num_dims = [25, 75, 125, 250]
             yield [MultivariateAnomalyFunction.get_multivariate_dataset(
-                        outlier_type, random_seed=seed, features=dim, group_size=gsize,
-                        name=f'Synthetic Multivariate {dim}-dimensional {outlier_type} '
-                        f'Curve Outliers with {gsize or dim} per group'
-                    )
-                   for dim, gsize in product(num_dims, group_sizes)]
+                outlier_type, random_seed=seed, features=dim, group_size=gsize,
+                name=f'Synthetic Multivariate {dim}-dimensional {outlier_type} '
+                     f'Curve Outliers with {gsize or dim} per group'
+            )
+                for dim, gsize in product(num_dims, group_sizes)]
         elif anomaly_type == 'multi_dim':
             yield [SyntheticDataGenerator.get(f'{outlier_type}', seed, num_dim)
                    for num_dim in np.linspace(100, 1500, steps, dtype=int)]

@@ -13,9 +13,9 @@ from .algorithm_utils import Algorithm, PyTorchUtils
 
 
 class AutoEncoder(Algorithm, PyTorchUtils):
-    def __init__(self, name: str='AutoEncoder', num_epochs: int=10, batch_size: int=20, lr: float=1e-3,
-                 hidden_size: int=5, sequence_length: int=30, train_gaussian_percentage: float=0.25,
-                 seed: int=None, gpu: int=None, details=True):
+    def __init__(self, name: str = 'AutoEncoder', num_epochs: int = 10, batch_size: int = 20, lr: float = 1e-3,
+                 hidden_size: int = 5, sequence_length: int = 30, train_gaussian_percentage: float = 0.25,
+                 seed: int = None, gpu: int = None, details=True):
         Algorithm.__init__(self, __name__, name, seed, details=details)
         PyTorchUtils.__init__(self, seed, gpu)
         self.num_epochs = num_epochs
@@ -129,7 +129,7 @@ class AutoEncoderModule(nn.Module, PyTorchUtils):
         self._decoder = nn.Sequential(*layers)
         self.to_device(self._decoder)
 
-    def forward(self, ts_batch, return_latent: bool=False):
+    def forward(self, ts_batch, return_latent: bool = False):
         flattened_sequence = ts_batch.view(ts_batch.size(0), -1)
         enc = self._encoder(flattened_sequence.float())
         dec = self._decoder(enc)

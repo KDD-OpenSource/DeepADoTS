@@ -3,6 +3,7 @@ from typing import Tuple, Callable
 
 import numpy as np
 import pandas as pd
+
 from . import Dataset
 
 
@@ -37,8 +38,8 @@ class SyntheticMultivariateDataset(Dataset):
 
         assert features >= 2, 'At least two dimensions are required for generating MV outliers'
         self.features = features
-        assert group_size is None or (features >= group_size > 0), 'Group size may not be greater '\
-            'than amount of dimensions'
+        assert group_size is None or (features >= group_size > 0), 'Group size may not be greater ' \
+                                                                   'than amount of dimensions'
         self.group_size = group_size or self.features
         assert self.group_size <= self.features
         if self.features % self.group_size == 1:  # How many dimensions each correlated group has
@@ -58,7 +59,8 @@ class SyntheticMultivariateDataset(Dataset):
     def get_curve(length, amplitude):
         # Transformed sinus curve: [-1, 1] -> [0, amplitude]
         def curve(t: int):
-            return amplitude * (np.sin(t)/2 + 0.5)
+            return amplitude * (np.sin(t) / 2 + 0.5)
+
         # Start and end of one curve section in sinus
         from_ = 1.5 * np.pi
         to_ = 3.5 * np.pi
@@ -94,7 +96,7 @@ class SyntheticMultivariateDataset(Dataset):
             # General outline for the repeating curves, varying height and length
             curve = self.get_random_curve()
             # Outlier generation in second dimension
-            create_anomaly = np.random.choice([False, True], p=[1-pollution, pollution])
+            create_anomaly = np.random.choice([False, True], p=[1 - pollution, pollution])
             # After curve add pause, only noise
             end_of_interval = pos + len(curve) + self.create_pause()
             self.insert_features(values[pos:end_of_interval, :], labels[pos:end_of_interval], curve, create_anomaly)
@@ -107,22 +109,25 @@ class SyntheticMultivariateDataset(Dataset):
         pollution: Portion of anomalous curves. Because it's not known how many curves there are
             in the end. It's randomly chosen based on this value. To avoid anomalies set this to zero.
     """
+
     def generate_data(self, pollution):
         value_dfs, label_series = [], []
         for i in range(0, self.features, self.group_size):
-            values, labels = self.generate_correlated_group(min(self.group_size, self.features-i),
+            values, labels = self.generate_correlated_group(min(self.group_size, self.features - i),
                                                             pollution=pollution * self.group_size / self.features)
             value_dfs.append(values)
             label_series.append(labels)
         labels = pd.Series(np.logical_or.reduce(label_series))
         values = pd.concat(value_dfs, axis=1, ignore_index=True)
         return values, labels
+
     """
         Insert values for curve and following pause over all dimensions.
         interval_values is changed by reference so this function doesn't return anything.
         (this is done by using numpy place function/slice operator)
 
     """
+
     def insert_features(self, interval_values: np.ndarray, interval_labels: np.ndarray,
                         curve: np.ndarray, create_anomaly: bool):
         # Randomly switch between dimensions for inserting the anomaly_func
@@ -150,7 +155,7 @@ class SyntheticMultivariateDataset(Dataset):
         if create_anomaly:
             assert end > start and start >= 0, f'Invalid anomaly indizes: {start} to {end}'
             padding = (end - start) // self.labels_padding
-            interval_labels[start+padding:end-padding] += 1
+            interval_labels[start + padding:end - padding] += 1
 
     def load(self):
         np.random.seed(self.random_seed)
