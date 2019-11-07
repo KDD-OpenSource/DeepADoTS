@@ -6,27 +6,15 @@ The goal of this repository is to provide a benchmarking pipeline for anomaly de
 
 ## Implemented Algorithms
 
-### LSTM-AD
-Malhotra, Pankaj, et al. "Long short term memory networks for anomaly detection in time series." Proceedings. Presses universitaires de Louvain, 2015.
-
-### LSTM-ED
-Malhotra, Pankaj, et al. "LSTM-based encoder-decoder for multi-sensor anomaly detection." ICML, 2016.
-
-### Autoencoder
-Hawkins, Simon, et al. "Outlier detection using replicator neural networks." DaWaK, 2002.
-
-### Donut
-Xu, Haowen, et al. "Unsupervised Anomaly Detection via Variational Auto-Encoder for Seasonal KPIs in Web Applications." WWW, 2018.
-
-### REBM using a restricted Boltzmann Machine as energy-based model
-Zhai, Shuangfei, et al. "Deep structured energy based models for anomaly detection." ICML, 2016.
-
-### DAGMM
-Zong, Bo, et al. "Deep autoencoding gaussian mixture model for unsupervised anomaly detection." ICLR, 2018.
-
-### LSTM-DAGMM
-Extension of Dagmm using an LSTM-Autoencoder instead of a Neural Network Autoencoder
-
+| Name               | Paper               | 
+|--------------------|---------------------|
+| LSTM-AD | [Long short term memory networks for anomaly detection in time series](https://www.elen.ucl.ac.be/Proceedings/esann/esannpdf/es2015-56), ESANN 2015  |
+| LSTM-ED |[LSTM-based encoder-decoder for multi-sensor anomaly detection](https://arxiv.org/pdf/1607.00148.pdf), ICML 2016|
+| Autoencoder | [Outlier detection using replicator neural networks](https://link.springer.com/content/pdf/10.1007%2F3-540-46145-0_17.pdf), DaWaK 2002 |
+| Donut| [Unsupervised Anomaly Detection via Variational Auto-Encoder for Seasonal KPIs in Web Applications](https://arxiv.org/pdf/1802.03903.pdf), WWW 2018 |
+| REBM | [Deep structured energy based models for anomaly detection](http://proceedings.mlr.press/v48/zhai16.pdf), ICML 2016|
+|DAGMM| [Deep autoencoding gaussian mixture model for unsupervised anomaly detection](https://openreview.net/pdf?id=BJJLHbb0-), ICLR 2018|
+|LSTM-DAGMM | Extension of [DAGMM](https://openreview.net/pdf?id=BJJLHbb0-) using an [LSTM](https://www.bioinf.jku.at/publications/older/2604.pdf)-Autoencoder instead of a Neural Network Autoencoder|
 
 ## Usage
 
@@ -58,7 +46,7 @@ class MNIST(Dataset):
     """0 is the outlier class. The training set is free of outliers."""
 
     def __init__(self, seed):
-        super().__init__(name="MNIST", file_name=None)  # We do not need to load data from a file
+        super().__init__(name="MNIST", file_name='')  # We do not need to load data from a file
         self.seed = seed
 
     def load(self):
