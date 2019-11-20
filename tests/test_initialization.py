@@ -21,7 +21,7 @@ from src.datasets import KDDCup, RealPickledDataset
 from src.evaluation import Evaluator
 
 
-class InitializationtestCase(unittest.TestCase):
+class InitializationTestCase(unittest.TestCase):
 
     @staticmethod
     def test_algorithm_initializations():
