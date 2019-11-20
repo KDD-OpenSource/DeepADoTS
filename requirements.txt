@@ -29,3 +29,4 @@ matplotlib
 progressbar2
 tabulate
 vulture
+pytest==5.2.2

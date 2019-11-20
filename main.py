@@ -18,18 +18,12 @@ def main():
 
 
 def detectors(seed):
-    if os.environ.get('CIRCLECI', False):
-        dets = [AutoEncoder(num_epochs=1, seed=seed), DAGMM(num_epochs=1, seed=seed),
-                DAGMM(num_epochs=1, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
-                LSTMAD(num_epochs=1, seed=seed), LSTMED(num_epochs=1, seed=seed),
-                RecurrentEBM(num_epochs=1, seed=seed)]
-    else:
-        standard_epochs = 40
-        dets = [AutoEncoder(num_epochs=standard_epochs, seed=seed),
-                DAGMM(num_epochs=standard_epochs, seed=seed, lr=1e-4),
-                DAGMM(num_epochs=standard_epochs, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
-                LSTMAD(num_epochs=standard_epochs, seed=seed), LSTMED(num_epochs=standard_epochs, seed=seed),
-                RecurrentEBM(num_epochs=standard_epochs, seed=seed)]
+    standard_epochs = 40
+    dets = [AutoEncoder(num_epochs=standard_epochs, seed=seed),
+            DAGMM(num_epochs=standard_epochs, seed=seed, lr=1e-4),
+            DAGMM(num_epochs=standard_epochs, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
+            LSTMAD(num_epochs=standard_epochs, seed=seed), LSTMED(num_epochs=standard_epochs, seed=seed),
+            RecurrentEBM(num_epochs=standard_epochs, seed=seed)]
 
     return sorted(dets, key=lambda x: x.framework)
 
@@ -39,7 +33,7 @@ def run_experiments():
     seeds = np.random.randint(np.iinfo(np.uint32).max, size=RUNS, dtype=np.uint32)
     output_dir = 'reports/experiments'
     evaluators = []
-    outlier_height_steps = 1 if os.environ.get('CIRCLECI', False) else 10
+    outlier_height_steps = 10
 
     for outlier_type in ['extreme_1', 'shift_1', 'variance_1', 'trend_1']:
         announce_experiment('Outlier Height')
@@ -47,10 +41,6 @@ def run_experiments():
             detectors, seeds, RUNS, outlier_type, steps=outlier_height_steps,
             output_dir=os.path.join(output_dir, outlier_type, 'intensity'))
         evaluators.append(ev_extr)
-
-    if os.environ.get('CIRCLECI', False):
-        ev_extr.plot_single_heatmap()
-        return
 
     announce_experiment('Multivariate Datasets')
     ev_mv = run_multivariate_experiment(
