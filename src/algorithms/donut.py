@@ -145,7 +145,7 @@ class Donut(Algorithm, TensorflowUtils):
     in time, the maximum of the scores of the features is taken to support multivariate time series as well."""
 
     def __init__(self, num_epochs=256, batch_size=32, x_dims=120,
-                 seed: int=None, gpu: int=None):
+                 seed: int = None, gpu: int = None):
         Algorithm.__init__(self, __name__, 'Donut', seed)
         TensorflowUtils.__init__(self, seed, gpu)
         self.max_epoch = num_epochs

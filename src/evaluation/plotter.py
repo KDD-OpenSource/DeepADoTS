@@ -9,7 +9,6 @@ import pandas as pd
 
 from .evaluator import Evaluator
 
-
 # For supporting pickles from old versions we need to map them
 NAMES_TRANSLATION = {
     'DAGMM_NNAutoEncoder_withWindow': 'DAGMM-NW',
@@ -62,7 +61,7 @@ class Plotter:
         aurocs_df = pd.concat(aurocs, axis=0, ignore_index=True)
 
         fig, axes = plt.subplots(
-            ncols=len(self.detector_names), figsize=(1.5*len(self.detector_names), 4), sharey=True)
+            ncols=len(self.detector_names), figsize=(1.5 * len(self.detector_names), 4), sharey=True)
         for ax, det in zip(axes.flat, self.detector_names):
             self._styled_boxplot(ax, aurocs_df, det)
 

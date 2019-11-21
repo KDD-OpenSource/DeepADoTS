@@ -1,5 +1,6 @@
-from .synthetic_multivariate_dataset import SyntheticMultivariateDataset
 import numpy as np
+
+from .synthetic_multivariate_dataset import SyntheticMultivariateDataset
 
 
 class MultivariateAnomalyFunction:
@@ -89,6 +90,7 @@ class MultivariateAnomalyFunction:
     """
         This is a helper function for shrinking an already generated curve.
     """
+
     @staticmethod
     def shrink_curve(curve_values, new_length):
         if new_length == len(curve_values):

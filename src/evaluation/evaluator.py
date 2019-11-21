@@ -23,7 +23,7 @@ from .config import init_logging
 
 
 class Evaluator:
-    def __init__(self, datasets: list, detectors: callable, output_dir: {str}=None, seed: int=None,
+    def __init__(self, datasets: list, detectors: callable, output_dir: {str} = None, seed: int = None,
                  create_log_file=True):
         """
         :param datasets: list of datasets

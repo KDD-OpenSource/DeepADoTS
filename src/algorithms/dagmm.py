@@ -23,7 +23,7 @@ class DAGMM(Algorithm, PyTorchUtils):
 
     def __init__(self, num_epochs=10, lambda_energy=0.1, lambda_cov_diag=0.005, lr=1e-3, batch_size=50, gmm_k=3,
                  normal_percentile=80, sequence_length=30, autoencoder_type=AutoEncoderModule, autoencoder_args=None,
-                 hidden_size: int=5, seed: int=None, gpu: int=None, details=True):
+                 hidden_size: int = 5, seed: int = None, gpu: int = None, details=True):
         _name = 'LSTM-DAGMM' if autoencoder_type == LSTMEDModule else 'DAGMM'
         Algorithm.__init__(self, __name__, _name, seed, details=details)
         PyTorchUtils.__init__(self, seed, gpu)
