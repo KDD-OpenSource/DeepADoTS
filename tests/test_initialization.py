@@ -1,24 +1,12 @@
 """Test each detector on each synthetic dataset"""
 
+import os
 import unittest
 
-import pandas as pd
-
-from src.algorithms.dagmm import DAGMM
-from src.datasets.kdd_cup import KDDCup
-from src.evaluation.evaluator import Evaluator
-
-import glob
-import os
-
 import numpy as np
-import pandas as pd
 
-from experiments import run_extremes_experiment, run_multivariate_experiment, run_multi_dim_multivariate_experiment, \
-    announce_experiment, run_multivariate_polluted_experiment, run_different_window_sizes_evaluator
+from experiments import run_extremes_experiment, announce_experiment
 from src.algorithms import AutoEncoder, DAGMM, RecurrentEBM, LSTMAD, LSTMED
-from src.datasets import KDDCup, RealPickledDataset
-from src.evaluation import Evaluator
 
 
 class InitializationTestCase(unittest.TestCase):
@@ -27,9 +15,9 @@ class InitializationTestCase(unittest.TestCase):
     def test_algorithm_initializations():
         def detectors(seed):
             dets = [AutoEncoder(num_epochs=1, seed=seed), DAGMM(num_epochs=1, seed=seed),
-                        DAGMM(num_epochs=1, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
-                        LSTMAD(num_epochs=1, seed=seed), LSTMED(num_epochs=1, seed=seed),
-                        RecurrentEBM(num_epochs=1, seed=seed)]
+                    DAGMM(num_epochs=1, autoencoder_type=DAGMM.AutoEncoder.LSTM, seed=seed),
+                    LSTMAD(num_epochs=1, seed=seed), LSTMED(num_epochs=1, seed=seed),
+                    RecurrentEBM(num_epochs=1, seed=seed)]
             return sorted(dets, key=lambda x: x.framework)
 
         RUNS = 1
