@@ -23,7 +23,7 @@ pandas
 tqdm
 scipy>=0.14.0
 scikit-learn>=0.19.1
-tensorflow==1.13.0rc1
+tensorflow==1.15.2
 flake8
 matplotlib
 progressbar2
